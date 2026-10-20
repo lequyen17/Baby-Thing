@@ -8,6 +8,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 @ConfigurationProperties(prefix = "app")
 public record AppProperties(
         String frontendUrl,
+        boolean cookieSecure,
         Mail mail,
         Jwt jwt,
         Otp otp,

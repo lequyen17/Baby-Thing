@@ -28,6 +28,7 @@ services:
       REDIS_PORT: 6379
       JWT_SECRET: ${JWT_SECRET}
       APP_FRONTEND_URL: ${APP_FRONTEND_URL}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
       MAIL_ENABLED: ${MAIL_ENABLED}
       MAIL_HOST: ${MAIL_HOST}
       MAIL_PORT: ${MAIL_PORT}
@@ -59,6 +60,15 @@ services:
     depends_on:
       - api
       - ui
+
+  # Public HTTPS qua Cloudflare Quick Tunnel (URL ngẫu nhiên *.trycloudflare.com, in ra log)
+  # Chạy: docker compose --profile tunnel up -d
+  tunnel:
+    image: cloudflare/cloudflared:2024.12.2
+    command: ["tunnel", "--no-autoupdate", "--protocol", "http2", "--url", "http://nginx:80"]
+    profiles: ["tunnel"]
+    depends_on:
+      - nginx
 
 volumes:
   postgres-data:

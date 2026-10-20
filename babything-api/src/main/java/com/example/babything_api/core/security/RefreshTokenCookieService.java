@@ -51,7 +51,7 @@ public class RefreshTokenCookieService {
     private ResponseCookie buildCookie(String value, long maxAgeSeconds) {
         return ResponseCookie.from(COOKIE_NAME, value)
                 .httpOnly(true)
-                .secure(false)
+                .secure(props.cookieSecure())
                 .sameSite("Lax")
                 .path("/api/auth")
                 .maxAge(maxAgeSeconds)
