@@ -12,6 +12,7 @@ import org.springframework.mail.MailException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @RestControllerAdvice
@@ -36,6 +37,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     ResponseEntity<ErrorResponse> handleUnreadable(HttpMessageNotReadableException e) {
         return ResponseEntity.badRequest().body(new ErrorResponse("BAD_REQUEST", "Malformed request body"));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse("BAD_REQUEST", "Invalid value for parameter '" + e.getName() + "'"));
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)

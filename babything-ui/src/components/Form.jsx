@@ -11,11 +11,14 @@ export function AuthCard({ title, subtitle, children, footer }) {
   );
 }
 
-export function Field({ label, error, ...inputProps }) {
+/** as="textarea" | "select" để dùng thay cho input; children là các option của select. */
+export function Field({ label, error, as: Control = 'input', children, ...inputProps }) {
   return (
     <label className="field">
       <span>{label}</span>
-      <input {...inputProps} aria-invalid={Boolean(error)} />
+      <Control {...inputProps} aria-invalid={Boolean(error)}>
+        {children}
+      </Control>
       {error && <small className="field-error">{error}</small>}
     </label>
   );

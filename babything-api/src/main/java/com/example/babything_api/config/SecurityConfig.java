@@ -1,10 +1,12 @@
 package com.example.babything_api.config;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -13,6 +15,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 import com.example.babything_api.core.security.JwtAuthFilter;
 
@@ -37,16 +41,27 @@ public class SecurityConfig {
                                 "/api/docs/**", "/api/swagger-ui/**", "/api/swagger-ui.html",
                                 "/error")
                         .permitAll()
+                        // Quản lý sản phẩm: khách chỉ được xem, mọi thao tác ghi và thống kê lượt xem dành cho ADMIN
+                        .requestMatchers(HttpMethod.POST, "/api/products", "/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/products/*/views").hasRole("ADMIN")
                         .anyRequest().authenticated())
-                .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, e) -> {
-                    response.setStatus(HttpStatus.UNAUTHORIZED.value());
-                    response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                    response.getWriter().write(
-                            "{\"code\":\"UNAUTHORIZED\",\"message\":\"Authentication required\"}");
-                }))
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, e) -> writeError(response,
+                                HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "Authentication required"))
+                        .accessDeniedHandler((request, response, e) -> writeError(response,
+                                HttpStatus.FORBIDDEN, "FORBIDDEN", "You do not have permission to do this")))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
+    }
+
+    private static void writeError(HttpServletResponse response, HttpStatus status, String code, String message)
+            throws IOException {
+        response.setStatus(status.value());
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.getWriter().write("{\"code\":\"" + code + "\",\"message\":\"" + message + "\"}");
     }
 
     /** Filter chỉ chạy trong Security chain, không để Spring Boot đăng ký thêm làm servlet filter. */

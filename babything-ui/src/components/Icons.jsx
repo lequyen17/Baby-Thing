@@ -101,3 +101,57 @@ export const CameraIcon = (props) => (
     <circle cx="12" cy="14" r="3" />
   </Icon>
 );
+
+export const PackageIcon = (props) => (
+  <Icon {...props}>
+    <path d="M21 8l-9-5-9 5v8l9 5 9-5V8z" />
+    <path d="M3 8l9 5 9-5M12 13v8" />
+  </Icon>
+);
+
+export const HistoryIcon = (props) => (
+  <Icon {...props}>
+    <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+    <path d="M3 3v5h5M12 7v5l3 2" />
+  </Icon>
+);
+
+export const PlusIcon = (props) => (
+  <Icon {...props}>
+    <path d="M12 5v14M5 12h14" />
+  </Icon>
+);
+
+export const SearchIcon = (props) => (
+  <Icon {...props}>
+    <circle cx="11" cy="11" r="7" />
+    <path d="M20 20l-3.5-3.5" />
+  </Icon>
+);
+
+export const EditIcon = (props) => (
+  <Icon {...props}>
+    <path d="M4 20h4L19 9l-4-4L4 16v4z" />
+    <path d="M13.5 6.5l4 4" />
+  </Icon>
+);
+
+export const TrashIcon = (props) => (
+  <Icon {...props}>
+    <path d="M4 7h16M10 11v6M14 11v6" />
+    <path d="M6 7l1 13h10l1-13M9 7V4h6v3" />
+  </Icon>
+);
+
+export const EyeIcon = (props) => (
+  <Icon {...props}>
+    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+    <circle cx="12" cy="12" r="3" />
+  </Icon>
+);
+
+export const ArrowLeftIcon = (props) => (
+  <Icon {...props}>
+    <path d="M19 12H5M12 19l-7-7 7-7" />
+  </Icon>
+);

@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens (user_id);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_family ON refresh_tokens (family_id, created_at);
 
--- Dành cho Google login (Level 3), chưa dùng.
+-- Tài khoản Google đã liên kết với user.
 CREATE TABLE IF NOT EXISTS user_identities (
     id               BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id          BIGINT       NOT NULL REFERENCES users (id) ON DELETE CASCADE,
@@ -47,3 +47,43 @@ CREATE TABLE IF NOT EXISTS user_identities (
     CONSTRAINT uq_user_identities_provider_sub UNIQUE (provider, provider_user_id),
     CONSTRAINT uq_user_identities_user_provider UNIQUE (user_id, provider)
 );
+
+-- ---------------------------------------------------------------- Sản phẩm
+
+-- Xoá mềm (deleted_at) để lịch sử xem không bị mất; SKU chỉ cần duy nhất trong các sản phẩm chưa xoá.
+CREATE TABLE IF NOT EXISTS products (
+    id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    sku         VARCHAR(64)    NOT NULL,
+    name        VARCHAR(200)   NOT NULL,
+    description TEXT           NULL,
+    price       NUMERIC(12, 2) NOT NULL,
+    stock       INTEGER        NOT NULL DEFAULT 0,
+    category    VARCHAR(100)   NULL,
+    image_url   VARCHAR(500)   NULL,
+    status      VARCHAR(20)    NOT NULL DEFAULT 'ACTIVE',
+    created_by  BIGINT         NULL REFERENCES users (id) ON DELETE SET NULL,
+    updated_by  BIGINT         NULL REFERENCES users (id) ON DELETE SET NULL,
+    created_at  TIMESTAMPTZ    NOT NULL DEFAULT now(),
+    updated_at  TIMESTAMPTZ    NOT NULL DEFAULT now(),
+    deleted_at  TIMESTAMPTZ    NULL,
+    CONSTRAINT ck_products_sku_uppercase CHECK (sku = upper(sku)),
+    CONSTRAINT ck_products_price CHECK (price >= 0),
+    CONSTRAINT ck_products_stock CHECK (stock >= 0),
+    CONSTRAINT ck_products_status CHECK (status IN ('ACTIVE', 'INACTIVE'))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_products_sku_alive ON products (sku) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_products_category ON products (category) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_products_created_at ON products (created_at DESC) WHERE deleted_at IS NULL;
+
+-- Lịch sử xem sản phẩm: mỗi cặp (user, product) một dòng, xem lại thì tăng view_count và cập nhật last_viewed_at.
+CREATE TABLE IF NOT EXISTS product_views (
+    id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id         BIGINT      NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    product_id      BIGINT      NOT NULL REFERENCES products (id) ON DELETE CASCADE,
+    view_count      INTEGER     NOT NULL DEFAULT 1,
+    first_viewed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    last_viewed_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT uq_product_views_user_product UNIQUE (user_id, product_id)
+);
+CREATE INDEX IF NOT EXISTS idx_product_views_user_last ON product_views (user_id, last_viewed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_product_views_product_last ON product_views (product_id, last_viewed_at DESC);

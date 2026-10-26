@@ -17,3 +17,9 @@ export function GuestRoute() {
   if (loading) return <Loading />;
   return user ? <Navigate to="/profile" replace /> : <Outlet />;
 }
+
+/** Trang chỉ dành cho ADMIN (tạo/sửa sản phẩm); đặt bên trong ProtectedRoute. */
+export function AdminRoute() {
+  const { user } = useAuth();
+  return user?.role === 'ADMIN' ? <Outlet /> : <Navigate to="/products" replace />;
+}

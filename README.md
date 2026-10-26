@@ -88,6 +88,39 @@ Phải ghi rõ `api ui`. Nếu không, lệnh `push` sẽ cố đẩy cả các 
 2. Ở **Authorized JavaScript origins**, thêm đúng URL bạn mở ứng dụng, vd. `http://localhost`. Khi deploy lên domain thật thì thêm cả `https://your-domain.com`.
 3. Điền client ID vào `GOOGLE_CLIENT_ID` trong `.env` rồi chạy `docker compose up -d` để áp dụng.
 
+## Quản lý sản phẩm
+
+Sau khi đăng nhập, header có hai mục:
+
+- **Products** (`/products`): danh sách sản phẩm, có tìm theo tên/SKU, lọc theo danh mục, sắp xếp theo giá/tên/mới nhất và phân trang. Bấm vào sản phẩm để xem chi tiết.
+- **History** (`/history`): những sản phẩm bạn đã mở, mới nhất ở trên, kèm số lần xem. Xoá được từng mục hoặc xoá hết.
+
+Tài khoản **ADMIN** có thêm:
+
+- Nút **New product**, **Edit**, **Delete** (xoá mềm: sản phẩm biến mất khỏi danh sách và lịch sử xem, SKU được dùng lại được).
+- Trạng thái **Hidden** để ẩn sản phẩm khỏi khách mà không xoá.
+- Mục **View history** ở trang chi tiết: tổng lượt xem và danh sách ai đã xem.
+
+Ứng dụng chưa có trang phân quyền, nên cấp quyền ADMIN cho một tài khoản đã đăng ký bằng SQL (đăng nhập lại để quyền có hiệu lực):
+
+```bash
+docker compose exec postgres psql -U <POSTGRES_USER> -d <POSTGRES_DB> \
+  -c "UPDATE users SET role = 'ADMIN' WHERE email = 'ban@example.com';"
+```
+
+API (chi tiết xem Swagger):
+
+| Method | Đường dẫn | Quyền |
+| ------ | --------- | ----- |
+| `GET` | `/api/products?q=&category=&status=&minPrice=&maxPrice=&sort=&page=&size=` | Đã đăng nhập (`status` chỉ có tác dụng với ADMIN) |
+| `GET` | `/api/products/categories` | Đã đăng nhập |
+| `GET` | `/api/products/{id}` (đồng thời ghi một lượt xem) | Đã đăng nhập |
+| `POST` / `PUT` / `DELETE` | `/api/products`, `/api/products/{id}` | ADMIN |
+| `GET` | `/api/products/{id}/views` | ADMIN |
+| `GET` / `DELETE` | `/api/users/me/product-history`, `/api/users/me/product-history/{productId}` | Đã đăng nhập |
+
+`sort` nhận `newest` (mặc định), `oldest`, `price_asc`, `price_desc`, `name_asc`, `name_desc`. `page` bắt đầu từ 0, `size` tối đa 50.
+
 ## Lệnh thường dùng
 
 ```bash
