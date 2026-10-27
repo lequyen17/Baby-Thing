@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { apiUpload } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
@@ -28,6 +28,13 @@ export default function AccountLayout() {
   const [extra] = useExtraProfile(user.id);
   const [addresses] = useAddresses(user.id);
   const [payout] = usePayoutAccount(user.id);
+
+  // Thông báo thành công tự ẩn sau vài giây
+  useEffect(() => {
+    if (!message) return undefined;
+    const timer = setTimeout(() => setMessage(''), 4000);
+    return () => clearTimeout(timer);
+  }, [message]);
 
   const checklist = [
     ['Ảnh đại diện', Boolean(user.avatarUrl)],
@@ -68,6 +75,12 @@ export default function AccountLayout() {
     <div className="page account">
       <section className="card profile-hero">
         <div className="profile-cover" />
+        {(error || message) && (
+          <div className="profile-avatar-alerts" role="status">
+            <Alert>{error}</Alert>
+            <Alert type="success">{message}</Alert>
+          </div>
+        )}
         <div className="profile-hero-body">
           {user.avatarUploadEnabled ? (
             <>
@@ -94,12 +107,6 @@ export default function AccountLayout() {
               )}
               <span className="badge badge-muted">Tham gia {formatDate(user.createdAt, true)}</span>
             </div>
-            {(error || message) && (
-              <div className="profile-avatar-alerts">
-                <Alert>{error}</Alert>
-                <Alert type="success">{message}</Alert>
-              </div>
-            )}
           </div>
           <div className="profile-completeness" title={checklist.map(([l, ok]) => `${ok ? '✓' : '○'} ${l}`).join('\n')}>
             <div className="completeness-head">

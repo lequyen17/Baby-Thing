@@ -35,6 +35,10 @@
 /* ------------------------------------------------ Account hero */
 .account .profile-cover { height: 132px; }
 .account .profile-hero-body { flex-wrap: wrap; margin-top: -52px; padding-bottom: 20px; }
+/* Thông báo nổi trên ảnh bìa để không làm đổi chiều cao/khung avatar */
+.account .profile-hero { position: relative; }
+.account .profile-avatar-alerts { position: absolute; top: 12px; right: 12px; z-index: 2; max-width: min(360px, calc(100% - 24px)); margin: 0; box-shadow: var(--shadow-md); }
+.account .profile-avatar-alerts .alert { margin: 0; }
 .profile-hero-text { flex: 1; min-width: 220px; }
 .profile-hero-text .muted { word-break: break-word; }
 .profile-completeness { width: 220px; padding: 14px 16px; border-radius: var(--radius-sm); background: var(--surface-muted); font-size: 0.85rem; }
