@@ -20,7 +20,7 @@ export default function LoginVerifyPage() {
     });
     clearLoginChallenge();
     await signIn(tokens);
-    navigate('/profile', { replace: true });
+    navigate('/', { replace: true });
   };
 
   const resend = () =>

@@ -10,11 +10,11 @@ import { ProductCard } from '../components/ProductCard';
 const PAGE_SIZE = 12;
 
 const SORTS = [
-  ['newest', 'Newest'],
-  ['price_asc', 'Price: low to high'],
-  ['price_desc', 'Price: high to low'],
-  ['name_asc', 'Name: A to Z'],
-  ['name_desc', 'Name: Z to A'],
+  ['newest', 'Mới nhất'],
+  ['price_asc', 'Giá: thấp đến cao'],
+  ['price_desc', 'Giá: cao đến thấp'],
+  ['name_asc', 'Tên: A đến Z'],
+  ['name_desc', 'Tên: Z đến A'],
 ];
 
 /** Bộ lọc nằm trên URL (?q=&category=&sort=&page=) để F5 hoặc bấm Back vẫn giữ nguyên. */
@@ -73,14 +73,14 @@ export default function ProductListPage() {
     <div className="page">
       <div className="page-header page-header-row">
         <div>
-          <h1>Products</h1>
+          <h1>{category || 'Tất cả sản phẩm'}</h1>
           <p className="muted">
-            {result ? `${result.totalItems} product${result.totalItems === 1 ? '' : 's'}` : 'Loading...'}
+            {result ? `${result.totalItems} sản phẩm` : 'Đang tải…'}
           </p>
         </div>
         {isAdmin && (
-          <Link to="/products/new" className="btn btn-primary">
-            <PlusIcon /> New product
+          <Link to="/products/new" className="btn btn-accent">
+            <PlusIcon /> Đăng bán
           </Link>
         )}
       </div>
@@ -90,14 +90,14 @@ export default function ProductListPage() {
           <SearchIcon />
           <input
             type="search"
-            placeholder="Search by name or SKU"
+            placeholder="Tìm theo tên hoặc SKU"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            aria-label="Search products"
+            aria-label="Tìm sản phẩm"
           />
         </label>
-        <select value={category} onChange={(e) => updateParams({ category: e.target.value })} aria-label="Category">
-          <option value="">All categories</option>
+        <select value={category} onChange={(e) => updateParams({ category: e.target.value })} aria-label="Danh mục">
+          <option value="">Tất cả danh mục</option>
           {categories.map((c) => (
             <option key={c} value={c}>
               {c}
@@ -105,21 +105,21 @@ export default function ProductListPage() {
           ))}
         </select>
         {isAdmin && (
-          <select value={status} onChange={(e) => updateParams({ status: e.target.value })} aria-label="Status">
-            <option value="">All statuses</option>
-            <option value="ACTIVE">Visible</option>
-            <option value="INACTIVE">Hidden</option>
+          <select value={status} onChange={(e) => updateParams({ status: e.target.value })} aria-label="Trạng thái">
+            <option value="">Mọi trạng thái</option>
+            <option value="ACTIVE">Đang hiển thị</option>
+            <option value="INACTIVE">Đang ẩn</option>
           </select>
         )}
-        <select value={sort} onChange={(e) => updateParams({ sort: e.target.value })} aria-label="Sort by">
+        <select value={sort} onChange={(e) => updateParams({ sort: e.target.value })} aria-label="Sắp xếp">
           {SORTS.map(([value, label]) => (
             <option key={value} value={value}>
               {label}
             </option>
           ))}
         </select>
-        <button type="submit" className="btn btn-primary">
-          Search
+        <button type="submit" className="btn btn-dark">
+          Tìm kiếm
         </button>
       </form>
 
@@ -127,7 +127,7 @@ export default function ProductListPage() {
 
       {result && result.items.length === 0 && (
         <div className="card empty-state">
-          <p className="muted">No products match your filters.</p>
+          <p className="muted">Không có sản phẩm nào phù hợp bộ lọc.</p>
         </div>
       )}
 
