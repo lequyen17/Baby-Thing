@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { Avatar } from './Avatar';
-import { ChevronDownIcon, LogoutIcon, SettingsIcon, UserIcon } from './Icons';
+import { ChevronDownIcon, HistoryIcon, LogoutIcon, SettingsIcon, UserIcon } from './Icons';
 
 export function UserMenu() {
   const { user, signOut } = useAuth();
@@ -54,6 +54,9 @@ export function UserMenu() {
           </div>
           <NavLink to="/profile" className="user-menu-item" role="menuitem">
             <UserIcon /> Hồ sơ của tôi
+          </NavLink>
+          <NavLink to="/history" className="user-menu-item" role="menuitem">
+            <HistoryIcon /> Sản phẩm đã xem
           </NavLink>
           <NavLink to="/settings" className="user-menu-item" role="menuitem">
             <SettingsIcon /> Cài đặt

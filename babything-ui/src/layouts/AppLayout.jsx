@@ -2,7 +2,16 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
-import { HistoryIcon, LogoMark, PackageIcon, PlusIcon, SearchIcon } from '../components/Icons';
+import {
+  BellIcon,
+  CameraIcon,
+  CardIcon,
+  LogoMark,
+  MessageIcon,
+  OrderIcon,
+  PlusIcon,
+  SearchIcon,
+} from '../components/Icons';
 import { UserMenu } from '../components/UserMenu';
 
 /** Khung chung cho các trang sau khi đăng nhập: thanh thông báo, header, danh mục, nội dung, footer. */
@@ -51,25 +60,32 @@ export default function AppLayout() {
               onChange={(e) => setSearch(e.target.value)}
               aria-label="Tìm kiếm sản phẩm"
             />
+            <Link to="/image-search" className="header-search-camera" aria-label="Tìm bằng hình ảnh (AI nhận diện)">
+              <CameraIcon size={20} />
+            </Link>
             <button type="submit" className="btn btn-dark btn-sm">
               Tìm kiếm
             </button>
           </form>
 
           <nav className="app-nav" aria-label="Tài khoản">
-            <NavLink to="/products" end className="app-nav-link">
-              <PackageIcon size={24} /> <span>Sản phẩm</span>
+            <NavLink to="/messages" className="app-nav-link">
+              <MessageIcon size={24} /> <span>Tin nhắn</span>
             </NavLink>
-            <NavLink to="/history" className="app-nav-link">
-              <HistoryIcon size={24} /> <span>Đã xem</span>
+            <NavLink to="/notifications" className="app-nav-link">
+              <BellIcon size={24} /> <span>Thông báo</span>
+            </NavLink>
+            <NavLink to="/orders" className="app-nav-link">
+              <OrderIcon size={24} /> <span>Đơn hàng</span>
+            </NavLink>
+            <NavLink to="/payments" className="app-nav-link">
+              <CardIcon size={24} /> <span>Thanh toán</span>
             </NavLink>
           </nav>
 
-          {isAdmin && (
-            <Link to="/products/new" className="btn btn-accent header-sell">
-              <PlusIcon /> <span>Đăng bán</span>
-            </Link>
-          )}
+          <Link to={isAdmin ? '/products/new' : '/sell'} className="btn btn-accent header-sell">
+            <PlusIcon /> <span>Đăng bán</span>
+          </Link>
           <UserMenu />
         </div>
       </header>
@@ -102,25 +118,56 @@ export default function AppLayout() {
           <div className="footer-brand">
             <span className="serif">Baby Things</span>
             <p>Nền tảng C2C mua bán đồ mẹ &amp; bé đã qua sử dụng.</p>
+            <NewsletterForm />
           </div>
           <div className="footer-col">
             <strong>Tài khoản</strong>
             <Link to="/profile">Hồ sơ của tôi</Link>
-            <Link to="/settings">Đổi mật khẩu</Link>
+            <Link to="/orders">Đơn mua &amp; đơn bán</Link>
+            <Link to="/payments">Lịch sử thanh toán</Link>
+            <Link to="/messages">Tin nhắn</Link>
             <Link to="/history">Sản phẩm đã xem</Link>
+            <Link to="/settings">Đổi mật khẩu</Link>
           </div>
           <div className="footer-col">
             <strong>Mua &amp; bán</strong>
             <Link to="/products">Tin mới đăng</Link>
-            {isAdmin && <Link to="/products/new">Đăng bán sản phẩm</Link>}
+            <Link to={isAdmin ? '/products/new' : '/sell'}>Đăng bán với AI</Link>
+            {isAdmin && <Link to="/products">Quản lý sản phẩm</Link>}
           </div>
           <div className="footer-col">
             <strong>Hỗ trợ</strong>
             <Link to="/#how">Cách hoạt động</Link>
+            <Link to="/feedback">Gửi góp ý</Link>
+            <Link to="/terms">Điều khoản sử dụng</Link>
+            <Link to="/privacy">Chính sách bảo mật</Link>
           </div>
         </div>
         <div className="app-footer-bottom">© {new Date().getFullYear()} Baby Things.</div>
       </footer>
     </div>
+  );
+}
+
+/** Ô đăng ký nhận tin: chưa có backend nên chỉ báo "sắp ra mắt". */
+function NewsletterForm() {
+  const [sent, setSent] = useState(false);
+  return (
+    <form
+      className="newsletter"
+      onSubmit={(e) => {
+        e.preventDefault();
+        setSent(true);
+      }}
+    >
+      <label htmlFor="newsletter-email">Nhận thông báo tin đăng mới</label>
+      <div className="newsletter-row">
+        <input id="newsletter-email" type="email" required placeholder="Email của bạn" />
+        <button type="submit" className="btn">
+          Đăng ký
+        </button>
+      </div>
+      {sent && <small>Tính năng sắp ra mắt — cảm ơn bạn đã quan tâm!</small>}
+    </form>
   );
 }

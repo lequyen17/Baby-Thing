@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AdminRoute, GuestRoute, ProtectedRoute } from './auth/RouteGuards';
 import AppLayout from './layouts/AppLayout';
+import ComingSoonPage, { COMING_SOON } from './pages/ComingSoonPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
@@ -34,6 +35,9 @@ export default function App() {
           <Route path="/products" element={<ProductListPage />} />
           <Route path="/products/:id" element={<ProductDetailPage />} />
           <Route path="/history" element={<ViewHistoryPage />} />
+          {Object.keys(COMING_SOON).map((feature) => (
+            <Route key={feature} path={`/${feature}`} element={<ComingSoonPage feature={feature} />} />
+          ))}
           <Route element={<AdminRoute />}>
             <Route path="/products/new" element={<ProductFormPage />} />
             <Route path="/products/:id/edit" element={<ProductFormPage />} />

@@ -212,3 +212,23 @@ export const LogoMark = ({ size = 40 }) => (
     />
   </svg>
 );
+
+export const MessageIcon = (props) => (
+  <Icon {...props}>
+    <path d="M4 5h16v11H9l-5 4z" />
+  </Icon>
+);
+
+export const BellIcon = (props) => (
+  <Icon {...props}>
+    <path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z" />
+    <path d="M10 20a2 2 0 0 0 4 0" />
+  </Icon>
+);
+
+export const OrderIcon = (props) => (
+  <Icon {...props}>
+    <path d="M3 7l9-4 9 4v10l-9 4-9-4z" />
+    <path d="M3 7l9 4 9-4M12 11v10" />
+  </Icon>
+);

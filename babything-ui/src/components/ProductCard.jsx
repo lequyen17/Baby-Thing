@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatPrice } from '../utils/format';
 import { categoryArt } from '../utils/categoryArt';
+import { HeartIcon, MessageIcon } from './Icons';
 import { ProductImage } from './ProductImage';
 
 export function StockBadge({ stock }) {
@@ -10,6 +12,9 @@ export function StockBadge({ stock }) {
 }
 
 export function ProductCard({ product, showStatus = false, footer }) {
+  // Lưu tin chưa có backend: chỉ đổi trạng thái trên giao diện
+  const [saved, setSaved] = useState(false);
+
   return (
     <article className="product-card">
       <Link to={`/products/${product.id}`} className="product-card-link">
@@ -29,11 +34,25 @@ export function ProductCard({ product, showStatus = false, footer }) {
           </div>
         </div>
       </Link>
+      <button
+        type="button"
+        className={`product-card-save ${saved ? 'is-saved' : ''}`}
+        aria-label={saved ? 'Bỏ lưu tin' : 'Lưu tin'}
+        aria-pressed={saved}
+        onClick={() => setSaved((v) => !v)}
+      >
+        <HeartIcon size={20} />
+      </button>
       <div className="product-card-footer">
         {footer ?? (
-          <Link to={`/products/${product.id}`} className="btn btn-dark btn-block">
-            Xem chi tiết
-          </Link>
+          <div className="product-card-actions">
+            <Link to="/messages" className="btn btn-secondary">
+              <MessageIcon size={16} /> Nhắn tin
+            </Link>
+            <Link to="/orders" className="btn btn-dark">
+              Mua ngay
+            </Link>
+          </div>
         )}
       </div>
     </article>
