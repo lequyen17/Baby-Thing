@@ -77,8 +77,8 @@ Phải ghi rõ `api ui`. Nếu không, lệnh `push` sẽ cố đẩy cả các 
 | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Có | Tài khoản database. Postgres chỉ dùng các giá trị này **lần chạy đầu tiên** (xem phần Xử lý sự cố) |
 | `JWT_SECRET`        | Có | Chuỗi ngẫu nhiên ≥ 32 ký tự, tạo bằng `openssl rand -base64 48` |
 | `APP_FRONTEND_URL`  | Có | URL người dùng mở trên trình duyệt (vd. `http://localhost`), dùng để tạo link đặt lại mật khẩu trong email |
-| `LOGIN_OTP_ENABLED` | Không | `true` (mặc định): đăng nhập phải nhập thêm mã OTP gửi qua email. `false`: chỉ cần email + mật khẩu |
-| `MAIL_ENABLED`      | Có | `false`: không gửi email thật, mã OTP và link reset được in ra log (tiện khi chạy thử) |
+| `LOGIN_OTP_ENABLED` | Không | `true` (mặc định): đăng nhập phải nhập thêm mã OTP gửi qua email. `false`: chỉ cần email + mật khẩu. Luôn bị bỏ qua khi `MAIL_ENABLED=false` |
+| `MAIL_ENABLED`      | Có | `false`: không gửi email thật và **bỏ OTP ở cả đăng ký lẫn đăng nhập** (đăng ký xong có tài khoản ngay, đăng nhập chỉ cần mật khẩu); link reset mật khẩu được in ra log. Chỉ dùng khi dev |
 | `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM` | Khi `MAIL_ENABLED=true` | Thông tin SMTP. Với Gmail: `smtp.gmail.com`, port `587`, mật khẩu là [App Password](https://myaccount.google.com/apppasswords) |
 | `GOOGLE_CLIENT_ID`  | Không | Để trống thì ẩn nút "Sign in with Google" |
 

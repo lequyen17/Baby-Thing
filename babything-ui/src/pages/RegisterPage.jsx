@@ -25,7 +25,11 @@ export default function RegisterPage() {
     setSubmitting(true);
     try {
       const { confirmPassword, ...body } = form;
-      await api('/auth/register', { method: 'POST', body, auth: false });
+      const res = await api('/auth/register', { method: 'POST', body, auth: false });
+      if (res?.verificationRequired === false) {
+        navigate('/login');
+        return;
+      }
       savePendingRegisterEmail(form.email.trim().toLowerCase());
       navigate('/register/verify');
     } catch (err) {

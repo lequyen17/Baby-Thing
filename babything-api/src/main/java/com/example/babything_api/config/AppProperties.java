@@ -29,7 +29,7 @@ public record AppProperties(
     public record PasswordReset(Duration ttl) {
     }
 
-    /** otpEnabled = false: đăng nhập chỉ cần mật khẩu, bỏ bước OTP email. */
+    /** otpEnabled = false hoặc mail.enabled = false: đăng nhập chỉ cần mật khẩu, bỏ bước OTP email. */
     public record Login(int maxFailures, Duration lockDuration, boolean otpEnabled) {
     }
 

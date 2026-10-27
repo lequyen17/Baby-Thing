@@ -84,21 +84,28 @@ public class AuthService {
 
     // ---------------------------------------------------------------- Đăng ký
 
-    public void register(RegisterRequest req, String ip) {
+    /** @return true nếu cần nhập OTP để hoàn tất, false nếu tài khoản đã được tạo ngay */
+    @Transactional
+    public boolean register(RegisterRequest req, String ip) {
         String email = normalizeEmail(req.email());
         rateLimiter.check(ip, "register", 10);
         rateLimiter.check(email, "register", 3);
         if (userRepository.existsByEmail(email)) {
             throw new ApiException(HttpStatus.CONFLICT, "EMAIL_EXISTS", "Email is already registered");
         }
+        String displayName = req.displayName().trim();
+        if (!props.mail().enabled()) {
+            createVerifiedUser(email, passwordEncoder.encode(req.password()), displayName, null);
+            return false;
+        }
         otpService.ensureNoCooldown(PURPOSE_REGISTER, email);
 
-        String displayName = req.displayName().trim();
         String otp = otpService.create(regKey(email), Map.of(
                 "display_name", displayName,
                 "password", passwordEncoder.encode(req.password())));
         mailService.sendRegistrationOtp(email, displayName, otp);
         otpService.startCooldown(PURPOSE_REGISTER, email);
+        return true;
     }
 
     public void resendRegisterOtp(String rawEmail, String ip) {
@@ -124,14 +131,19 @@ public class AuthService {
             throw new ApiException(HttpStatus.CONFLICT, "EMAIL_EXISTS", "Email is already registered");
         }
         Instant now = Instant.now();
+        User user = createVerifiedUser(email, pending.get("password"), pending.get("display_name"), now);
+        return issueTokens(user, UUID.randomUUID(), now);
+    }
+
+    /** lastLoginAt = null khi chưa đăng nhập (đăng ký không qua OTP). */
+    private User createVerifiedUser(String email, String passwordHash, String displayName, Instant lastLoginAt) {
         User user = new User();
         user.setEmail(email);
-        user.setPassword(pending.get("password"));
-        user.setDisplayName(pending.get("display_name"));
-        user.setEmailVerifiedAt(now);
-        user.setLastLoginAt(now);
-        userRepository.save(user);
-        return issueTokens(user, UUID.randomUUID(), now);
+        user.setPassword(passwordHash);
+        user.setDisplayName(displayName);
+        user.setEmailVerifiedAt(Instant.now());
+        user.setLastLoginAt(lastLoginAt);
+        return userRepository.save(user);
     }
 
     // ---------------------------------------------------------------- Đăng nhập (mật khẩu + OTP email)
@@ -159,7 +171,7 @@ public class AuthService {
         ensureActive(user);
         redis.delete(failKey);
 
-        if (!props.login().otpEnabled()) {
+        if (!props.login().otpEnabled() || !props.mail().enabled()) {
             Instant now = Instant.now();
             user.setLastLoginAt(now);
             userRepository.save(user);

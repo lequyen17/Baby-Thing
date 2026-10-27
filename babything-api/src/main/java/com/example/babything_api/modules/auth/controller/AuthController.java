@@ -28,6 +28,7 @@ import com.example.babything_api.modules.auth.dto.LoginRequest;
 import com.example.babything_api.modules.auth.dto.LoginResult;
 import com.example.babything_api.modules.auth.dto.MessageResponse;
 import com.example.babything_api.modules.auth.dto.RegisterRequest;
+import com.example.babything_api.modules.auth.dto.RegisterResponse;
 import com.example.babything_api.modules.auth.dto.ResetPasswordRequest;
 import com.example.babything_api.modules.auth.dto.TokenResponse;
 import com.example.babything_api.modules.auth.dto.VerifyLoginRequest;
@@ -48,9 +49,11 @@ public class AuthController {
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.ACCEPTED)
-    MessageResponse register(@Valid @RequestBody RegisterRequest req, HttpServletRequest http) {
-        authService.register(req, ClientIp.of(http));
-        return new MessageResponse("A verification code has been sent to your email");
+    RegisterResponse register(@Valid @RequestBody RegisterRequest req, HttpServletRequest http) {
+        boolean verificationRequired = authService.register(req, ClientIp.of(http));
+        return new RegisterResponse(
+                verificationRequired ? "A verification code has been sent to your email" : "Account created",
+                verificationRequired);
     }
 
     @PostMapping("/register/resend")
