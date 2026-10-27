@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Alert, Field } from '../components/Form';
-import { LockIcon } from '../components/Icons';
 
 const EMPTY_FORM = { currentPassword: '', newPassword: '', confirmPassword: '' };
 
@@ -23,7 +22,7 @@ function ChangePasswordForm() {
     setMessage('');
     setFieldErrors({});
     if (form.newPassword !== form.confirmPassword) {
-      setFieldErrors({ confirmPassword: 'Passwords do not match' });
+      setFieldErrors({ confirmPassword: 'Mật khẩu nhập lại không khớp' });
       return;
     }
     setSubmitting(true);
@@ -35,7 +34,7 @@ function ChangePasswordForm() {
       // Server đã thu hồi mọi phiên khác, cấp phiên mới cho thiết bị này
       await signIn(tokens);
       setForm(EMPTY_FORM);
-      setMessage('Password changed. You have been signed out on all other devices.');
+      setMessage('Đã đổi mật khẩu. Các thiết bị khác đã bị đăng xuất.');
     } catch (err) {
       setError(err.message);
       setFieldErrors(err.fields || {});
@@ -49,7 +48,7 @@ function ChangePasswordForm() {
       <Alert>{error}</Alert>
       <Alert type="success">{message}</Alert>
       <Field
-        label="Current password"
+        label="Mật khẩu hiện tại"
         type="password"
         autoComplete="current-password"
         value={form.currentPassword}
@@ -57,7 +56,7 @@ function ChangePasswordForm() {
         error={fieldErrors.currentPassword}
       />
       <Field
-        label="New password (8-72 characters)"
+        label="Mật khẩu mới (8–72 ký tự)"
         type="password"
         autoComplete="new-password"
         value={form.newPassword}
@@ -65,7 +64,7 @@ function ChangePasswordForm() {
         error={fieldErrors.newPassword}
       />
       <Field
-        label="Confirm new password"
+        label="Nhập lại mật khẩu mới"
         type="password"
         autoComplete="new-password"
         value={form.confirmPassword}
@@ -73,7 +72,7 @@ function ChangePasswordForm() {
         error={fieldErrors.confirmPassword}
       />
       <button type="submit" className="btn btn-primary" disabled={submitting}>
-        {submitting ? 'Saving...' : 'Update password'}
+        {submitting ? 'Đang lưu…' : 'Cập nhật mật khẩu'}
       </button>
     </form>
   );
@@ -83,37 +82,25 @@ export default function SettingsPage() {
   const { user } = useAuth();
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h1>Settings</h1>
-        <p className="muted">Manage your account security.</p>
+    <section className="card">
+      <div className="card-head">
+        <div>
+          <h2>Đổi mật khẩu</h2>
+        </div>
       </div>
-
-      <div className="settings-layout">
-        <nav className="settings-nav">
-          <span className="settings-nav-item active">
-            <LockIcon /> Password
-          </span>
-        </nav>
-
-        <section className="card">
-          <h2 className="card-title">Change password</h2>
           {user.hasPassword ? (
             <>
               <p className="muted card-description">
-                After changing your password, you will be signed out on all other devices.
+                Sau khi đổi mật khẩu, bạn sẽ bị đăng xuất khỏi các thiết bị khác.
               </p>
               <ChangePasswordForm />
             </>
           ) : (
             // Tài khoản tạo bằng Google chưa có mật khẩu -> đặt qua luồng quên mật khẩu (link gửi về email)
             <p className="muted card-description">
-              Your account signs in with Google and has no password yet. To also sign in with email and
-              password, <Link to="/forgot-password">set a password</Link> via a link sent to your email.
+              Tài khoản của bạn đăng nhập bằng Google và chưa có mật khẩu. Để đăng nhập thêm bằng email và mật khẩu, hãy <Link to="/forgot-password">đặt mật khẩu</Link> qua liên kết gửi về email.
             </p>
           )}
-        </section>
-      </div>
-    </div>
+    </section>
   );
 }

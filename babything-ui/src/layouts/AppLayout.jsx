@@ -3,7 +3,6 @@ import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import {
-  BellIcon,
   CameraIcon,
   CardIcon,
   LogoMark,
@@ -12,6 +11,9 @@ import {
   PlusIcon,
   SearchIcon,
 } from '../components/Icons';
+import { useMessages } from '../messages/useMessages';
+import NotificationBell from '../notifications/NotificationBell';
+import { POLICY_LIST } from '../content/pages';
 import { UserMenu } from '../components/UserMenu';
 
 /** Khung chung cho các trang sau khi đăng nhập: thanh thông báo, header, danh mục, nội dung, footer. */
@@ -24,6 +26,7 @@ export default function AppLayout() {
   const activeCategory = params.get('category') ?? '';
   const [search, setSearch] = useState(params.get('q') ?? '');
   const [categories, setCategories] = useState([]);
+  const { unread: unreadMessages } = useMessages(user.id);
 
   useEffect(() => {
     api('/products/categories')
@@ -70,11 +73,13 @@ export default function AppLayout() {
 
           <nav className="app-nav" aria-label="Tài khoản">
             <NavLink to="/messages" className="app-nav-link">
-              <MessageIcon size={24} /> <span>Tin nhắn</span>
+              <span className="nav-icon">
+                <MessageIcon size={24} />
+                {unreadMessages > 0 && <span className="nav-badge">{unreadMessages > 9 ? '9+' : unreadMessages}</span>}
+              </span>
+              <span>Tin nhắn</span>
             </NavLink>
-            <NavLink to="/notifications" className="app-nav-link">
-              <BellIcon size={24} /> <span>Thông báo</span>
-            </NavLink>
+            <NotificationBell />
             <NavLink to="/orders" className="app-nav-link">
               <OrderIcon size={24} /> <span>Đơn hàng</span>
             </NavLink>
@@ -127,7 +132,8 @@ export default function AppLayout() {
             <Link to="/payments">Lịch sử thanh toán</Link>
             <Link to="/messages">Tin nhắn</Link>
             <Link to="/history">Sản phẩm đã xem</Link>
-            <Link to="/settings">Đổi mật khẩu</Link>
+            <Link to="/profile/addresses">Sổ địa chỉ</Link>
+            <Link to="/settings">Bảo mật</Link>
           </div>
           <div className="footer-col">
             <strong>Mua &amp; bán</strong>
@@ -139,9 +145,16 @@ export default function AppLayout() {
           <div className="footer-col">
             <strong>Hỗ trợ</strong>
             <Link to="/#how">Cách hoạt động</Link>
+            <Link to="/guide/buy">Hướng dẫn mua</Link>
+            <Link to="/guide/sell">Hướng dẫn bán</Link>
+            <Link to="/fees">Bảng phí</Link>
+            <Link to="/faq">Câu hỏi thường gặp</Link>
             <Link to="/feedback">Gửi góp ý</Link>
-            <Link to="/terms">Điều khoản sử dụng</Link>
-            <Link to="/privacy">Chính sách bảo mật</Link>
+            {POLICY_LIST.map((p) => (
+              <Link key={p.key} to={p.path}>
+                {p.title}
+              </Link>
+            ))}
           </div>
         </div>
         <div className="app-footer-bottom">© {new Date().getFullYear()} Baby Things.</div>
