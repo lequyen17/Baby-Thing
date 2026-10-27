@@ -1,6 +1,7 @@
--- Chạy mỗi lần khởi động (spring.sql.init.mode=always), nên mọi lệnh đều phải idempotent.
+-- V1: schema khởi tạo.
+-- KHÔNG sửa file này sau khi đã merge; mọi thay đổi schema thêm file V<n+1>__mo_ta.sql mới.
 
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE users (
     id                  BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     email               VARCHAR(255) NOT NULL,
     password            VARCHAR(255) NULL,          -- NULL = chỉ đăng nhập Google
@@ -21,7 +22,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- Mỗi lần rotate là một dòng mới, chung family_id.
 -- Mốc bắt đầu phiên = MIN(created_at) của family.
-CREATE TABLE IF NOT EXISTS refresh_tokens (
+CREATE TABLE refresh_tokens (
     id             BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id        BIGINT       NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     token          VARCHAR(64)  NOT NULL,          -- SHA-256 hex của refresh token (plain chỉ gửi cho client)
@@ -32,11 +33,11 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     created_at     TIMESTAMPTZ  NOT NULL DEFAULT now(),
     CONSTRAINT uq_refresh_tokens_token UNIQUE (token)
 );
-CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens (user_id);
-CREATE INDEX IF NOT EXISTS idx_refresh_tokens_family ON refresh_tokens (family_id, created_at);
+CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens (user_id);
+CREATE INDEX idx_refresh_tokens_family ON refresh_tokens (family_id, created_at);
 
 -- Tài khoản Google đã liên kết với user.
-CREATE TABLE IF NOT EXISTS user_identities (
+CREATE TABLE user_identities (
     id               BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id          BIGINT       NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     provider         VARCHAR(20)  NOT NULL,
@@ -51,7 +52,7 @@ CREATE TABLE IF NOT EXISTS user_identities (
 -- ---------------------------------------------------------------- Sản phẩm
 
 -- Xoá mềm (deleted_at) để lịch sử xem không bị mất; SKU chỉ cần duy nhất trong các sản phẩm chưa xoá.
-CREATE TABLE IF NOT EXISTS products (
+CREATE TABLE products (
     id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     sku         VARCHAR(64)    NOT NULL,
     name        VARCHAR(200)   NOT NULL,
@@ -71,12 +72,12 @@ CREATE TABLE IF NOT EXISTS products (
     CONSTRAINT ck_products_stock CHECK (stock >= 0),
     CONSTRAINT ck_products_status CHECK (status IN ('ACTIVE', 'INACTIVE'))
 );
-CREATE UNIQUE INDEX IF NOT EXISTS uq_products_sku_alive ON products (sku) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_products_category ON products (category) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_products_created_at ON products (created_at DESC) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX uq_products_sku_alive ON products (sku) WHERE deleted_at IS NULL;
+CREATE INDEX idx_products_category ON products (category) WHERE deleted_at IS NULL;
+CREATE INDEX idx_products_created_at ON products (created_at DESC) WHERE deleted_at IS NULL;
 
 -- Lịch sử xem sản phẩm: mỗi cặp (user, product) một dòng, xem lại thì tăng view_count và cập nhật last_viewed_at.
-CREATE TABLE IF NOT EXISTS product_views (
+CREATE TABLE product_views (
     id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id         BIGINT      NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     product_id      BIGINT      NOT NULL REFERENCES products (id) ON DELETE CASCADE,
@@ -85,5 +86,5 @@ CREATE TABLE IF NOT EXISTS product_views (
     last_viewed_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT uq_product_views_user_product UNIQUE (user_id, product_id)
 );
-CREATE INDEX IF NOT EXISTS idx_product_views_user_last ON product_views (user_id, last_viewed_at DESC);
-CREATE INDEX IF NOT EXISTS idx_product_views_product_last ON product_views (product_id, last_viewed_at DESC);
+CREATE INDEX idx_product_views_user_last ON product_views (user_id, last_viewed_at DESC);
+CREATE INDEX idx_product_views_product_last ON product_views (product_id, last_viewed_at DESC);
