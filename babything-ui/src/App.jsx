@@ -1,4 +1,13 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
+import AccountLayout from './account/AccountLayout';
+import ContentPage from './content/ContentPage';
+import { CONTENT } from './content/pages';
+import MessagesPage from './messages/MessagesPage';
+import NotificationPrefsPage from './notifications/NotificationPrefsPage';
+import NotificationsPage from './notifications/NotificationsPage';
+import SellerProfilePage from './seller/SellerProfilePage';
+import AddressesPage from './pages/AddressesPage';
+import PayoutPage from './pages/PayoutPage';
 import { AdminRoute, GuestRoute, ProtectedRoute } from './auth/RouteGuards';
 import AppLayout from './layouts/AppLayout';
 import ComingSoonPage, { COMING_SOON } from './pages/ComingSoonPage';
@@ -27,11 +36,23 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       </Route>
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+      {Object.entries(CONTENT).map(([key, page]) => (
+        <Route key={key} path={page.path} element={<ContentPage page={page} />} />
+      ))}
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/settings" element={<SettingsPage />} />
+          <Route element={<AccountLayout />}>
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/profile/addresses" element={<AddressesPage />} />
+            <Route path="/profile/payout" element={<PayoutPage />} />
+            <Route path="/profile/notifications" element={<NotificationPrefsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+          </Route>
+          <Route path="/sellers/:id" element={<SellerProfilePage />} />
+          <Route path="/messages" element={<MessagesPage />} />
+          <Route path="/messages/:conversationId" element={<MessagesPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/products" element={<ProductListPage />} />
           <Route path="/products/:id" element={<ProductDetailPage />} />
           <Route path="/history" element={<ViewHistoryPage />} />

@@ -8,6 +8,8 @@ import { savePendingRegisterEmail } from './flowStorage';
 export default function RegisterPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ displayName: '', email: '', password: '', confirmPassword: '' });
+  const [agreed, setAgreed] = useState(false);
+  const [marketing, setMarketing] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -20,6 +22,10 @@ export default function RegisterPage() {
     setFieldErrors({});
     if (form.password !== form.confirmPassword) {
       setFieldErrors({ confirmPassword: 'Passwords do not match' });
+      return;
+    }
+    if (!agreed) {
+      setError('Vui lòng đồng ý với Điều khoản sử dụng và Chính sách quyền riêng tư để tạo tài khoản.');
       return;
     }
     setSubmitting(true);
@@ -77,6 +83,24 @@ export default function RegisterPage() {
           onChange={update('confirmPassword')}
           error={fieldErrors.confirmPassword}
         />
+        <label className="check consent">
+          <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
+          <span>
+            Tôi đồng ý với{' '}
+            <Link to="/terms" target="_blank">
+              Điều khoản sử dụng
+            </Link>{' '}
+            và{' '}
+            <Link to="/privacy" target="_blank">
+              Chính sách quyền riêng tư
+            </Link>
+            .
+          </span>
+        </label>
+        <label className="check consent">
+          <input type="checkbox" checked={marketing} onChange={(e) => setMarketing(e.target.checked)} />
+          <span>Tôi muốn nhận thông tin khuyến mãi và gợi ý sản phẩm (không bắt buộc).</span>
+        </label>
         <button type="submit" className="btn btn-primary" disabled={submitting}>
           {submitting ? 'Sending code...' : 'Sign up'}
         </button>

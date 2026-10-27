@@ -1896,7 +1896,7 @@ a:hover {
     grid-template-columns: 1fr;
   }
 
-  .app-nav-link span,
+  .app-nav-link > span:not(.nav-icon),
   .header-sell span {
     display: none;
   }
