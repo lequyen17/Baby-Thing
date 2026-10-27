@@ -29,7 +29,7 @@ export default function LoginPage() {
       } else {
         // Server tắt OTP đăng nhập (LOGIN_OTP_ENABLED=false) -> nhận token luôn
         await signIn(res.tokens);
-        navigate('/profile', { replace: true });
+        navigate('/', { replace: true });
       }
     } catch (err) {
       setError(err.message);

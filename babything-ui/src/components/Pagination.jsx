@@ -2,12 +2,12 @@
 export function Pagination({ page, totalPages, onChange }) {
   if (totalPages <= 1) return null;
   return (
-    <nav className="pagination" aria-label="Pagination">
+    <nav className="pagination" aria-label="Phân trang">
       <button type="button" className="btn btn-secondary" disabled={page <= 0} onClick={() => onChange(page - 1)}>
-        Previous
+        Trang trước
       </button>
       <span className="muted">
-        Page {page + 1} of {totalPages}
+        Trang {page + 1} / {totalPages}
       </span>
       <button
         type="button"
@@ -15,7 +15,7 @@ export function Pagination({ page, totalPages, onChange }) {
         disabled={page >= totalPages - 1}
         onClick={() => onChange(page + 1)}
       >
-        Next
+        Trang sau
       </button>
     </nav>
   );

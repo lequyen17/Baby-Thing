@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { AdminRoute, GuestRoute, ProtectedRoute } from './auth/RouteGuards';
 import AppLayout from './layouts/AppLayout';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import LoginVerifyPage from './pages/LoginVerifyPage';
 import ProductDetailPage from './pages/ProductDetailPage';
@@ -27,6 +28,7 @@ export default function App() {
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
+          <Route path="/" element={<HomePage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/products" element={<ProductListPage />} />
@@ -38,7 +40,7 @@ export default function App() {
           </Route>
         </Route>
       </Route>
-      <Route path="*" element={<Navigate to="/profile" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

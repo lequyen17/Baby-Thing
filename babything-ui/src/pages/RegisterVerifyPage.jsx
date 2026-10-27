@@ -16,7 +16,7 @@ export default function RegisterVerifyPage() {
     const tokens = await api('/auth/register/verify', { method: 'POST', body: { email, otp }, auth: false });
     clearPendingRegisterEmail();
     await signIn(tokens);
-    navigate('/profile', { replace: true });
+    navigate('/', { replace: true });
   };
 
   const resend = () => api('/auth/register/resend', { method: 'POST', body: { email }, auth: false });

@@ -74,7 +74,7 @@ export default function GoogleSignInButton({ text = 'signin_with' }) {
       try {
         const tokens = await api('/auth/google', { method: 'POST', body: { credential }, auth: false });
         await signIn(tokens);
-        navigate('/profile', { replace: true });
+        navigate('/', { replace: true });
       } catch (err) {
         if (active) {
           setError(err.message);
