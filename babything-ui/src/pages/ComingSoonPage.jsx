@@ -8,7 +8,6 @@ import {
   MessageIcon,
   OrderIcon,
   PenIcon,
-  PlusIcon,
 } from '../components/Icons';
 
 /** Các mục có trong thiết kế nhưng backend chưa hỗ trợ: hiển thị trang "sắp ra mắt". */
@@ -17,7 +16,6 @@ export const COMING_SOON = {
   notifications: [BellIcon, 'tone-peach', 'Thông báo', 'Cập nhật về đơn hàng, tin nhắn và tin đăng bạn quan tâm.'],
   orders: [OrderIcon, 'tone-sage', 'Đơn mua & đơn bán', 'Đặt hàng, xác nhận đơn và theo dõi trạng thái giao hàng.'],
   payments: [CardIcon, 'tone-sky', 'Thanh toán', 'Thanh toán an toàn và xem lại toàn bộ lịch sử giao dịch.'],
-  sell: [PlusIcon, 'tone-peach', 'Đăng bán', 'Mọi thành viên đều có thể đăng bán đồ bé đã dùng, kèm trợ lý AI soạn bài.'],
   'image-search': [CameraIcon, 'tone-sage', 'Tìm bằng hình ảnh', 'Chụp ảnh món đồ, AI tìm những tin đăng tương tự cho bạn.'],
   feedback: [PenIcon, 'tone-peach', 'Góp ý', 'Gửi góp ý và theo dõi phản hồi của Baby Things ngay trong tài khoản.'],
   terms: [LockIcon, 'tone-sky', 'Điều khoản sử dụng', 'Các quy định khi mua bán trên Baby Things.'],

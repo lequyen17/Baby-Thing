@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useOutletContext } from 'react-router-dom';
 import { api } from '../api/client';
-import { useAuth } from '../auth/AuthContext';
 import { Alert } from '../components/Form';
 import {
   ArrowRightIcon,
@@ -37,8 +36,6 @@ const AI_STEPS = [
 ];
 
 export default function HomePage() {
-  const { user } = useAuth();
-  const isAdmin = user.role === 'ADMIN';
   const { categories } = useOutletContext();
   const { hash } = useLocation();
   const [products, setProducts] = useState(null);
@@ -61,7 +58,7 @@ export default function HomePage() {
     if (filter === 'low') return p.stock > 0 && p.stock <= 5;
     return true;
   });
-  const sellTo = isAdmin ? '/products/new' : '/sell';
+  const sellTo = '/products/new';
 
   return (
     <div className="home">

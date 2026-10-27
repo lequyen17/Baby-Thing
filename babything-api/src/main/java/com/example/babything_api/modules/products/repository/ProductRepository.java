@@ -3,6 +3,10 @@ package com.example.babything_api.modules.products.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -12,6 +16,11 @@ import com.example.babything_api.modules.products.entity.Product;
 import com.example.babything_api.modules.products.entity.ProductStatus;
 
 public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product> {
+
+    /** Nạp luôn người bán, tránh N+1 khi dựng ProductResponse cho cả trang. */
+    @Override
+    @EntityGraph(attributePaths = "seller")
+    Page<Product> findAll(Specification<Product> spec, Pageable pageable);
 
     Optional<Product> findByIdAndDeletedAtIsNull(Long id);
 

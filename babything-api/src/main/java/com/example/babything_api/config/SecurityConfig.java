@@ -6,7 +6,6 @@ import java.nio.charset.StandardCharsets;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -41,11 +40,7 @@ public class SecurityConfig {
                                 "/api/docs/**", "/api/swagger-ui/**", "/api/swagger-ui.html",
                                 "/error")
                         .permitAll()
-                        // Quản lý sản phẩm: khách chỉ được xem, mọi thao tác ghi và thống kê lượt xem dành cho ADMIN
-                        .requestMatchers(HttpMethod.POST, "/api/products", "/api/products/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/products/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/products/*/views").hasRole("ADMIN")
+                        // Sản phẩm: mọi thành viên đăng bán được; quyền sửa/xoá theo chủ tin kiểm tra trong ProductService
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, e) -> writeError(response,

@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { AdminRoute, GuestRoute, ProtectedRoute } from './auth/RouteGuards';
+import { GuestRoute, ProtectedRoute } from './auth/RouteGuards';
 import AppLayout from './layouts/AppLayout';
 import ComingSoonPage, { COMING_SOON } from './pages/ComingSoonPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -34,14 +34,14 @@ export default function App() {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/products" element={<ProductListPage />} />
           <Route path="/products/:id" element={<ProductDetailPage />} />
+          {/* Mọi thành viên đăng bán được; sửa tin của người khác thì server trả 403 */}
+          <Route path="/products/new" element={<ProductFormPage />} />
+          <Route path="/products/:id/edit" element={<ProductFormPage />} />
+          <Route path="/sell" element={<Navigate to="/products/new" replace />} />
           <Route path="/history" element={<ViewHistoryPage />} />
           {Object.keys(COMING_SOON).map((feature) => (
             <Route key={feature} path={`/${feature}`} element={<ComingSoonPage feature={feature} />} />
           ))}
-          <Route element={<AdminRoute />}>
-            <Route path="/products/new" element={<ProductFormPage />} />
-            <Route path="/products/:id/edit" element={<ProductFormPage />} />
-          </Route>
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

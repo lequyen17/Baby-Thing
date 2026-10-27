@@ -83,7 +83,7 @@ export default function AppLayout() {
             </NavLink>
           </nav>
 
-          <Link to={isAdmin ? '/products/new' : '/sell'} className="btn btn-accent header-sell">
+          <Link to="/products/new" className="btn btn-accent header-sell">
             <PlusIcon /> <span>Đăng bán</span>
           </Link>
           <UserMenu />
@@ -132,7 +132,8 @@ export default function AppLayout() {
           <div className="footer-col">
             <strong>Mua &amp; bán</strong>
             <Link to="/products">Tin mới đăng</Link>
-            <Link to={isAdmin ? '/products/new' : '/sell'}>Đăng bán với AI</Link>
+            <Link to="/products/new">Đăng bán</Link>
+            <Link to="/products?mine=1">Tin đăng của tôi</Link>
             {isAdmin && <Link to="/products">Quản lý sản phẩm</Link>}
           </div>
           <div className="footer-col">
