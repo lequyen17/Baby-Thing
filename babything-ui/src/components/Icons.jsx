@@ -150,6 +150,28 @@ export const EyeIcon = (props) => (
   </Icon>
 );
 
+export const ReceiptIcon = (props) => (
+  <Icon {...props}>
+    <path d="M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2V3z" />
+    <path d="M9 8h6M9 12h6M9 16h3" />
+  </Icon>
+);
+
+export const CartIcon = (props) => (
+  <Icon {...props}>
+    <circle cx="9" cy="20" r="1.5" />
+    <circle cx="18" cy="20" r="1.5" />
+    <path d="M2 3h3l2.5 12h11.5l2-8H6.2" />
+  </Icon>
+);
+
+export const XCircleIcon = (props) => (
+  <Icon {...props}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M15 9l-6 6M9 9l6 6" />
+  </Icon>
+);
+
 export const ArrowLeftIcon = (props) => (
   <Icon {...props}>
     <path d="M19 12H5M12 19l-7-7 7-7" />

@@ -4,7 +4,7 @@ import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Avatar } from '../components/Avatar';
 import { Alert } from '../components/Form';
-import { ArrowLeftIcon, EditIcon, EyeIcon, TrashIcon } from '../components/Icons';
+import { ArrowLeftIcon, CartIcon, EditIcon, EyeIcon, TrashIcon } from '../components/Icons';
 import { Pagination } from '../components/Pagination';
 import { StockBadge } from '../components/ProductCard';
 import { ProductImage } from '../components/ProductImage';
@@ -115,6 +115,13 @@ export default function ProductDetailPage() {
                 {isAdmin && <span className="badge">Stock: {product.stock}</span>}
               </div>
               {product.description && <p className="product-description">{product.description}</p>}
+              {product.status === 'ACTIVE' && product.stock > 0 && (
+                <div className="product-actions">
+                  <Link to="/orders/new" state={{ product }} className="btn btn-primary">
+                    <CartIcon /> Order now
+                  </Link>
+                </div>
+              )}
               {isAdmin && (
                 <>
                   <p className="muted product-meta">

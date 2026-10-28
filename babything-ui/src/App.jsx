@@ -4,6 +4,9 @@ import AppLayout from './layouts/AppLayout';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import LoginPage from './pages/LoginPage';
 import LoginVerifyPage from './pages/LoginVerifyPage';
+import OrderDetailPage from './pages/OrderDetailPage';
+import OrderFormPage from './pages/OrderFormPage';
+import OrderListPage from './pages/OrderListPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import ProductFormPage from './pages/ProductFormPage';
 import ProductListPage from './pages/ProductListPage';
@@ -32,6 +35,10 @@ export default function App() {
           <Route path="/products" element={<ProductListPage />} />
           <Route path="/products/:id" element={<ProductDetailPage />} />
           <Route path="/history" element={<ViewHistoryPage />} />
+          <Route path="/orders" element={<OrderListPage />} />
+          <Route path="/orders/new" element={<OrderFormPage />} />
+          <Route path="/orders/:id" element={<OrderDetailPage />} />
+          <Route path="/orders/:id/edit" element={<OrderFormPage />} />
           <Route element={<AdminRoute />}>
             <Route path="/products/new" element={<ProductFormPage />} />
             <Route path="/products/:id/edit" element={<ProductFormPage />} />

@@ -121,6 +121,28 @@ API (chi tiết xem Swagger):
 
 `sort` nhận `newest` (mặc định), `oldest`, `price_asc`, `price_desc`, `name_asc`, `name_desc`. `page` bắt đầu từ 0, `size` tối đa 50.
 
+## Quản lý đơn hàng
+
+Mục **Orders** (`/orders`) trên header:
+
+- **Danh sách đơn**: khách thấy đơn của mình, ADMIN thấy tất cả. Tìm theo mã đơn (`#12`), tên người nhận, số điện thoại (ADMIN tìm được cả email khách), lọc theo trạng thái, sắp xếp theo ngày/tổng tiền.
+- **Tạo đơn**: nút **New order** hoặc **Order now** ở trang chi tiết sản phẩm. Chọn sản phẩm, số lượng, nhập thông tin giao hàng. Tồn kho bị trừ ngay khi đặt; không đủ hàng thì báo lỗi.
+- **Xem đơn**: dòng hàng (tên, giá được lưu lại lúc đặt), tổng tiền, thông tin giao hàng, tiến trình xử lý.
+- **Sửa đơn**: chỉ khi đơn còn **Pending**. Sửa được sản phẩm, số lượng và thông tin giao hàng; giá được cập nhật theo giá hiện tại.
+- **Huỷ đơn**: khách huỷ được khi **Pending**, ADMIN huỷ được cả khi **Confirmed**. Huỷ thì hàng được cộng lại vào kho.
+- ADMIN chuyển trạng thái theo thứ tự **Pending → Confirmed → Shipping → Delivered**.
+
+| Method | Đường dẫn | Quyền |
+| ------ | --------- | ----- |
+| `GET` | `/api/orders?q=&status=&sort=&page=&size=` | Đã đăng nhập (khách chỉ thấy đơn của mình) |
+| `GET` | `/api/orders/{id}` | Chủ đơn hoặc ADMIN |
+| `POST` | `/api/orders` | Đã đăng nhập |
+| `PUT` | `/api/orders/{id}` | Chủ đơn hoặc ADMIN, đơn đang `PENDING` |
+| `POST` | `/api/orders/{id}/cancel` (body tuỳ chọn `{"reason": "..."}`) | Chủ đơn (`PENDING`) hoặc ADMIN (`PENDING`/`CONFIRMED`) |
+| `PATCH` | `/api/orders/{id}/status` (body `{"status": "CONFIRMED"}`) | ADMIN |
+
+`status` nhận `PENDING`, `CONFIRMED`, `SHIPPING`, `DELIVERED`, `CANCELLED`. `sort` nhận `newest` (mặc định), `oldest`, `total_desc`, `total_asc`.
+
 ## Lệnh thường dùng
 
 ```bash

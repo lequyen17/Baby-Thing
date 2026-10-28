@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet } from 'react-router-dom';
-import { CheckSquareIcon, HistoryIcon, PackageIcon } from '../components/Icons';
+import { CheckSquareIcon, HistoryIcon, PackageIcon, ReceiptIcon } from '../components/Icons';
 import { UserMenu } from '../components/UserMenu';
 
 /** Khung chung cho các trang sau khi đăng nhập: header + nội dung. */
@@ -15,6 +15,9 @@ export default function AppLayout() {
           <nav className="app-nav">
             <NavLink to="/products" className="app-nav-link" aria-label="Products">
               <PackageIcon /> <span>Products</span>
+            </NavLink>
+            <NavLink to="/orders" className="app-nav-link" aria-label="Orders">
+              <ReceiptIcon /> <span>Orders</span>
             </NavLink>
             <NavLink to="/history" className="app-nav-link" aria-label="View history">
               <HistoryIcon /> <span>History</span>
