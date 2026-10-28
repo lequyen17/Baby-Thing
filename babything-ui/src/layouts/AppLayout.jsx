@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
+import { useCartCount } from '../cart/useCart';
 import {
   CameraIcon,
   CardIcon,
+  CartIcon,
   CheckSquareIcon,
   LogoMark,
   MessageIcon,
@@ -30,6 +32,8 @@ export default function AppLayout() {
   const [categories, setCategories] = useState([]);
   useRealtime(user.id);
   const unreadMessages = useUnreadMessages(user.id);
+  // Admin không mua hàng nên không có giỏ
+  const cartCount = useCartCount(!isAdmin);
 
   useEffect(() => {
     api('/products/categories')
@@ -89,9 +93,17 @@ export default function AppLayout() {
             <NavLink to="/payments" className="app-nav-link">
               <CardIcon size={24} /> <span>Thanh toán</span>
             </NavLink>
-            {isAdmin && (
+            {isAdmin ? (
               <NavLink to="/admin" className="app-nav-link">
                 <CheckSquareIcon size={24} /> <span>Quản trị</span>
+              </NavLink>
+            ) : (
+              <NavLink to="/cart" className="app-nav-link">
+                <span className="nav-icon">
+                  <CartIcon size={24} />
+                  {cartCount > 0 && <span className="nav-badge">{cartCount > 9 ? '9+' : cartCount}</span>}
+                </span>
+                <span>Giỏ hàng</span>
               </NavLink>
             )}
           </nav>

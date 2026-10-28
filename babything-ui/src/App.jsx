@@ -5,6 +5,7 @@ import AdminOrdersPage from './admin/AdminOrdersPage';
 import AdminPaymentsPage from './admin/AdminPaymentsPage';
 import AdminProductsPage from './admin/AdminProductsPage';
 import AdminSettlementsPage from './admin/AdminSettlementsPage';
+import CartPage from './cart/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import MockGatewayPage from './pages/MockGatewayPage';
 import SalesPage from './pages/SalesPage';
@@ -76,6 +77,7 @@ export default function App() {
           <Route path="/orders/new" element={<OrderFormPage />} />
           <Route path="/orders/:id" element={<OrderDetailPage />} />
           <Route path="/orders/:id/edit" element={<OrderFormPage />} />
+          <Route path="/cart" element={<CartPage />} />
           <Route path="/orders/:id/pay" element={<CheckoutPage />} />
           <Route path="/payments" element={<PaymentListPage />} />
           <Route path="/sales" element={<SalesPage />} />

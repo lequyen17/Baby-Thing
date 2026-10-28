@@ -40,6 +40,7 @@ import com.example.babything_api.modules.orders.entity.Order;
 import com.example.babything_api.modules.orders.entity.OrderItem;
 import com.example.babything_api.modules.orders.entity.OrderStatus;
 import com.example.babything_api.modules.orders.repository.OrderRepository;
+import com.example.babything_api.modules.cart.service.CartService;
 import com.example.babything_api.modules.notifications.service.NotificationService;
 import com.example.babything_api.modules.payments.entity.PaymentStatus;
 import com.example.babything_api.modules.payments.service.PaymentService;
@@ -77,16 +78,18 @@ public class OrderService {
     private final SettlementService settlementService;
     private final AppProperties.Marketplace marketplace;
     private final NotificationService notifications;
+    private final CartService cartService;
 
     public OrderService(OrderRepository orderRepository, ProductRepository productRepository,
             PaymentService paymentService, SettlementService settlementService, AppProperties props,
-            NotificationService notifications) {
+            NotificationService notifications, CartService cartService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.paymentService = paymentService;
         this.settlementService = settlementService;
         this.marketplace = props.marketplace();
         this.notifications = notifications;
+        this.cartService = cartService;
     }
 
     /** Báo cho người bán có đơn mới, hoặc cho bên còn lại khi đơn đổi trạng thái / bị huỷ (không báo cho chính người thao tác). */
@@ -220,6 +223,8 @@ public class OrderService {
             }
             created.add(toResponse(customer, saved));
         }
+        // Đặt từ giỏ hay "Mua ngay" thì sản phẩm đã đặt cũng không cần nằm trong giỏ nữa
+        cartService.removeOrdered(customer.getId(), quantities(req.items()).keySet());
         return created;
     }
 

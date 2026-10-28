@@ -7,6 +7,7 @@ import { Alert } from '../components/Form';
 import { ArrowLeftIcon, CartIcon, CheckIcon, EditIcon, EyeIcon, MessageIcon, TrashIcon, XCircleIcon } from '../components/Icons';
 import { ListingSpecs } from '../components/ListingSpecs';
 import { useContactSeller } from '../messages/useMessages';
+import { addToCart } from '../cart/useCart';
 import { Pagination } from '../components/Pagination';
 import { StockBadge } from '../components/ProductCard';
 import { ProductImage } from '../components/ProductImage';
@@ -122,6 +123,20 @@ export default function ProductDetailPage() {
 
   const approve = () => run(() => api(`/products/${id}/approve`, { method: 'POST' }), 'Đã duyệt tin, tin đang hiển thị.');
 
+  const handleAddToCart = async () => {
+    setBusy(true);
+    setError('');
+    setNotice('');
+    try {
+      await addToCart(product.id);
+      setNotice('Đã thêm vào giỏ hàng.');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const reject = () => {
     const reason = window.prompt('Lý do từ chối (người bán sẽ thấy để sửa lại):', '');
     if (reason === null) return;
@@ -216,9 +231,14 @@ export default function ProductDetailPage() {
                   <button type="button" className="btn btn-secondary" onClick={() => contactSeller({ productId: product.id }).catch((err) => setError(err.message))}>
                     <MessageIcon /> Nhắn tin cho người bán
                   </button>
+                  {product.status === 'ACTIVE' && product.stock > 0 && !isAdmin && (
+                    <button type="button" className="btn btn-secondary" onClick={handleAddToCart} disabled={busy}>
+                      <CartIcon /> Thêm vào giỏ
+                    </button>
+                  )}
                   {product.status === 'ACTIVE' && product.stock > 0 && (
                     <Link to="/orders/new" state={{ product }} className="btn btn-primary">
-                      <CartIcon /> Đặt mua ngay
+                      Đặt mua ngay
                     </Link>
                   )}
                 </div>

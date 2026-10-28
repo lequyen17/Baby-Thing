@@ -4,6 +4,7 @@ import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Alert, Field } from '../components/Form';
 import { ArrowLeftIcon, PlusIcon, SearchIcon, TrashIcon } from '../components/Icons';
+import { notifyCartChanged } from '../cart/useCart';
 import { ProductImage } from '../components/ProductImage';
 import { formatPrice } from '../utils/format';
 
@@ -145,9 +146,11 @@ export default function OrderFormPage() {
   const { state } = useLocation();
   // Từ trang chi tiết đơn sang thì đã có dữ liệu; từ trang sản phẩm sang ("Đặt mua ngay") thì có sẵn sản phẩm
   const passed = isEdit && state?.order && String(state.order.id) === id ? fromOrder(state.order) : null;
+  // Từ giỏ hàng sang: các món đã chọn trong giỏ
+  const fromCart = !isEdit && Array.isArray(state?.cartItems) && state.cartItems.length > 0;
 
   const [items, setItems] = useState(
-    passed?.items ?? (!isEdit && state?.product ? [fromProduct(state.product)] : []),
+    passed?.items ?? (fromCart ? state.cartItems : !isEdit && state?.product ? [fromProduct(state.product)] : []),
   );
   const [shipping, setShipping] = useState(
     passed?.shipping ?? { recipientName: user.displayName ?? '', phone: '', address: '', note: '' },
@@ -217,6 +220,8 @@ export default function OrderFormPage() {
         items: items.map((i) => ({ productId: i.productId, quantity: Number(i.quantity) || null })),
       };
       const saved = await api(isEdit ? `/orders/${id}` : '/orders', { method: isEdit ? 'PUT' : 'POST', body });
+      // Server đã bỏ các sản phẩm vừa đặt khỏi giỏ
+      if (!isEdit) notifyCartChanged();
       if (isEdit) {
         navigate(`/orders/${saved.id}`, { replace: true, state: { notice: 'Đã cập nhật đơn hàng.' } });
       } else if (saved.length === 1) {
@@ -240,12 +245,12 @@ export default function OrderFormPage() {
     }
   };
 
-  const backTo = isEdit ? `/orders/${id}` : '/orders';
+  const backTo = isEdit ? `/orders/${id}` : fromCart ? '/cart' : '/orders';
 
   return (
     <div className="page">
       <Link to={backTo} className="back-link">
-        <ArrowLeftIcon size={16} /> {isEdit ? 'Quay lại đơn hàng' : 'Tất cả đơn hàng'}
+        <ArrowLeftIcon size={16} /> {isEdit ? 'Quay lại đơn hàng' : fromCart ? 'Quay lại giỏ hàng' : 'Tất cả đơn hàng'}
       </Link>
       <div className="page-header">
         <h1>{isEdit ? `Sửa đơn #${id}` : 'Tạo đơn mới'}</h1>

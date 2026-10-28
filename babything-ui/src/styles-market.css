@@ -111,6 +111,44 @@
 .admin-order-milestone { display: inline-block; max-width: 220px; white-space: normal; }
 .doc-table.admin-orders td { vertical-align: top; }
 
+/* ------------------------------------------------ Giỏ hàng */
+.product-card-actions:has(.btn-cart) { grid-template-columns: minmax(0, 1fr) 42px minmax(0, 1fr); }
+.product-card-actions .btn-cart { padding: 0; }
+.btn-cart.is-added { border-color: var(--sage); background: var(--success-bg); color: var(--success-text); }
+
+.cart-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+.cart-main { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.cart-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.cart-group { padding: 0; overflow: hidden; }
+.cart-group-head { padding: 14px 20px; border-bottom: 1px solid var(--border); background: var(--surface-muted); }
+.cart-group-head a { color: var(--text); }
+.cart-items { margin: 0; padding: 0; list-style: none; }
+.cart-item { display: grid; grid-template-columns: auto 64px minmax(0, 1fr) auto 110px auto; align-items: center; gap: 14px; padding: 14px 20px; }
+.cart-item + .cart-item { border-top: 1px solid var(--border); }
+.cart-item > input[type='checkbox'] { width: 18px; height: 18px; accent-color: var(--accent); }
+.cart-item-thumb .history-thumb { width: 64px; height: 64px; }
+.cart-item-info { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
+.cart-item-info a { color: var(--text); }
+.cart-item-info .muted { font-size: 0.85rem; }
+.cart-item-price { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; font-weight: 600; }
+.cart-item-price s { font-weight: 400; font-size: 0.85rem; }
+.cart-item-total { text-align: right; font-weight: 700; white-space: nowrap; }
+.cart-item.is-unavailable .cart-item-thumb, .cart-item.is-unavailable .cart-item-price, .cart-item.is-unavailable .cart-item-total { opacity: 0.5; }
+.qty-stepper { display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; }
+.qty-stepper button { width: 32px; height: 34px; border: 0; background: none; font: inherit; font-size: 1.1rem; cursor: pointer; color: var(--text); }
+.qty-stepper button:disabled { color: var(--border-strong); cursor: default; }
+.qty-stepper input { width: 44px; height: 34px; border: 0; border-left: 1px solid var(--border); border-right: 1px solid var(--border); text-align: center; font: inherit; -moz-appearance: textfield; }
+.qty-stepper input::-webkit-outer-spin-button, .qty-stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.cart-summary { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 12px; }
+.cart-summary dl { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 8px; margin: 0; }
+.cart-summary dt { color: var(--muted); }
+.cart-summary dd { margin: 0; text-align: right; font-weight: 600; }
+.cart-summary .small-note { display: flex; gap: 6px; margin: 0; }
+@media (max-width: 1000px) {
+  .cart-layout { grid-template-columns: 1fr; }
+  .cart-summary { position: static; }
+}
+
 .doc-table .num { text-align: right; white-space: nowrap; }
 .doc-table small { white-space: nowrap; }
 .payout-bar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 20px; padding: 16px 20px; background: var(--tint-butter); }
@@ -123,6 +161,14 @@
   .review-check { grid-column: 1 / -1; }
   .attention-grid { grid-template-columns: 1fr; }
   .bulk-actions { margin-left: 0; }
+  .cart-layout { grid-template-columns: 1fr; }
+  .cart-summary { position: static; }
+  /* Hàng 1: chọn, ảnh, thông tin, xoá; hàng 2: số lượng, thành tiền */
+  .cart-item { grid-template-columns: auto 56px minmax(0, 1fr) auto; padding: 14px 16px; }
+  .cart-item .icon-btn { grid-column: 4; grid-row: 1; align-self: start; }
+  .cart-item .qty-stepper { grid-column: 3; grid-row: 2; justify-self: start; }
+  .cart-item .cart-item-total { grid-column: 4; grid-row: 2; }
+  .cart-item-thumb .history-thumb { width: 56px; height: 56px; }
   .review-media .history-thumb { width: 72px; height: 72px; }
   .review-actions { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; }
   .inline-add { flex-direction: column; }

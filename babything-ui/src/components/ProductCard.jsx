@@ -4,7 +4,8 @@ import { useAuth } from '../auth/AuthContext';
 import { useContactSeller } from '../messages/useMessages';
 import { formatPrice, PRODUCT_STATUSES } from '../utils/format';
 import { categoryArt } from '../utils/categoryArt';
-import { HeartIcon, MessageIcon } from './Icons';
+import { addToCart } from '../cart/useCart';
+import { CartIcon, CheckIcon, HeartIcon, MessageIcon } from './Icons';
 import { ProductImage } from './ProductImage';
 
 export function StockBadge({ stock }) {
@@ -27,6 +28,21 @@ export function ProductCard({ product, showStatus = false, footer }) {
   const [saved, setSaved] = useState(false);
   const unavailable = unavailableReason(product, user);
   const contactSeller = useContactSeller();
+  const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState(false);
+
+  const handleAddToCart = async () => {
+    setAdding(true);
+    try {
+      await addToCart(product.id);
+      setAdded(true);
+      setTimeout(() => setAdded(false), 2000);
+    } catch (err) {
+      window.alert(err.message);
+    } finally {
+      setAdding(false);
+    }
+  };
 
   return (
     <article className="product-card">
@@ -77,9 +93,23 @@ export function ProductCard({ product, showStatus = false, footer }) {
                 {unavailable}
               </button>
             ) : (
-              <Link to="/orders/new" state={{ product }} className="btn btn-dark">
-                Mua ngay
-              </Link>
+              <>
+                {user.role !== 'ADMIN' && (
+                  <button
+                    type="button"
+                    className={`btn btn-secondary btn-cart ${added ? 'is-added' : ''}`}
+                    onClick={handleAddToCart}
+                    disabled={adding}
+                    aria-label={added ? 'Đã thêm vào giỏ' : 'Thêm vào giỏ'}
+                    title={added ? 'Đã thêm vào giỏ' : 'Thêm vào giỏ'}
+                  >
+                    {added ? <CheckIcon size={16} /> : <CartIcon size={16} />}
+                  </button>
+                )}
+                <Link to="/orders/new" state={{ product }} className="btn btn-dark">
+                  Mua ngay
+                </Link>
+              </>
             )}
           </div>
         )}
