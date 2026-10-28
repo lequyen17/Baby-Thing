@@ -19,8 +19,9 @@ export default function AdminLayout() {
       api('/products/review-count'),
       api('/admin/payments/summary'),
       api('/admin/settlements/summary'),
+      api('/admin/orders/stats'),
     ])
-      .then(([review, payments, settlements]) => setStats({ review, payments, settlements }))
+      .then(([review, payments, settlements, orders]) => setStats({ review, payments, settlements, orders }))
       .catch(() => setStats(null));
   }, [isAdmin, version]);
 
@@ -28,7 +29,8 @@ export default function AdminLayout() {
 
   const tabs = [
     ['/admin/products', 'Duyệt tin', CheckSquareIcon, stats?.review.pending],
-    ['/orders', 'Đơn hàng', OrderIcon],
+    // Số trên tab = đơn cần chú ý (chờ xác nhận / chưa giao quá lâu, sắp hết hạn kiểm hàng)
+    ['/admin/orders', 'Đơn hàng', OrderIcon, stats && Object.values(stats.orders.attention).reduce((a, b) => a + b, 0)],
     ['/admin/payments', 'Thanh toán', CardIcon],
     ['/admin/settlements', 'Chi trả người bán', BankIcon, stats?.settlements.pendingCount],
   ];

@@ -1,9 +1,13 @@
 package com.example.babything_api.modules.orders.service;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,7 +25,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 
 import com.example.babything_api.config.AppProperties;
 import com.example.babything_api.core.dto.PageResponse;
@@ -93,7 +100,35 @@ public class OrderService {
         }
     }
 
-    public record ListQuery(String view, String q, OrderStatus status, String sort, int page, int size) {
+    /**
+     * seller, from, to, attention chỉ có tác dụng với admin (trang quản trị đơn):
+     * seller = tên / email người bán; from, to = ngày đặt (giờ Việt Nam, tính cả hai đầu); attention xem ATTENTIONS.
+     */
+    public record ListQuery(String view, String q, OrderStatus status, String sort, int page, int size,
+            String seller, LocalDate from, LocalDate to, String attention) {
+
+        public ListQuery(String view, String q, OrderStatus status, String sort, int page, int size) {
+            this(view, q, status, sort, page, size, null, null, null, null);
+        }
+    }
+
+    /**
+     * Đơn admin cần để mắt tới:
+     * slow_confirm = đã thanh toán quá CONFIRM_WINDOW mà người bán chưa xác nhận;
+     * slow_ship = đã xác nhận quá SHIP_WINDOW mà chưa giao cho vận chuyển;
+     * inspection_ending = còn dưới INSPECTION_WARNING là hết hạn kiểm hàng (sắp tự hoàn tất).
+     */
+    public static final List<String> ATTENTIONS = List.of("slow_confirm", "slow_ship", "inspection_ending");
+    private static final Duration CONFIRM_WINDOW = Duration.ofHours(24);
+    private static final Duration SHIP_WINDOW = Duration.ofHours(48);
+    private static final Duration INSPECTION_WARNING = Duration.ofHours(12);
+    private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+
+    /** Số đơn / tổng tiền theo trạng thái và số đơn cần chú ý, cho đầu trang quản trị đơn. */
+    public record AdminStats(Map<OrderStatus, StatusCount> byStatus, Map<String, Long> attention) {
+    }
+
+    public record StatusCount(long count, BigDecimal amount) {
     }
 
     /** Dòng hàng vừa trừ kho, kèm người bán để tách đơn. */
@@ -117,11 +152,38 @@ public class OrderService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_VIEW",
                     "Tham số view phải là một trong: " + String.join(", ", VIEWS));
         }
+        String attention = blankToNull(query.attention());
+        if (attention != null && !ATTENTIONS.contains(attention)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_ATTENTION",
+                    "Tham số attention phải là một trong: " + String.join(", ", ATTENTIONS));
+        }
+        if (query.from() != null && query.to() != null && query.from().isAfter(query.to())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_DATE_RANGE", "Ngày bắt đầu phải trước ngày kết thúc");
+        }
         int page = Math.max(query.page(), 0);
         int size = Math.max(1, Math.min(query.size(), MAX_PAGE_SIZE));
         return PageResponse.of(
                 orderRepository.findAll(filter(viewer, view, query), PageRequest.of(page, size, sort)),
                 o -> toResponse(viewer, o));
+    }
+
+    @Transactional(readOnly = true)
+    public AdminStats adminStats(User admin) {
+        if (!isAdmin(admin)) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "ADMIN_ONLY", "Chỉ quản trị viên mới xem được thống kê này");
+        }
+        Map<OrderStatus, StatusCount> byStatus = new EnumMap<>(OrderStatus.class);
+        for (OrderStatus s : OrderStatus.values()) {
+            byStatus.put(s, new StatusCount(0, BigDecimal.ZERO));
+        }
+        for (Object[] row : orderRepository.countByStatus()) {
+            byStatus.put((OrderStatus) row[0], new StatusCount((Long) row[1], (BigDecimal) row[2]));
+        }
+        Map<String, Long> attention = new LinkedHashMap<>();
+        for (String key : ATTENTIONS) {
+            attention.put(key, orderRepository.count((root, cq, cb) -> attentionPredicate(key, root, cb)));
+        }
+        return new AdminStats(byStatus, attention);
     }
 
     @Transactional(readOnly = true)
@@ -438,7 +500,21 @@ public class OrderService {
         order.setNote(blankToNull(req.note()));
     }
 
-    private static Specification<Order> filter(User viewer, String view, ListQuery query) {
+    private Predicate attentionPredicate(String key, Root<Order> root, CriteriaBuilder cb) {
+        Instant now = Instant.now();
+        return switch (key) {
+            case "slow_confirm" -> cb.and(cb.equal(root.get("status"), OrderStatus.PENDING),
+                    cb.lessThan(root.get("paidAt"), now.minus(CONFIRM_WINDOW)));
+            case "slow_ship" -> cb.and(cb.equal(root.get("status"), OrderStatus.CONFIRMED),
+                    cb.lessThan(root.get("confirmedAt"), now.minus(SHIP_WINDOW)));
+            case "inspection_ending" -> cb.and(cb.equal(root.get("status"), OrderStatus.DELIVERED),
+                    cb.lessThan(root.get("deliveredAt"),
+                            now.minus(marketplace.inspectionPeriod()).plus(INSPECTION_WARNING)));
+            default -> throw new IllegalArgumentException(key);
+        };
+    }
+
+    private Specification<Order> filter(User viewer, String view, ListQuery query) {
         boolean admin = isAdmin(viewer);
         return (root, cq, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -464,6 +540,27 @@ public class OrderService {
                     any.add(cb.equal(root.get("id"), Long.parseLong(term)));
                 }
                 predicates.add(cb.or(any.toArray(Predicate[]::new)));
+            }
+            if (admin) {
+                String seller = blankToNull(query.seller());
+                if (seller != null) {
+                    String pattern = "%" + escapeLike(seller.toLowerCase(Locale.ROOT)) + "%";
+                    var s = root.join("seller", JoinType.LEFT);
+                    predicates.add(cb.or(cb.like(cb.lower(s.get("email")), pattern, '\\'),
+                            cb.like(cb.lower(s.get("displayName")), pattern, '\\')));
+                }
+                if (query.from() != null) {
+                    predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"),
+                            query.from().atStartOfDay(VN_ZONE).toInstant()));
+                }
+                if (query.to() != null) {
+                    predicates.add(cb.lessThan(root.get("createdAt"),
+                            query.to().plusDays(1).atStartOfDay(VN_ZONE).toInstant()));
+                }
+                String attention = blankToNull(query.attention());
+                if (attention != null) {
+                    predicates.add(attentionPredicate(attention, root, cb));
+                }
             }
             return cb.and(predicates.toArray(Predicate[]::new));
         };

@@ -71,6 +71,46 @@
 .review-body .spec-list { margin: 6px 0 0; font-size: 0.86rem; }
 .review-actions { display: flex; flex-direction: column; gap: 8px; }
 
+.review-item.is-selectable { grid-template-columns: auto 96px minmax(0, 1fr) auto; }
+.review-item.is-selected { border-color: var(--accent); background: var(--primary-soft); }
+.review-check { width: 18px; height: 18px; margin-top: 4px; accent-color: var(--accent); }
+
+/* Bộ lọc + thao tác hàng loạt */
+.admin-filter { flex-wrap: wrap; }
+.admin-filter .search-box { flex: 2 1 260px; }
+.admin-filter-input { flex: 1 1 180px; min-height: 44px; padding: 0 14px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); font: inherit; }
+.admin-filter-date { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--muted); }
+.admin-filter-date input { min-height: 44px; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); font: inherit; color: var(--text); }
+.filter-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.filter-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px 4px 12px; border-radius: 999px; background: var(--tint-sky); font-size: 0.85rem; font-weight: 600; }
+.filter-chip button { display: inline-flex; padding: 4px; border: 0; border-radius: 50%; background: none; cursor: pointer; color: inherit; }
+.filter-chip button:hover { background: rgba(42, 39, 51, 0.08); }
+.link-button { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-weight: 600; cursor: pointer; text-align: left; }
+.link-button:hover { text-decoration: underline; }
+.bulk-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; min-height: 40px; }
+.bulk-select { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; }
+.bulk-select input { width: 18px; height: 18px; accent-color: var(--accent); }
+.bulk-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+
+/* Quản trị đơn */
+.status-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.status-chips button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 112px; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); font: inherit; text-align: left; cursor: pointer; }
+.status-chips button span { color: var(--muted); font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
+.status-chips button strong { font-family: var(--font-serif); font-size: 1.35rem; }
+.status-chips button small { color: var(--muted); font-size: 0.75rem; white-space: nowrap; }
+.status-chips button.is-active { border-color: var(--accent); background: var(--primary-soft); }
+.attention-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.attention-card { display: flex; align-items: flex-start; gap: 10px; padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--muted); font: inherit; text-align: left; cursor: pointer; }
+.attention-card span { display: flex; flex-direction: column; gap: 2px; }
+.attention-card strong { color: var(--text); font-size: 0.95rem; }
+.attention-card small { font-size: 0.8rem; }
+.attention-card.has-items { border-color: #e2c27a; background: var(--warning-bg); color: var(--warning-text); }
+.attention-card.is-active { outline: 2px solid var(--accent); outline-offset: 1px; }
+.admin-order-item { display: flex; align-items: center; gap: 10px; min-width: 200px; }
+.admin-order-item .history-thumb { width: 44px; height: 44px; flex-shrink: 0; }
+.admin-order-milestone { display: inline-block; max-width: 220px; white-space: normal; }
+.doc-table.admin-orders td { vertical-align: top; }
+
 .doc-table .num { text-align: right; white-space: nowrap; }
 .doc-table small { white-space: nowrap; }
 .payout-bar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 20px; padding: 16px 20px; background: var(--tint-butter); }
@@ -79,7 +119,10 @@
 
 @media (max-width: 760px) {
   .checkout { grid-template-columns: 1fr; }
-  .review-item { grid-template-columns: 72px minmax(0, 1fr); }
+  .review-item, .review-item.is-selectable { grid-template-columns: 72px minmax(0, 1fr); }
+  .review-check { grid-column: 1 / -1; }
+  .attention-grid { grid-template-columns: 1fr; }
+  .bulk-actions { margin-left: 0; }
   .review-media .history-thumb { width: 72px; height: 72px; }
   .review-actions { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; }
   .inline-add { flex-direction: column; }

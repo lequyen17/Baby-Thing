@@ -35,6 +35,10 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
     @Query("select o from ShopOrder o where o.id = :id")
     Optional<Order> findForUpdate(@Param("id") Long id);
 
+    /** Thống kê trang quản trị: [status, số đơn, tổng tiền]. */
+    @Query("select o.status, count(o), coalesce(sum(o.totalAmount), 0) from ShopOrder o group by o.status")
+    List<Object[]> countByStatus();
+
     /** Job: đơn chưa thanh toán đã quá hạn. */
     @Query("select o.id from ShopOrder o where o.status = :status and o.paymentDueAt < :before order by o.id")
     List<Long> findIdsByStatusAndPaymentDueAtBefore(@Param("status") OrderStatus status,

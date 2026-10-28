@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import AccountLayout from './account/AccountLayout';
 import AdminLayout from './admin/AdminLayout';
+import AdminOrdersPage from './admin/AdminOrdersPage';
 import AdminPaymentsPage from './admin/AdminPaymentsPage';
 import AdminProductsPage from './admin/AdminProductsPage';
 import AdminSettlementsPage from './admin/AdminSettlementsPage';
@@ -81,6 +82,7 @@ export default function App() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Navigate to="/admin/products" replace />} />
             <Route path="products" element={<AdminProductsPage />} />
+            <Route path="orders" element={<AdminOrdersPage />} />
             <Route path="payments" element={<AdminPaymentsPage />} />
             <Route path="settlements" element={<AdminSettlementsPage />} />
           </Route>
