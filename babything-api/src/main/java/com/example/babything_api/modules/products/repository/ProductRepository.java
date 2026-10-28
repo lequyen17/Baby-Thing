@@ -9,9 +9,12 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import jakarta.persistence.LockModeType;
 
 import com.example.babything_api.modules.products.entity.Product;
 import com.example.babything_api.modules.products.entity.ProductStatus;
@@ -24,6 +27,11 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     Page<Product> findAll(Specification<Product> spec, Pageable pageable);
 
     Optional<Product> findByIdAndDeletedAtIsNull(Long id);
+
+    /** Khoá dòng khi sửa tin để đơn hàng không trừ kho xen giữa lúc đọc và ghi lại tồn kho. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from Product p where p.id = :id and p.deletedAt is null")
+    Optional<Product> findAliveForUpdate(@Param("id") Long id);
 
     boolean existsBySkuAndDeletedAtIsNull(String sku);
 

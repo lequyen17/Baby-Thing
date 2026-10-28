@@ -121,7 +121,7 @@ export default function ProductDetailPage() {
                 {canManage && <span className="badge">Stock: {product.stock}</span>}
               </div>
               {product.description && <p className="product-description">{product.description}</p>}
-              {product.status === 'ACTIVE' && product.stock > 0 && (
+              {product.status === 'ACTIVE' && product.stock > 0 && product.sellerId !== user.id && (
                 <div className="product-actions">
                   <Link to="/orders/new" state={{ product }} className="btn btn-primary">
                     <CartIcon /> Order now

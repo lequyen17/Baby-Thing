@@ -89,7 +89,7 @@ public class OrderService {
         Order order = new Order();
         order.setUser(customer);
         applyShipping(order, req);
-        order.replaceItems(reserve(req.items()));
+        order.replaceItems(reserve(customer, req.items()));
         return OrderResponse.from(orderRepository.saveAndFlush(order));
     }
 
@@ -103,7 +103,7 @@ public class OrderService {
         }
         release(order);
         applyShipping(order, req);
-        order.replaceItems(reserve(req.items()));
+        order.replaceItems(reserve(order.getUser(), req.items()));
         return OrderResponse.from(orderRepository.saveAndFlush(order));
     }
 
@@ -148,9 +148,9 @@ public class OrderService {
 
     /**
      * Gộp các dòng trùng sản phẩm, trừ kho theo thứ tự productId (tránh deadlock giữa hai đơn cùng lúc)
-     * và chụp lại tên / giá sản phẩm vào dòng hàng.
+     * và chụp lại tên / giá sản phẩm vào dòng hàng. Người mua không được đặt tin đăng của chính mình.
      */
-    private List<OrderItem> reserve(List<OrderItemRequest> requested) {
+    private List<OrderItem> reserve(User buyer, List<OrderItemRequest> requested) {
         Map<Long, Integer> quantities = new TreeMap<>();
         requested.forEach(i -> quantities.merge(i.productId(), i.quantity(), Integer::sum));
 
@@ -160,6 +160,10 @@ public class OrderService {
                     .filter(p -> p.getStatus() == ProductStatus.ACTIVE)
                     .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "PRODUCT_UNAVAILABLE",
                             "Product #" + productId + " is no longer available"));
+            if (buyer.getId().equals(product.getCreatedBy())) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "OWN_PRODUCT",
+                        "You cannot order your own listing \"" + product.getName() + "\"");
+            }
             if (productRepository.decreaseStock(productId, quantity) == 0) {
                 throw new ApiException(HttpStatus.CONFLICT, "OUT_OF_STOCK",
                         "Not enough stock for \"" + product.getName() + "\" (" + product.getStock() + " left)");

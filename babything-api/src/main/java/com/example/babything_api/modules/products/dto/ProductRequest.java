@@ -18,6 +18,8 @@ import com.example.babything_api.modules.products.entity.ProductStatus;
 /**
  * Dùng chung cho tạo mới và cập nhật (PUT thay toàn bộ). status null = ACTIVE.
  * sku để trống: tạo mới thì server tự sinh, cập nhật thì giữ SKU cũ.
+ * previousStock (chỉ khi cập nhật): tồn kho lúc mở form. Có giá trị thì server chỉ cộng phần chênh lệch
+ * stock - previousStock vào kho hiện tại, để không xoá mất phần đã bị đơn hàng trừ trong lúc đang sửa.
  */
 public record ProductRequest(
         @Size(max = 64)
@@ -32,5 +34,6 @@ public record ProductRequest(
         @Size(max = 500) @Pattern(regexp = "^(https?://\\S+)?$", message = "Image URL must start with http:// or https://")
         String imageUrl,
         ProductCondition condition,
-        ProductStatus status) {
+        ProductStatus status,
+        @Min(0) @Max(1_000_000_000) Integer previousStock) {
 }

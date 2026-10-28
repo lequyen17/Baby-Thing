@@ -109,18 +109,28 @@ public class ProductService {
         product.setCreatedBy(seller.getId());
         product.setSeller(seller);
         apply(product, req, sku, seller);
+        product.setStock(req.stock());
         return ProductResponse.from(save(product));
     }
 
-    /** sku để trống thì giữ SKU cũ. */
+    /** sku để trống thì giữ SKU cũ. Có previousStock thì tồn kho được sửa theo phần chênh lệch (xem ProductRequest). */
     @Transactional
     public ProductResponse update(User user, Long id, ProductRequest req) {
-        Product product = findManageable(user, id);
+        Product product = checkManageable(user,
+                productRepository.findAliveForUpdate(id).orElseThrow(ProductService::notFound));
         String sku = blankToNull(req.sku()) == null ? product.getSku() : normalizeSku(req.sku());
         if (productRepository.existsBySkuAndDeletedAtIsNullAndIdNot(sku, id)) {
             throw skuExists();
         }
+        int stock = req.previousStock() == null
+                ? req.stock()
+                : product.getStock() + (req.stock() - req.previousStock());
+        if (stock < 0) {
+            throw new ApiException(HttpStatus.CONFLICT, "STOCK_CHANGED",
+                    "Stock changed while you were editing (" + product.getStock() + " left now). Please check it again");
+        }
         apply(product, req, sku, user);
+        product.setStock(stock);
         return ProductResponse.from(save(product));
     }
 
@@ -136,7 +146,14 @@ public class ProductService {
     // ---------------------------------------------------------------- Helpers
 
     Product findVisible(User viewer, Long id) {
-        Product product = findAlive(id);
+        return checkVisible(viewer, findAlive(id));
+    }
+
+    Product findManageable(User user, Long id) {
+        return checkManageable(user, findAlive(id));
+    }
+
+    private static Product checkVisible(User viewer, Product product) {
         if (product.getStatus() != ProductStatus.ACTIVE && !canManage(viewer, product)) {
             throw notFound();
         }
@@ -144,8 +161,8 @@ public class ProductService {
     }
 
     /** Tin ẩn của người khác coi như không tồn tại; tin đang hiện thì báo không có quyền. */
-    Product findManageable(User user, Long id) {
-        Product product = findVisible(user, id);
+    private static Product checkManageable(User user, Product product) {
+        checkVisible(user, product);
         if (!canManage(user, product)) {
             throw new ApiException(HttpStatus.FORBIDDEN, "NOT_PRODUCT_OWNER",
                     "Only the seller or an admin can change this listing");
@@ -179,7 +196,6 @@ public class ProductService {
         product.setName(req.name().trim());
         product.setDescription(blankToNull(req.description()));
         product.setPrice(req.price());
-        product.setStock(req.stock());
         product.setCategory(blankToNull(req.category()));
         product.setImageUrl(blankToNull(req.imageUrl()));
         product.setCondition(req.condition());

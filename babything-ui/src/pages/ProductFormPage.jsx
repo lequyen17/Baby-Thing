@@ -17,6 +17,7 @@ const EMPTY_FORM = {
   imageUrl: '',
   condition: '',
   status: 'ACTIVE',
+  previousStock: null,
 };
 
 function toForm(product) {
@@ -30,6 +31,8 @@ function toForm(product) {
     imageUrl: product.imageUrl ?? '',
     condition: product.condition ?? '',
     status: product.status,
+    // Server chỉ cộng phần chênh lệch so với số này, để không ghi đè hàng vừa được đặt trong lúc sửa
+    previousStock: product.stock,
   };
 }
 
@@ -98,7 +101,9 @@ export default function ProductFormPage() {
       navigate(`/products/${saved.id}`, { replace: true });
     } catch (err) {
       setError(err.message);
-      setFieldErrors(err.code === 'SKU_EXISTS' ? { sku: err.message } : err.fields || {});
+      if (err.code === 'SKU_EXISTS') setFieldErrors({ sku: err.message });
+      else if (err.code === 'STOCK_CHANGED') setFieldErrors({ stock: err.message });
+      else setFieldErrors(err.fields || {});
       setSubmitting(false);
     }
   };

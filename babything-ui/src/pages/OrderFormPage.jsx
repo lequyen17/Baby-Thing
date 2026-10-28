@@ -43,7 +43,7 @@ function fromOrder(order) {
 }
 
 /** Tìm sản phẩm theo tên/SKU để thêm vào đơn. Dùng GET /products (danh sách) nên không tính lượt xem. */
-function ProductPicker({ onPick }) {
+function ProductPicker({ userId, onPick }) {
   const [q, setQ] = useState('');
   const [results, setResults] = useState([]);
 
@@ -76,23 +76,29 @@ function ProductPicker({ onPick }) {
       </label>
       {results.length > 0 && (
         <ul className="order-picker-results">
-          {results.map((p) => (
-            <li key={p.id}>
-              <button
-                type="button"
-                className="order-picker-item"
-                onClick={() => onPick(p)}
-                disabled={p.stock <= 0}
-                aria-label={`Add ${p.name}`}
-              >
-                <ProductImage product={p} className="order-picker-thumb" />
-                <span className="order-picker-name">{p.name}</span>
-                <span className="muted">{p.stock > 0 ? `${p.stock} in stock` : 'Out of stock'}</span>
-                <span className="product-price">{formatPrice(p.price)}</span>
-                <PlusIcon size={16} />
-              </button>
-            </li>
-          ))}
+          {results.map((p) => {
+            // Server cũng chặn (OWN_PRODUCT)
+            const own = p.sellerId === userId;
+            return (
+              <li key={p.id}>
+                <button
+                  type="button"
+                  className="order-picker-item"
+                  onClick={() => onPick(p)}
+                  disabled={own || p.stock <= 0}
+                  aria-label={`Add ${p.name}`}
+                >
+                  <ProductImage product={p} className="order-picker-thumb" />
+                  <span className="order-picker-name">{p.name}</span>
+                  <span className="muted">
+                    {own ? 'Your listing' : p.stock > 0 ? `${p.stock} in stock` : 'Out of stock'}
+                  </span>
+                  <span className="product-price">{formatPrice(p.price)}</span>
+                  <PlusIcon size={16} />
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
@@ -202,7 +208,7 @@ export default function OrderFormPage() {
         <form className="order-form" onSubmit={handleSubmit} noValidate>
           <section className="card">
             <h2 className="card-title">Products</h2>
-            <ProductPicker onPick={addProduct} />
+            <ProductPicker userId={user.id} onPick={addProduct} />
             {fieldErrors.items && <small className="field-error">{fieldErrors.items}</small>}
 
             {items.length === 0 ? (
