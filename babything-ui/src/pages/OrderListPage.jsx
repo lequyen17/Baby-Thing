@@ -12,32 +12,32 @@ import { formatDate, formatPrice } from '../utils/format';
 const PAGE_SIZE = 10;
 
 const SORTS = [
-  ['newest', 'Newest'],
-  ['oldest', 'Oldest'],
-  ['total_desc', 'Total: high to low'],
-  ['total_asc', 'Total: low to high'],
+  ['newest', 'Mới nhất'],
+  ['oldest', 'Cũ nhất'],
+  ['total_desc', 'Tổng tiền: cao đến thấp'],
+  ['total_asc', 'Tổng tiền: thấp đến cao'],
 ];
 
 function itemSummary(items) {
   if (items.length === 0) return '';
   const [first, ...rest] = items;
-  return rest.length > 0 ? `${first.productName} + ${rest.length} more` : first.productName;
+  return rest.length > 0 ? `${first.productName} và ${rest.length} sản phẩm khác` : first.productName;
 }
 
 /** Tab ứng với tham số view của API; '' = tất cả (chỉ admin). */
 const VIEWS = [
-  ['buying', 'Purchases'],
-  ['selling', 'Sales'],
+  ['buying', 'Đơn mua'],
+  ['selling', 'Đơn bán'],
 ];
 
-/** Đơn mua / đơn bán của mình; admin có thêm tab tất cả. Bộ lọc nằm trên URL giống trang Products. */
+/** Đơn mua / đơn bán của mình; admin có thêm tab tất cả. Bộ lọc nằm trên URL giống trang sản phẩm. */
 export default function OrderListPage() {
   const { user } = useAuth();
   const isAdmin = user.role === 'ADMIN';
   const notice = useLocation().state?.notice ?? '';
   const [params, setParams] = useSearchParams();
   const view = params.get('view') ?? (isAdmin ? '' : 'buying');
-  const views = isAdmin ? [['', 'All orders'], ...VIEWS] : VIEWS;
+  const views = isAdmin ? [['', 'Tất cả đơn'], ...VIEWS] : VIEWS;
   const q = params.get('q') ?? '';
   const status = params.get('status') ?? '';
   const sort = params.get('sort') ?? 'newest';
@@ -84,13 +84,11 @@ export default function OrderListPage() {
       <Alert type="success">{notice}</Alert>
       <div className="page-header page-header-row">
         <div>
-          <h1>Orders</h1>
-          <p className="muted">
-            {result ? `${result.totalItems} order${result.totalItems === 1 ? '' : 's'}` : 'Loading...'}
-          </p>
+          <h1>Đơn hàng</h1>
+          <p className="muted">{result ? `${result.totalItems} đơn hàng` : 'Đang tải…'}</p>
         </div>
         <Link to="/orders/new" className="btn btn-primary">
-          <PlusIcon /> New order
+          <PlusIcon /> Tạo đơn mới
         </Link>
       </div>
 
@@ -115,21 +113,21 @@ export default function OrderListPage() {
           <SearchIcon />
           <input
             type="search"
-            placeholder={isAdmin ? 'Order #, recipient, phone or email' : 'Order #, recipient or phone'}
+            placeholder={isAdmin ? 'Mã đơn (#12), người nhận, SĐT hoặc email' : 'Mã đơn (#12), người nhận hoặc SĐT'}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            aria-label="Search orders"
+            aria-label="Tìm đơn hàng"
           />
         </label>
-        <select value={status} onChange={(e) => updateParams({ status: e.target.value })} aria-label="Status">
-          <option value="">All statuses</option>
+        <select value={status} onChange={(e) => updateParams({ status: e.target.value })} aria-label="Trạng thái">
+          <option value="">Mọi trạng thái</option>
           {Object.entries(ORDER_STATUSES).map(([value, { label }]) => (
             <option key={value} value={value}>
               {label}
             </option>
           ))}
         </select>
-        <select value={sort} onChange={(e) => updateParams({ sort: e.target.value })} aria-label="Sort by">
+        <select value={sort} onChange={(e) => updateParams({ sort: e.target.value })} aria-label="Sắp xếp">
           {SORTS.map(([value, label]) => (
             <option key={value} value={value}>
               {label}
@@ -137,7 +135,7 @@ export default function OrderListPage() {
           ))}
         </select>
         <button type="submit" className="btn btn-primary">
-          Search
+          Tìm kiếm
         </button>
       </form>
 
@@ -147,14 +145,14 @@ export default function OrderListPage() {
         <div className="card empty-state">
           <p className="muted">
             {filtered ? (
-              'No orders match your filters.'
+              'Không có đơn hàng nào phù hợp bộ lọc.'
             ) : selling ? (
               <>
-                Nobody has ordered your listings yet. <Link to="/products/new">Sell an item</Link>
+                Chưa có ai đặt mua tin đăng của bạn. <Link to="/products/new">Đăng bán ngay</Link>
               </>
             ) : (
               <>
-                You have no orders yet. <Link to="/products">Browse products</Link>
+                Bạn chưa có đơn hàng nào. <Link to="/products">Xem sản phẩm</Link>
               </>
             )}
           </p>
@@ -172,15 +170,15 @@ export default function OrderListPage() {
                 />
                 <div className="order-row-info">
                   <div className="order-row-title">
-                    <strong>Order #{order.id}</strong>
+                    <strong>Đơn #{order.id}</strong>
                     <OrderStatusBadge status={order.status} />
                   </div>
                   <span className="order-row-items">{itemSummary(order.items)}</span>
                   <span className="muted order-row-meta">
-                    {formatDate(order.createdAt)} · {order.totalQuantity} item{order.totalQuantity === 1 ? '' : 's'}
+                    {formatDate(order.createdAt)} · {order.totalQuantity} sản phẩm
                     {view === 'buying'
-                      ? order.seller && ` · Seller: ${order.seller.displayName}`
-                      : ` · Buyer: ${order.customer.email ?? order.customer.displayName}`}
+                      ? order.seller && ` · Người bán: ${order.seller.displayName}`
+                      : ` · Người mua: ${order.customer.email ?? order.customer.displayName}`}
                   </span>
                 </div>
                 <span className="product-price order-row-total">{formatPrice(order.totalAmount)}</span>

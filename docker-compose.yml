@@ -42,8 +42,11 @@ services:
       R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
       R2_BUCKET_NAME: ${R2_BUCKET_NAME:-}
       R2_PUBLIC_URL: ${R2_PUBLIC_URL:-}
+      UPLOADS_DIR: /app/uploads
       # Container không có TTY nên Spring tự tắt màu; bật lại để `docker compose logs` có màu
       SPRING_OUTPUT_ANSI_ENABLED: always
+    volumes:
+      - uploads-data:/app/uploads
 
 
   ui:
@@ -73,3 +76,4 @@ services:
 volumes:
   postgres-data:
   redis-data:
+  uploads-data:

@@ -2,7 +2,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 
 function Loading() {
-  return <div className="page-center muted">Loading...</div>;
+  return <div className="page-center muted">Đang tải…</div>;
 }
 
 export function ProtectedRoute() {

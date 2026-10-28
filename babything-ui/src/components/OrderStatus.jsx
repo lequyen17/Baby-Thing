@@ -1,17 +1,17 @@
 /** Nhãn, màu badge và nút chuyển bước cho từng trạng thái đơn (khớp OrderStatus phía API). */
 export const ORDER_STATUSES = {
-  PENDING: { label: 'Pending', badge: 'badge-warning' },
-  CONFIRMED: { label: 'Confirmed', badge: '' },
-  SHIPPING: { label: 'Shipping', badge: '' },
-  DELIVERED: { label: 'Delivered', badge: 'badge-success' },
-  CANCELLED: { label: 'Cancelled', badge: 'badge-muted' },
+  PENDING: { label: 'Chờ xác nhận', badge: 'badge-warning' },
+  CONFIRMED: { label: 'Đã xác nhận', badge: '' },
+  SHIPPING: { label: 'Đang giao', badge: '' },
+  DELIVERED: { label: 'Đã giao', badge: 'badge-success' },
+  CANCELLED: { label: 'Đã huỷ', badge: 'badge-muted' },
 };
 
 /** Người bán / admin bấm nút này để đẩy đơn sang bước tiếp theo. */
 export const NEXT_STEP = {
-  PENDING: { status: 'CONFIRMED', label: 'Confirm order' },
-  CONFIRMED: { status: 'SHIPPING', label: 'Mark as shipping' },
-  SHIPPING: { status: 'DELIVERED', label: 'Mark as delivered' },
+  PENDING: { status: 'CONFIRMED', label: 'Xác nhận đơn' },
+  CONFIRMED: { status: 'SHIPPING', label: 'Bắt đầu giao hàng' },
+  SHIPPING: { status: 'DELIVERED', label: 'Xác nhận đã giao' },
 };
 
 export const STEPS = ['PENDING', 'CONFIRMED', 'SHIPPING', 'DELIVERED'];

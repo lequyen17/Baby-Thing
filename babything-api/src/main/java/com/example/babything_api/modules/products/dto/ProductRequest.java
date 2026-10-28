@@ -22,16 +22,22 @@ import com.example.babything_api.modules.products.entity.ProductStatus;
  * stock - previousStock vào kho hiện tại, để không xoá mất phần đã bị đơn hàng trừ trong lúc đang sửa.
  */
 public record ProductRequest(
-        @Size(max = 64)
-        @Pattern(regexp = "^[A-Za-z0-9_-]*$", message = "SKU may only contain letters, digits, - and _")
+        @Size(max = 64, message = "Mã SKU tối đa 64 ký tự")
+        @Pattern(regexp = "^[A-Za-z0-9_-]*$", message = "Mã SKU chỉ gồm chữ cái không dấu, chữ số, - và _")
         String sku,
-        @NotBlank(message = "Name is required") @Size(max = 200) String name,
-        @Size(max = 5000) String description,
-        @NotNull(message = "Price is required") @DecimalMin(value = "0", message = "Price must not be negative")
-        @DecimalMax(value = "9999999999.99") @Digits(integer = 10, fraction = 2) BigDecimal price,
-        @NotNull(message = "Stock is required") @Min(value = 0, message = "Stock must not be negative") @Max(1_000_000_000) Integer stock,
-        @Size(max = 100) String category,
-        @Size(max = 500) @Pattern(regexp = "^(https?://\\S+)?$", message = "Image URL must start with http:// or https://")
+        @NotBlank(message = "Vui lòng nhập tên sản phẩm") @Size(max = 200, message = "Tên sản phẩm tối đa 200 ký tự")
+        String name,
+        @Size(max = 5000, message = "Mô tả tối đa 5000 ký tự") String description,
+        @NotNull(message = "Vui lòng nhập giá") @DecimalMin(value = "0", message = "Giá không được âm")
+        @DecimalMax(value = "9999999999.99", message = "Giá quá lớn")
+        @Digits(integer = 10, fraction = 2, message = "Giá không hợp lệ") BigDecimal price,
+        @NotNull(message = "Vui lòng nhập số lượng") @Min(value = 0, message = "Số lượng không được âm")
+        @Max(value = 1_000_000_000, message = "Số lượng quá lớn") Integer stock,
+        @Size(max = 100, message = "Danh mục tối đa 100 ký tự") String category,
+        // Link ngoài, hoặc ảnh tải lên qua POST /api/products/images khi chưa cấu hình R2 (/api/uploads/...)
+        @Size(max = 500, message = "Link ảnh tối đa 500 ký tự")
+        @Pattern(regexp = "^(https?://\\S+|/api/uploads/(?!.*\\.\\.)[A-Za-z0-9/._-]+)?$",
+                message = "Link ảnh phải bắt đầu bằng http:// hoặc https://")
         String imageUrl,
         ProductCondition condition,
         ProductStatus status,

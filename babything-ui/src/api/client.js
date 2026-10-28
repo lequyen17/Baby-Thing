@@ -41,7 +41,7 @@ authChannel?.addEventListener('message', (event) => {
 
 export class ApiError extends Error {
   constructor(status, body) {
-    super(body?.message || 'Something went wrong, please try again');
+    super(body?.message || 'Đã có lỗi xảy ra, vui lòng thử lại');
     this.status = status;
     this.code = body?.code;
     this.fields = body?.fields || {};

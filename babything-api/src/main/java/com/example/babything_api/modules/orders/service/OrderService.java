@@ -4,12 +4,15 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -77,7 +80,7 @@ public class OrderService {
         Sort sort = SORTS.get(query.sort() == null ? "newest" : query.sort());
         if (sort == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_SORT",
-                    "Sort must be one of " + String.join(", ", SORTS.keySet()));
+                    "Kiểu sắp xếp phải là một trong: " + String.join(", ", SORTS.keySet()));
         }
         String view = blankToNull(query.view());
         if (view == null && !isAdmin(viewer)) {
@@ -85,7 +88,7 @@ public class OrderService {
         }
         if (view != null && !VIEWS.contains(view)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_VIEW",
-                    "View must be one of " + String.join(", ", VIEWS));
+                    "Tham số view phải là một trong: " + String.join(", ", VIEWS));
         }
         int page = Math.max(query.page(), 0);
         int size = Math.max(1, Math.min(query.size(), MAX_PAGE_SIZE));
@@ -132,47 +135,54 @@ public class OrderService {
     public OrderResponse update(User viewer, Long id, OrderRequest req) {
         Order order = findForUpdate(viewer, id);
         if (!isAdmin(viewer) && !isBuyer(viewer, order)) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "NOT_ORDER_BUYER", "Only the buyer can change this order");
+            throw new ApiException(HttpStatus.FORBIDDEN, "NOT_ORDER_BUYER", "Chỉ người mua mới sửa được đơn này");
         }
         if (!order.getStatus().isEditable()) {
             throw new ApiException(HttpStatus.CONFLICT, "ORDER_NOT_EDITABLE",
-                    "Only pending orders can be changed");
+                    "Chỉ sửa được đơn đang chờ xác nhận");
         }
         applyShipping(order, req);
 
         Map<Long, Integer> wanted = quantities(req.items());
-        Map<Long, Integer> toReserve = new TreeMap<>(wanted);
-        List<OrderItem> kept = new ArrayList<>();
-        order.getItems().stream()
-                .sorted(Comparator.comparing(OrderItem::getProductId))
-                .forEach(item -> {
-                    Integer quantity = wanted.get(item.getProductId());
-                    if (quantity != null && quantity <= item.getQuantity()) {
-                        if (quantity < item.getQuantity()) {
-                            productRepository.increaseStock(item.getProductId(), item.getQuantity() - quantity);
-                            item.setQuantity(quantity);
-                            item.setLineTotal(item.getUnitPrice().multiply(BigDecimal.valueOf(quantity)));
-                        }
-                        kept.add(item);
-                        toReserve.remove(item.getProductId());
-                    } else {
-                        productRepository.increaseStock(item.getProductId(), item.getQuantity());
-                    }
-                });
+        Map<Long, OrderItem> current = new HashMap<>();
+        order.getItems().forEach(item -> current.put(item.getProductId(), item));
+        // Hoàn và trừ kho trong cùng một vòng theo productId, để hai lần sửa đơn cùng lúc không khoá chéo nhau
+        Set<Long> productIds = new TreeSet<>(wanted.keySet());
+        productIds.addAll(current.keySet());
 
-        List<Reserved> reserved = reserve(order.getUser(), toReserve);
+        List<OrderItem> items = new ArrayList<>();
+        List<Reserved> reserved = new ArrayList<>();
+        for (Long productId : productIds) {
+            OrderItem item = current.get(productId);
+            Integer quantity = wanted.get(productId);
+            if (item != null && quantity != null && quantity <= item.getQuantity()) {
+                if (quantity < item.getQuantity()) {
+                    productRepository.increaseStock(productId, item.getQuantity() - quantity);
+                    item.setQuantity(quantity);
+                    item.setLineTotal(item.getUnitPrice().multiply(BigDecimal.valueOf(quantity)));
+                }
+                items.add(item);
+                continue;
+            }
+            if (item != null) {
+                productRepository.increaseStock(productId, item.getQuantity());
+            }
+            if (quantity != null) {
+                Reserved r = reserve(order.getUser(), Map.of(productId, quantity)).get(0);
+                reserved.add(r);
+                items.add(r.item());
+            }
+        }
+
         Long sellerId = sellerId(order);
         reserved.stream()
                 .filter(r -> !Objects.equals(r.seller() == null ? null : r.seller().getId(), sellerId))
                 .findFirst()
                 .ifPresent(r -> {
                     throw new ApiException(HttpStatus.BAD_REQUEST, "DIFFERENT_SELLER",
-                            "\"" + r.item().getProductName() + "\" is sold by someone else. "
-                                    + "Place a new order for it instead");
+                            "\"" + r.item().getProductName() + "\" thuộc người bán khác. "
+                                    + "Hãy đặt một đơn mới cho sản phẩm này");
                 });
-        List<OrderItem> items = new ArrayList<>(kept);
-        reserved.forEach(r -> items.add(r.item()));
-        items.sort(Comparator.comparing(OrderItem::getProductId));
         order.replaceItems(items);
         return toResponse(viewer, orderRepository.saveAndFlush(order));
     }
@@ -187,8 +197,8 @@ public class OrderService {
         if (!allowed) {
             throw new ApiException(HttpStatus.CONFLICT, "ORDER_NOT_CANCELLABLE",
                     order.getStatus() == OrderStatus.CANCELLED
-                            ? "This order is already cancelled"
-                            : "This order can no longer be cancelled");
+                            ? "Đơn hàng này đã bị huỷ"
+                            : "Đơn hàng này không thể huỷ được nữa");
         }
         release(order);
         order.setStatus(OrderStatus.CANCELLED);
@@ -203,16 +213,16 @@ public class OrderService {
     public OrderResponse updateStatus(User viewer, Long id, OrderStatus status) {
         if (status == OrderStatus.CANCELLED) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "USE_CANCEL",
-                    "Use POST /api/orders/{id}/cancel to cancel an order");
+                    "Dùng POST /api/orders/{id}/cancel để huỷ đơn");
         }
         Order order = findForUpdate(viewer, id);
         if (!isAdmin(viewer) && !isSeller(viewer, order)) {
             throw new ApiException(HttpStatus.FORBIDDEN, "NOT_ORDER_SELLER",
-                    "Only the seller or an admin can update this order");
+                    "Chỉ người bán hoặc quản trị viên mới cập nhật được đơn này");
         }
         if (!order.getStatus().canMoveTo(status)) {
             throw new ApiException(HttpStatus.CONFLICT, "INVALID_STATUS_TRANSITION",
-                    "Cannot change order from " + order.getStatus() + " to " + status);
+                    "Không thể chuyển đơn từ \"" + order.getStatus().label() + "\" sang \"" + status.label() + "\"");
         }
         order.setStatus(status);
         return toResponse(viewer, orderRepository.saveAndFlush(order));
@@ -237,14 +247,14 @@ public class OrderService {
             Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
                     .filter(p -> p.getStatus() == ProductStatus.ACTIVE)
                     .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "PRODUCT_UNAVAILABLE",
-                            "Product #" + productId + " is no longer available"));
+                            "Sản phẩm #" + productId + " không còn bán nữa"));
             if (buyer.getId().equals(product.getCreatedBy())) {
                 throw new ApiException(HttpStatus.BAD_REQUEST, "OWN_PRODUCT",
-                        "You cannot order your own listing \"" + product.getName() + "\"");
+                        "Bạn không thể đặt mua tin đăng của chính mình \"" + product.getName() + "\"");
             }
             if (productRepository.decreaseStock(productId, quantity) == 0) {
                 throw new ApiException(HttpStatus.CONFLICT, "OUT_OF_STOCK",
-                        "Not enough stock for \"" + product.getName() + "\" (" + product.getStock() + " left)");
+                        "\"" + product.getName() + "\" không đủ hàng (chỉ còn " + product.getStock() + ")");
             }
             OrderItem item = new OrderItem();
             item.setProductId(productId);
@@ -352,6 +362,6 @@ public class OrderService {
     }
 
     private static ApiException notFound() {
-        return new ApiException(HttpStatus.NOT_FOUND, "ORDER_NOT_FOUND", "Order not found");
+        return new ApiException(HttpStatus.NOT_FOUND, "ORDER_NOT_FOUND", "Không tìm thấy đơn hàng");
     }
 }

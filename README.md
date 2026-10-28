@@ -81,6 +81,7 @@ Phải ghi rõ `api ui`. Nếu không, lệnh `push` sẽ cố đẩy cả các 
 | `MAIL_ENABLED`      | Có | `false`: không gửi email thật, mã OTP và link reset được in ra log (tiện khi chạy thử) |
 | `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM` | Khi `MAIL_ENABLED=true` | Thông tin SMTP. Với Gmail: `smtp.gmail.com`, port `587`, mật khẩu là [App Password](https://myaccount.google.com/apppasswords) |
 | `GOOGLE_CLIENT_ID`  | Không | Để trống thì ẩn nút "Sign in with Google" |
+| `R2_*`              | Không | Cloudflare R2 để lưu ảnh (avatar, ảnh sản phẩm). Để trống thì ảnh được lưu trong volume `uploads-data` của `api` (`docker compose down -v` sẽ xoá cả ảnh) |
 
 ### Bật đăng nhập Google
 
@@ -116,6 +117,7 @@ API (chi tiết xem Swagger):
 | `GET` | `/api/products/categories` | Đã đăng nhập |
 | `GET` | `/api/products/{id}` (đồng thời ghi một lượt xem) | Đã đăng nhập |
 | `POST` / `PUT` / `DELETE` | `/api/products`, `/api/products/{id}` | ADMIN |
+| `POST` | `/api/products/images` (multipart, trường `file`, ≤ 2 MB, JPEG/PNG/WebP/GIF) → `{"url": "..."}`, gửi URL này trong `imageUrl` khi lưu tin | Đã đăng nhập |
 | `GET` | `/api/products/{id}/views` | ADMIN |
 | `GET` / `DELETE` | `/api/users/me/product-history`, `/api/users/me/product-history/{productId}` | Đã đăng nhập |
 

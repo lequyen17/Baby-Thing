@@ -1684,15 +1684,36 @@ a:hover {
 
 .image-url-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 96px;
+  grid-template-columns: minmax(0, 1fr) 160px;
   gap: 16px;
   align-items: start;
 }
 
+.image-upload-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.image-upload-actions label.is-disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
 .image-preview {
-  width: 96px;
+  width: 160px;
   border-radius: 12px;
   border: 1px solid var(--border);
+}
+
+@media (max-width: 560px) {
+  .image-url-row {
+    grid-template-columns: minmax(0, 1fr) 96px;
+  }
+
+  .image-preview {
+    width: 96px;
+  }
 }
 
 .image-preview svg {

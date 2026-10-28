@@ -28,7 +28,7 @@ public class RateLimiter {
         }
         if (count != null && count > limit) {
             throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, "RATE_LIMITED",
-                    "Too many requests, please try again in a few minutes");
+                    "Bạn thao tác quá nhanh, vui lòng thử lại sau ít phút");
         }
     }
 }

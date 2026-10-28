@@ -15,7 +15,8 @@ public record AppProperties(
         PasswordReset passwordReset,
         Login login,
         @DefaultValue Google google,
-        @DefaultValue R2 r2) {
+        @DefaultValue R2 r2,
+        @DefaultValue Uploads uploads) {
 
     public record Mail(String from, boolean enabled) {
     }
@@ -41,7 +42,11 @@ public record AppProperties(
         }
     }
 
-    /** Thiếu bất kỳ trường bắt buộc nào = tắt upload avatar lên R2. */
+    /** Thư mục lưu ảnh tải lên khi chưa cấu hình R2. */
+    public record Uploads(@DefaultValue("uploads") String dir) {
+    }
+
+    /** Thiếu bất kỳ trường bắt buộc nào = không dùng R2, ảnh được lưu vào Uploads.dir. */
     public record R2(String accountId, String accessKeyId, String secretAccessKey, String bucketName,
             String publicBaseUrl) {
 

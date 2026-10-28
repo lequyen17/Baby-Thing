@@ -55,9 +55,12 @@ public class ProductService {
         this.viewRepository = viewRepository;
     }
 
-    /** mine = chỉ tin đăng của người đang xem (thấy cả tin đang ẩn). */
+    /**
+     * mine = chỉ tin đăng của người đang xem (thấy cả tin đang ẩn).
+     * sellerId = tin của một người bán (hồ sơ người bán); như danh sách chung, khách chỉ thấy tin ACTIVE.
+     */
     public record ListQuery(String q, String category, ProductStatus status, BigDecimal minPrice,
-            BigDecimal maxPrice, boolean mine, String sort, int page, int size) {
+            BigDecimal maxPrice, boolean mine, Long sellerId, String sort, int page, int size) {
     }
 
     // ---------------------------------------------------------------- Xem danh sách / chi tiết
@@ -68,12 +71,12 @@ public class ProductService {
         Sort sort = SORTS.get(query.sort() == null ? "newest" : query.sort());
         if (sort == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_SORT",
-                    "Sort must be one of " + String.join(", ", SORTS.keySet()));
+                    "Kiểu sắp xếp phải là một trong: " + String.join(", ", SORTS.keySet()));
         }
         int page = Math.max(query.page(), 0);
         int size = Math.max(1, Math.min(query.size(), MAX_PAGE_SIZE));
         ProductStatus status = isAdmin(viewer) || query.mine() ? query.status() : ProductStatus.ACTIVE;
-        Long sellerId = query.mine() ? viewer.getId() : null;
+        Long sellerId = query.mine() ? viewer.getId() : query.sellerId();
         return PageResponse.of(
                 productRepository.findAll(filter(query, status, sellerId), PageRequest.of(page, size, sort)),
                 ProductResponse::from);
@@ -127,17 +130,21 @@ public class ProductService {
                 : product.getStock() + (req.stock() - req.previousStock());
         if (stock < 0) {
             throw new ApiException(HttpStatus.CONFLICT, "STOCK_CHANGED",
-                    "Stock changed while you were editing (" + product.getStock() + " left now). Please check it again");
+                    "Số lượng đã thay đổi trong lúc bạn sửa (hiện còn " + product.getStock() + "). Vui lòng kiểm tra lại");
         }
         apply(product, req, sku, user);
         product.setStock(stock);
         return ProductResponse.from(save(product));
     }
 
-    /** Xoá mềm: sản phẩm biến mất khỏi mọi danh sách và lịch sử xem, SKU được giải phóng. */
+    /**
+     * Xoá mềm: sản phẩm biến mất khỏi mọi danh sách và lịch sử xem, SKU được giải phóng.
+     * Khoá dòng như update: save ghi lại cả cột stock, không khoá thì đè mất phần đơn hàng vừa trừ.
+     */
     @Transactional
     public void delete(User user, Long id) {
-        Product product = findManageable(user, id);
+        Product product = checkManageable(user,
+                productRepository.findAliveForUpdate(id).orElseThrow(ProductService::notFound));
         product.setDeletedAt(Instant.now());
         product.setUpdatedBy(user.getId());
         productRepository.save(product);
@@ -165,7 +172,7 @@ public class ProductService {
         checkVisible(user, product);
         if (!canManage(user, product)) {
             throw new ApiException(HttpStatus.FORBIDDEN, "NOT_PRODUCT_OWNER",
-                    "Only the seller or an admin can change this listing");
+                    "Chỉ người bán hoặc quản trị viên mới sửa được tin đăng này");
         }
         return product;
     }
@@ -260,10 +267,10 @@ public class ProductService {
     }
 
     private static ApiException notFound() {
-        return new ApiException(HttpStatus.NOT_FOUND, "PRODUCT_NOT_FOUND", "Product not found");
+        return new ApiException(HttpStatus.NOT_FOUND, "PRODUCT_NOT_FOUND", "Không tìm thấy sản phẩm");
     }
 
     private static ApiException skuExists() {
-        return new ApiException(HttpStatus.CONFLICT, "SKU_EXISTS", "Another product already uses this SKU");
+        return new ApiException(HttpStatus.CONFLICT, "SKU_EXISTS", "Mã SKU này đã được sản phẩm khác sử dụng");
     }
 }

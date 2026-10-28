@@ -5,11 +5,22 @@ import java.util.Set;
 
 /** Luồng xử lý: PENDING → CONFIRMED → SHIPPING → DELIVERED; huỷ được khi chưa giao cho vận chuyển. */
 public enum OrderStatus {
-    PENDING,
-    CONFIRMED,
-    SHIPPING,
-    DELIVERED,
-    CANCELLED;
+    PENDING("Chờ xác nhận"),
+    CONFIRMED("Đã xác nhận"),
+    SHIPPING("Đang giao"),
+    DELIVERED("Đã giao"),
+    CANCELLED("Đã huỷ");
+
+    private final String label;
+
+    OrderStatus(String label) {
+        this.label = label;
+    }
+
+    /** Tên hiển thị trong thông báo lỗi, khớp ORDER_STATUSES phía UI. */
+    public String label() {
+        return label;
+    }
 
     /** Các bước người bán / admin được chuyển tới bằng PATCH /status. Huỷ đi qua endpoint /cancel riêng để hoàn kho. */
     private static final Map<OrderStatus, Set<OrderStatus>> NEXT = Map.of(

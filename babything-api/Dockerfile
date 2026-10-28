@@ -10,6 +10,8 @@ RUN --mount=type=cache,target=/root/.m2 mvn -B -q package -DskipTests
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 RUN useradd --system --uid 1001 spring
+# Ảnh tải lên khi chưa cấu hình R2; volume mới mount vào đây nhận quyền sở hữu của spring
+RUN mkdir -p /app/uploads && chown spring /app/uploads
 COPY --from=build /app/target/*.jar app.jar
 USER spring
 EXPOSE 8080

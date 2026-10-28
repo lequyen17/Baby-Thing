@@ -45,7 +45,7 @@ export default function ViewHistoryPage() {
   };
 
   const clearAll = async () => {
-    if (!window.confirm('Clear your entire viewing history?')) return;
+    if (!window.confirm('Xoá toàn bộ lịch sử xem?')) return;
     try {
       await api('/users/me/product-history', { method: 'DELETE' });
       setPage(0);
@@ -59,23 +59,23 @@ export default function ViewHistoryPage() {
     <div className="page">
       <div className="page-header page-header-row">
         <div>
-          <h1>Recently viewed</h1>
-          <p className="muted">Products you have opened, most recent first.</p>
+          <h1>Sản phẩm đã xem</h1>
+          <p className="muted">Những sản phẩm bạn đã mở, mới nhất ở trên.</p>
         </div>
         {result?.totalItems > 0 && (
           <button type="button" className="btn btn-secondary" onClick={clearAll}>
-            <TrashIcon /> Clear history
+            <TrashIcon /> Xoá lịch sử
           </button>
         )}
       </div>
 
       <Alert>{error}</Alert>
-      {!result && !error && <p className="muted">Loading...</p>}
+      {!result && !error && <p className="muted">Đang tải…</p>}
 
       {result?.totalItems === 0 && (
         <div className="card empty-state">
           <p className="muted">
-            You have not viewed any products yet. <Link to="/products">Browse products</Link>
+            Bạn chưa xem sản phẩm nào. <Link to="/products">Xem sản phẩm</Link>
           </p>
         </div>
       )}
@@ -91,7 +91,7 @@ export default function ViewHistoryPage() {
                   <strong>{product.name}</strong>
                   <span className="product-price">{formatPrice(product.price)}</span>
                   <span className="muted history-meta">
-                    Viewed {viewCount} time{viewCount === 1 ? '' : 's'} · Last {formatDate(lastViewedAt)}
+                    Đã xem {viewCount} lần · Gần nhất {formatDate(lastViewedAt)}
                   </span>
                 </div>
               </>
@@ -105,15 +105,15 @@ export default function ViewHistoryPage() {
                 ) : (
                   <div className="history-link is-unavailable">
                     {content}
-                    <span className="badge badge-muted">No longer available</span>
+                    <span className="badge badge-muted">Không còn bán</span>
                   </div>
                 )}
                 <button
                   type="button"
                   className="icon-btn"
                   onClick={() => remove(product.id)}
-                  aria-label={`Remove ${product.name} from history`}
-                  title="Remove from history"
+                  aria-label={`Xoá ${product.name} khỏi lịch sử`}
+                  title="Xoá khỏi lịch sử"
                 >
                   <TrashIcon />
                 </button>

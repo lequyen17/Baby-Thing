@@ -55,15 +55,15 @@ export default function OrderDetailPage() {
   };
 
   const handleCancel = () => {
-    const reason = window.prompt(`Cancel order #${order.id}? You can add a reason (optional):`, '');
+    const reason = window.prompt(`Huỷ đơn #${order.id}? Bạn có thể ghi lý do (không bắt buộc):`, '');
     if (reason === null) return;
-    run(() => api(`/orders/${id}/cancel`, { method: 'POST', body: { reason } }), 'Order cancelled.');
+    run(() => api(`/orders/${id}/cancel`, { method: 'POST', body: { reason } }), 'Đã huỷ đơn hàng.');
   };
 
   const handleNextStep = (step) =>
     run(
       () => api(`/orders/${id}/status`, { method: 'PATCH', body: { status: step.status } }),
-      `Order is now ${ORDER_STATUSES[step.status].label.toLowerCase()}.`,
+      `Đơn hàng đã chuyển sang "${ORDER_STATUSES[step.status].label}".`,
     );
 
   const perms = order ? orderPermissions(order, user) : null;
@@ -71,24 +71,24 @@ export default function OrderDetailPage() {
   return (
     <div className="page">
       <Link to={perms?.isSeller ? '/orders?view=selling' : '/orders'} className="back-link">
-        <ArrowLeftIcon size={16} /> All orders
+        <ArrowLeftIcon size={16} /> Tất cả đơn hàng
       </Link>
       <Alert type="success">{notice}</Alert>
       <Alert>{error}</Alert>
-      {!order && !error && <p className="muted">Loading...</p>}
+      {!order && !error && <p className="muted">Đang tải…</p>}
 
       {order && (
         <>
           <div className="page-header page-header-row">
             <div>
               <h1 className="order-title">
-                Order #{order.id} <OrderStatusBadge status={order.status} />
+                Đơn #{order.id} <OrderStatusBadge status={order.status} />
               </h1>
               <p className="muted">
-                Placed {formatDate(order.createdAt)} · Updated {formatDate(order.updatedAt)}
+                Đặt lúc {formatDate(order.createdAt)} · Cập nhật {formatDate(order.updatedAt)}
                 {order.seller && !perms.isSeller && (
                   <>
-                    {' · Seller: '}
+                    {' · Người bán: '}
                     <Link to={`/sellers/${order.seller.id}`}>{order.seller.displayName}</Link>
                   </>
                 )}
@@ -102,12 +102,12 @@ export default function OrderDetailPage() {
               )}
               {perms.canEdit && (
                 <Link to={`/orders/${order.id}/edit`} state={{ order }} className="btn btn-secondary">
-                  <EditIcon /> Edit
+                  <EditIcon /> Sửa đơn
                 </Link>
               )}
               {perms.canCancel && (
                 <button type="button" className="btn btn-danger" onClick={handleCancel} disabled={busy}>
-                  <XCircleIcon /> Cancel order
+                  <XCircleIcon /> Huỷ đơn
                 </button>
               )}
             </div>
@@ -115,8 +115,8 @@ export default function OrderDetailPage() {
 
           {order.status === 'CANCELLED' ? (
             <div className="card order-cancelled">
-              <strong>Cancelled {formatDate(order.cancelledAt)}</strong>
-              {order.cancelReason && <p className="muted">Reason: {order.cancelReason}</p>}
+              <strong>Đã huỷ lúc {formatDate(order.cancelledAt)}</strong>
+              {order.cancelReason && <p className="muted">Lý do: {order.cancelReason}</p>}
             </div>
           ) : (
             <section className="card">
@@ -126,7 +126,7 @@ export default function OrderDetailPage() {
 
           <div className="order-detail-grid">
             <section className="card">
-              <h2 className="card-title">Items</h2>
+              <h2 className="card-title">Sản phẩm</h2>
               <ul className="order-items">
                 {order.items.map((item) => (
                   <li key={item.id} className="order-item">
@@ -145,29 +145,29 @@ export default function OrderDetailPage() {
                 ))}
               </ul>
               <div className="order-total">
-                <span>Total</span>
+                <span>Tổng tiền</span>
                 <span className="product-price product-price-lg">{formatPrice(order.totalAmount)}</span>
               </div>
             </section>
 
             <section className="card">
-              <h2 className="card-title">Shipping</h2>
+              <h2 className="card-title">Giao hàng</h2>
               <dl className="order-shipping">
-                <dt>Recipient</dt>
+                <dt>Người nhận</dt>
                 <dd>{order.recipientName}</dd>
-                <dt>Phone</dt>
+                <dt>Số điện thoại</dt>
                 <dd>{order.phone}</dd>
-                <dt>Address</dt>
+                <dt>Địa chỉ</dt>
                 <dd>{order.address}</dd>
                 {order.note && (
                   <>
-                    <dt>Note</dt>
+                    <dt>Ghi chú</dt>
                     <dd>{order.note}</dd>
                   </>
                 )}
                 {!perms.isBuyer && (
                   <>
-                    <dt>Buyer</dt>
+                    <dt>Người mua</dt>
                     <dd>
                       {order.customer.displayName}
                       {/* Server chỉ trả email cho admin */}

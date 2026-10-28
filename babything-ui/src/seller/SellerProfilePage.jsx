@@ -33,6 +33,7 @@ export default function SellerProfilePage() {
   const navigate = useNavigate();
   const { open } = useMessages(user.id);
   const [extra] = useExtraProfile(user.id);
+  // { items, totalItems } của tin đang hiện của người bán này
   const [products, setProducts] = useState(null);
 
   const isMe = String(user.id) === id;
@@ -41,9 +42,18 @@ export default function SellerProfilePage() {
     : DEMO_SELLERS[id] && { ...DEMO_SELLERS[id], verified: true };
 
   useEffect(() => {
-    api('/products?sort=newest&page=0&size=8')
-      .then((d) => setProducts(d.items))
-      .catch(() => setProducts([]));
+    const empty = { items: [], totalItems: 0 };
+    // Người bán mẫu (id dạng demo-...) không có tài khoản thật nên không có tin
+    if (!/^\d+$/.test(id)) {
+      setProducts(empty);
+      return;
+    }
+    setProducts(null);
+    // status=ACTIVE: admin xem hồ sơ cũng chỉ thấy tin đang bán như khách
+    const query = new URLSearchParams({ sellerId: id, status: 'ACTIVE', sort: 'newest', page: '0', size: '8' });
+    api(`/products?${query}`)
+      .then(setProducts)
+      .catch(() => setProducts(empty));
   }, [id]);
 
   if (!seller) {
@@ -109,7 +119,7 @@ export default function SellerProfilePage() {
         </div>
         <Stat value={seller.deals} label="Giao dịch hoàn tất" />
         <Stat value={`${seller.complaintRate}%`} label="Tỉ lệ khiếu nại được chấp nhận" />
-        <Stat value={products?.length ?? '…'} label="Tin đang bán" />
+        <Stat value={products?.totalItems ?? '…'} label="Tin đang bán" />
       </section>
 
       <section>
@@ -118,13 +128,13 @@ export default function SellerProfilePage() {
         </div>
         {products === null ? (
           <p className="muted">Đang tải…</p>
-        ) : products.length === 0 ? (
+        ) : products.items.length === 0 ? (
           <div className="card empty-block">
             <strong>Chưa có tin đang bán</strong>
           </div>
         ) : (
           <div className="product-grid">
-            {products.map((p) => (
+            {products.items.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}
           </div>

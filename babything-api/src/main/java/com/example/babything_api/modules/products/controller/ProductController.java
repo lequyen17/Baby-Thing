@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,13 +14,18 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.Valid;
 
 import com.example.babything_api.core.dto.PageResponse;
 import com.example.babything_api.core.security.AuthPrincipal;
+import com.example.babything_api.infrastructure.cache.RateLimiter;
+import com.example.babything_api.infrastructure.storage.ImageStorage;
+import com.example.babything_api.modules.products.dto.ProductImageResponse;
 import com.example.babything_api.modules.products.dto.ProductRequest;
 import com.example.babything_api.modules.products.dto.ProductResponse;
 import com.example.babything_api.modules.products.dto.ProductViewStats;
@@ -32,12 +38,19 @@ import com.example.babything_api.modules.products.service.ProductViewService;
 @RequestMapping("/api/products")
 public class ProductController {
 
+    private static final int IMAGE_UPLOADS_PER_MINUTE = 20;
+
     private final ProductService productService;
     private final ProductViewService viewService;
+    private final ImageStorage imageStorage;
+    private final RateLimiter rateLimiter;
 
-    public ProductController(ProductService productService, ProductViewService viewService) {
+    public ProductController(ProductService productService, ProductViewService viewService,
+            ImageStorage imageStorage, RateLimiter rateLimiter) {
         this.productService = productService;
         this.viewService = viewService;
+        this.imageStorage = imageStorage;
+        this.rateLimiter = rateLimiter;
     }
 
     @GetMapping
@@ -48,11 +61,12 @@ public class ProductController {
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(defaultValue = "false") boolean mine,
+            @RequestParam(required = false) Long sellerId,
             @RequestParam(defaultValue = "newest") String sort,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
-        return productService.list(principal.user(),
-                new ProductService.ListQuery(q, category, status, minPrice, maxPrice, mine, sort, page, size));
+        return productService.list(principal.user(), new ProductService.ListQuery(q, category, status, minPrice,
+                maxPrice, mine, sellerId, sort, page, size));
     }
 
     @GetMapping("/categories")
@@ -70,6 +84,18 @@ public class ProductController {
     ProductResponse create(@AuthenticationPrincipal AuthPrincipal principal,
             @Valid @RequestBody ProductRequest req) {
         return productService.create(principal.user(), req);
+    }
+
+    /**
+     * Tải ảnh lên trước, rồi gửi URL nhận được trong imageUrl khi tạo / sửa tin.
+     * Ảnh cũ không bị xoá khi đổi ảnh vì đơn hàng đã đặt vẫn dùng URL đó.
+     */
+    @PostMapping(value = "/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    ProductImageResponse uploadImage(@AuthenticationPrincipal AuthPrincipal principal,
+            @RequestPart("file") MultipartFile file) {
+        rateLimiter.check("user:" + principal.user().getId(), "product-image", IMAGE_UPLOADS_PER_MINUTE);
+        return new ProductImageResponse(imageStorage.store("products/" + principal.user().getId(), file));
     }
 
     @PutMapping("/{id}")

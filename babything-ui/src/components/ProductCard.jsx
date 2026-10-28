@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext';
 import { formatPrice } from '../utils/format';
 import { categoryArt } from '../utils/categoryArt';
 import { HeartIcon, MessageIcon } from './Icons';
@@ -11,9 +12,19 @@ export function StockBadge({ stock }) {
   return <span className="badge badge-success">Còn hàng</span>;
 }
 
+/** Lý do không đặt được (giống điều kiện ở trang chi tiết); null = đặt được. */
+function unavailableReason(product, user) {
+  if (product.sellerId === user.id) return 'Tin của bạn';
+  if (product.status !== 'ACTIVE') return 'Đang ẩn';
+  if (product.stock <= 0) return 'Hết hàng';
+  return null;
+}
+
 export function ProductCard({ product, showStatus = false, footer }) {
+  const { user } = useAuth();
   // Lưu tin chưa có backend: chỉ đổi trạng thái trên giao diện
   const [saved, setSaved] = useState(false);
+  const unavailable = unavailableReason(product, user);
 
   return (
     <article className="product-card">
@@ -49,9 +60,15 @@ export function ProductCard({ product, showStatus = false, footer }) {
             <Link to="/messages" className="btn btn-secondary">
               <MessageIcon size={16} /> Nhắn tin
             </Link>
-            <Link to="/orders/new" state={{ product }} className="btn btn-dark">
-              Mua ngay
-            </Link>
+            {unavailable ? (
+              <button type="button" className="btn btn-dark" disabled>
+                {unavailable}
+              </button>
+            ) : (
+              <Link to="/orders/new" state={{ product }} className="btn btn-dark">
+                Mua ngay
+              </Link>
+            )}
           </div>
         )}
       </div>

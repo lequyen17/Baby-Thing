@@ -31,24 +31,24 @@ public class GlobalExceptionHandler {
         e.getBindingResult().getFieldErrors()
                 .forEach(err -> fields.putIfAbsent(err.getField(), err.getDefaultMessage()));
         return ResponseEntity.badRequest()
-                .body(new ErrorResponse("VALIDATION_ERROR", "Invalid request data", fields));
+                .body(new ErrorResponse("VALIDATION_ERROR", "Dữ liệu chưa hợp lệ", fields));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     ResponseEntity<ErrorResponse> handleUnreadable(HttpMessageNotReadableException e) {
-        return ResponseEntity.badRequest().body(new ErrorResponse("BAD_REQUEST", "Malformed request body"));
+        return ResponseEntity.badRequest().body(new ErrorResponse("BAD_REQUEST", "Dữ liệu gửi lên không đúng định dạng"));
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
         return ResponseEntity.badRequest()
-                .body(new ErrorResponse("BAD_REQUEST", "Invalid value for parameter '" + e.getName() + "'"));
+                .body(new ErrorResponse("BAD_REQUEST", "Giá trị của tham số '" + e.getName() + "' không hợp lệ"));
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     ResponseEntity<ErrorResponse> handleMaxUpload(MaxUploadSizeExceededException e) {
         return ResponseEntity.badRequest()
-                .body(new ErrorResponse("AVATAR_TOO_LARGE", "Image must be 2 MB or smaller"));
+                .body(new ErrorResponse("IMAGE_TOO_LARGE", "Ảnh phải nhỏ hơn hoặc bằng 2 MB"));
     }
 
     @ExceptionHandler(MailException.class)

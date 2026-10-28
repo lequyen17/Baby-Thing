@@ -1,15 +1,12 @@
-package com.example.babything_api.infrastructure.r2;
+package com.example.babything_api.infrastructure.storage;
 
 import java.net.URI;
-import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import com.example.babything_api.config.AppProperties;
-import com.example.babything_api.core.exceptions.ApiException;
 
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -21,18 +18,18 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 /**
- * Upload avatar lên bucket R2 qua S3 API. Object public qua {@code R2_PUBLIC_URL} (custom domain hoặc r2.dev).
+ * Lưu object lên bucket R2 qua S3 API. Object public qua {@code R2_PUBLIC_URL} (custom domain hoặc r2.dev).
  */
 @Component
-public class R2AvatarStorage {
+public class R2Storage {
 
-    private static final Logger log = LoggerFactory.getLogger(R2AvatarStorage.class);
+    private static final Logger log = LoggerFactory.getLogger(R2Storage.class);
 
     private final AppProperties.R2 config;
     private final S3Client s3;
     private final String publicPrefix;
 
-    public R2AvatarStorage(AppProperties props) {
+    public R2Storage(AppProperties props) {
         this.config = props.r2();
         if (config.enabled()) {
             URI endpoint = URI.create("https://" + config.accountId() + ".r2.cloudflarestorage.com");
@@ -54,13 +51,8 @@ public class R2AvatarStorage {
         return s3 != null;
     }
 
-    public String publicUrlPrefix() {
-        return publicPrefix;
-    }
-
-    public String upload(long userId, String contentType, String extension, byte[] bytes) {
-        ensureEnabled();
-        String key = "avatars/" + userId + "/" + UUID.randomUUID() + "." + extension;
+    /** Trả về URL public của object. Chỉ gọi khi enabled(). */
+    String put(String key, String contentType, byte[] bytes) {
         s3.putObject(
                 PutObjectRequest.builder()
                         .bucket(config.bucketName())
@@ -71,12 +63,12 @@ public class R2AvatarStorage {
         return publicPrefix + "/" + key;
     }
 
-    /** Xóa object cũ nếu URL thuộc bucket public của app (không đụng avatar Google). */
-    public void deleteIfOwned(String avatarUrl) {
-        if (!enabled() || avatarUrl == null || avatarUrl.isBlank()) {
+    /** Xóa object nếu URL thuộc bucket public của app (không đụng avatar Google). */
+    void deleteIfOwned(String url) {
+        if (!enabled() || url == null || url.isBlank()) {
             return;
         }
-        String key = keyFromPublicUrl(avatarUrl);
+        String key = keyFromPublicUrl(url);
         if (key == null) {
             return;
         }
@@ -86,19 +78,12 @@ public class R2AvatarStorage {
                     .key(key)
                     .build());
         } catch (Exception e) {
-            log.warn("Could not delete old avatar object {}: {}", key, e.getMessage());
+            log.warn("Could not delete object {}: {}", key, e.getMessage());
         }
     }
 
-    private void ensureEnabled() {
-        if (!enabled()) {
-            throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "AVATAR_UPLOAD_DISABLED",
-                    "Avatar upload is not configured");
-        }
-    }
-
-    private String keyFromPublicUrl(String avatarUrl) {
-        String normalized = avatarUrl.trim();
+    private String keyFromPublicUrl(String url) {
+        String normalized = url.trim();
         String prefix = publicPrefix + "/";
         if (!normalized.startsWith(prefix)) {
             return null;

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { api } from '../api/client';
+import { api, apiUpload } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Alert, Field } from '../components/Form';
 import { ArrowLeftIcon } from '../components/Icons';
 import { ProductImage } from '../components/ProductImage';
 import { CONDITIONS } from '../utils/format';
+import { IMAGE_ACCEPT, shrinkImage } from '../utils/image';
 
 const EMPTY_FORM = {
   sku: '',
@@ -52,6 +53,8 @@ export default function ProductFormPage() {
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [imageError, setImageError] = useState('');
 
   useEffect(() => {
     api('/products/categories')
@@ -65,7 +68,7 @@ export default function ProductFormPage() {
       .then((product) => {
         // Server cũng chặn (403), báo sớm để khỏi điền form vô ích
         if (user.role !== 'ADMIN' && product.sellerId !== user.id) {
-          setError('You can only edit your own listings');
+          setError('Bạn chỉ sửa được tin đăng của mình');
           return;
         }
         setForm(toForm(product));
@@ -75,6 +78,26 @@ export default function ProductFormPage() {
   }, [id, loaded, user]);
 
   const update = (key) => (e) => setForm({ ...form, [key]: e.target.value });
+  // Dạng hàm: kết quả upload về sau khi người dùng có thể đã sửa các ô khác
+  const setImageUrl = (imageUrl) => setForm((f) => ({ ...f, imageUrl }));
+
+  const handleImage = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setImageError('');
+    setUploading(true);
+    try {
+      const data = new FormData();
+      data.append('file', await shrinkImage(file));
+      const { url } = await apiUpload('/products/images', data);
+      setImageUrl(url);
+    } catch (err) {
+      setImageError(err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -83,7 +106,7 @@ export default function ProductFormPage() {
     const stock = form.stock === '' ? null : Number(form.stock);
     // Jackson tự cắt 1.5 thành 1, nên chặn số lẻ ngay ở đây
     if (stock !== null && !Number.isInteger(stock)) {
-      setFieldErrors({ stock: 'Stock must be a whole number' });
+      setFieldErrors({ stock: 'Số lượng phải là số nguyên' });
       return;
     }
     setSubmitting(true);
@@ -111,11 +134,11 @@ export default function ProductFormPage() {
   return (
     <div className="page">
       <Link to={isEdit ? `/products/${id}` : '/products'} className="back-link">
-        <ArrowLeftIcon size={16} /> {isEdit ? 'Back to product' : 'All products'}
+        <ArrowLeftIcon size={16} /> {isEdit ? 'Quay lại tin đăng' : 'Tất cả sản phẩm'}
       </Link>
       <div className="page-header">
-        <h1>{isEdit ? 'Edit listing' : 'Sell an item'}</h1>
-        <p className="muted">Hidden listings are only visible to you and admins.</p>
+        <h1>{isEdit ? 'Sửa tin đăng' : 'Đăng bán sản phẩm'}</h1>
+        <p className="muted">Tin đang ẩn chỉ bạn và quản trị viên nhìn thấy.</p>
       </div>
 
       <Alert>{error}</Alert>
@@ -124,7 +147,7 @@ export default function ProductFormPage() {
         <form className="card product-form" onSubmit={handleSubmit} noValidate>
           <div className="form-grid">
             <Field
-              label="Product name"
+              label="Tên sản phẩm"
               value={form.name}
               onChange={update('name')}
               maxLength={200}
@@ -132,15 +155,15 @@ export default function ProductFormPage() {
               error={fieldErrors.name}
             />
             <Field
-              label="SKU"
+              label="Mã SKU"
               value={form.sku}
               onChange={update('sku')}
               maxLength={64}
-              placeholder={isEdit ? 'Leave empty to keep current SKU' : 'Optional, generated if empty'}
+              placeholder={isEdit ? 'Để trống để giữ mã hiện tại' : 'Không bắt buộc, để trống sẽ tự tạo'}
               error={fieldErrors.sku}
             />
             <Field
-              label="Price (VND)"
+              label="Giá (VND)"
               type="number"
               min="0"
               step="1000"
@@ -151,7 +174,7 @@ export default function ProductFormPage() {
               error={fieldErrors.price}
             />
             <Field
-              label="Stock"
+              label="Số lượng"
               type="number"
               min="0"
               step="1"
@@ -162,12 +185,12 @@ export default function ProductFormPage() {
               error={fieldErrors.stock}
             />
             <Field
-              label="Category"
+              label="Danh mục"
               value={form.category}
               onChange={update('category')}
               maxLength={100}
               list="product-categories"
-              placeholder="e.g. Feeding"
+              placeholder="VD: Xe đẩy"
               error={fieldErrors.category}
             />
             <datalist id="product-categories">
@@ -177,40 +200,69 @@ export default function ProductFormPage() {
             </datalist>
             <Field
               as="select"
-              label="Condition"
+              label="Tình trạng"
               value={form.condition}
               onChange={update('condition')}
               error={fieldErrors.condition}
             >
-              <option value="">Not specified</option>
+              <option value="">Không ghi rõ</option>
               {CONDITIONS.map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
                 </option>
               ))}
             </Field>
-            <Field as="select" label="Status" value={form.status} onChange={update('status')} error={fieldErrors.status}>
-              <option value="ACTIVE">Visible to customers</option>
-              <option value="INACTIVE">Hidden</option>
+            <Field as="select" label="Trạng thái" value={form.status} onChange={update('status')} error={fieldErrors.status}>
+              <option value="ACTIVE">Hiển thị cho người mua</option>
+              <option value="INACTIVE">Ẩn tin</option>
             </Field>
           </div>
 
           <div className="image-url-row">
-            <Field
-              label="Image URL"
-              type="url"
-              value={form.imageUrl}
-              onChange={update('imageUrl')}
-              maxLength={500}
-              placeholder="https://..."
-              error={fieldErrors.imageUrl}
-            />
+            <div>
+              <div className="field">
+                <span>Ảnh sản phẩm</span>
+                <div className="image-upload-actions">
+                  <input
+                    id="product-image-file"
+                    type="file"
+                    accept={IMAGE_ACCEPT}
+                    className="visually-hidden"
+                    onChange={handleImage}
+                    disabled={uploading}
+                  />
+                  <label
+                    htmlFor="product-image-file"
+                    className={`btn btn-secondary btn-sm${uploading ? ' is-disabled' : ''}`}
+                    aria-disabled={uploading}
+                  >
+                    {uploading ? 'Đang tải lên…' : form.imageUrl ? 'Đổi ảnh' : 'Tải ảnh lên'}
+                  </label>
+                  {form.imageUrl && !uploading && (
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => setImageUrl('')}>
+                      Bỏ ảnh
+                    </button>
+                  )}
+                </div>
+                <small className="muted">JPEG, PNG, WebP hoặc GIF. Ảnh lớn sẽ được tự động thu nhỏ.</small>
+                {imageError && <small className="field-error">{imageError}</small>}
+              </div>
+              <Field
+                label="Hoặc dán link ảnh"
+                type="url"
+                value={form.imageUrl}
+                onChange={update('imageUrl')}
+                maxLength={500}
+                placeholder="https://..."
+                error={fieldErrors.imageUrl}
+              />
+            </div>
             <ProductImage product={{ imageUrl: form.imageUrl.trim(), name: form.name }} className="image-preview" />
           </div>
 
           <Field
             as="textarea"
-            label="Description"
+            label="Mô tả"
             rows={5}
             value={form.description}
             onChange={update('description')}
@@ -219,11 +271,11 @@ export default function ProductFormPage() {
           />
 
           <div className="product-actions">
-            <button type="submit" className="btn btn-primary" disabled={submitting}>
-              {submitting ? 'Saving...' : isEdit ? 'Save changes' : 'Post listing'}
+            <button type="submit" className="btn btn-primary" disabled={submitting || uploading}>
+              {submitting ? 'Đang lưu…' : isEdit ? 'Lưu thay đổi' : 'Đăng tin'}
             </button>
             <Link to={isEdit ? `/products/${id}` : '/products'} className="btn btn-secondary">
-              Cancel
+              Huỷ
             </Link>
           </div>
         </form>

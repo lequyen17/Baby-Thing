@@ -24,13 +24,12 @@ function ProductViewers({ productId }) {
 
   return (
     <section className="card">
-      <h2 className="card-title">View history</h2>
+      <h2 className="card-title">Lượt xem</h2>
       <Alert>{error}</Alert>
       {stats && (
         <>
           <p className="muted card-description">
-            {stats.totalViews} view{stats.totalViews === 1 ? '' : 's'} by {stats.viewers.totalItems} customer
-            {stats.viewers.totalItems === 1 ? '' : 's'}
+            {stats.totalViews} lượt xem từ {stats.viewers.totalItems} người
           </p>
           {stats.viewers.items.length > 0 && (
             <ul className="viewer-list">
@@ -42,10 +41,8 @@ function ProductViewers({ productId }) {
                     {v.email && <span className="muted">{v.email}</span>}
                   </div>
                   <div className="viewer-meta">
-                    <span>
-                      {v.viewCount} view{v.viewCount === 1 ? '' : 's'}
-                    </span>
-                    <span className="muted">Last: {formatDate(v.lastViewedAt)}</span>
+                    <span>{v.viewCount} lượt xem</span>
+                    <span className="muted">Gần nhất: {formatDate(v.lastViewedAt)}</span>
                   </div>
                 </li>
               ))}
@@ -79,7 +76,7 @@ export default function ProductDetailPage() {
   }, [id]);
 
   const handleDelete = async () => {
-    if (!window.confirm(`Delete "${product.name}"? Customers will no longer see it.`)) return;
+    if (!window.confirm(`Xoá tin "${product.name}"? Người mua sẽ không còn thấy tin này.`)) return;
     setDeleting(true);
     try {
       await api(`/products/${id}`, { method: 'DELETE' });
@@ -93,10 +90,10 @@ export default function ProductDetailPage() {
   return (
     <div className="page">
       <Link to="/products" className="back-link">
-        <ArrowLeftIcon size={16} /> All products
+        <ArrowLeftIcon size={16} /> Tất cả sản phẩm
       </Link>
       <Alert>{error}</Alert>
-      {!product && !error && <p className="muted">Loading...</p>}
+      {!product && !error && <p className="muted">Đang tải…</p>}
 
       {product && (
         <>
@@ -107,7 +104,7 @@ export default function ProductDetailPage() {
               <h1>{product.name}</h1>
               <p className="muted">
                 SKU: {product.sku}
-                {product.sellerName && ` · Seller: ${product.sellerId === user.id ? 'you' : product.sellerName}`}
+                {product.sellerName && ` · Người bán: ${product.sellerId === user.id ? 'bạn' : product.sellerName}`}
               </p>
               <div className="product-price product-price-lg">{formatPrice(product.price)}</div>
               <div className="badges">
@@ -115,30 +112,30 @@ export default function ProductDetailPage() {
                 {condition && <span className="badge">{condition}</span>}
                 {canManage && (
                   <span className={`badge ${product.status === 'ACTIVE' ? 'badge-success' : 'badge-muted'}`}>
-                    {product.status === 'ACTIVE' ? 'Visible' : 'Hidden'}
+                    {product.status === 'ACTIVE' ? 'Đang hiển thị' : 'Đang ẩn'}
                   </span>
                 )}
-                {canManage && <span className="badge">Stock: {product.stock}</span>}
+                {canManage && <span className="badge">Tồn kho: {product.stock}</span>}
               </div>
               {product.description && <p className="product-description">{product.description}</p>}
               {product.status === 'ACTIVE' && product.stock > 0 && product.sellerId !== user.id && (
                 <div className="product-actions">
                   <Link to="/orders/new" state={{ product }} className="btn btn-primary">
-                    <CartIcon /> Order now
+                    <CartIcon /> Đặt mua ngay
                   </Link>
                 </div>
               )}
               {canManage && (
                 <>
                   <p className="muted product-meta">
-                    Created {formatDate(product.createdAt)} · Updated {formatDate(product.updatedAt)}
+                    Đăng lúc {formatDate(product.createdAt)} · Cập nhật {formatDate(product.updatedAt)}
                   </p>
                   <div className="product-actions">
                     <Link to={`/products/${product.id}/edit`} state={{ product }} className="btn btn-secondary">
-                      <EditIcon /> Edit
+                      <EditIcon /> Sửa tin
                     </Link>
                     <button type="button" className="btn btn-danger" onClick={handleDelete} disabled={deleting}>
-                      <TrashIcon /> {deleting ? 'Deleting...' : 'Delete'}
+                      <TrashIcon /> {deleting ? 'Đang xoá…' : 'Xoá tin'}
                     </button>
                   </div>
                 </>
@@ -150,7 +147,7 @@ export default function ProductDetailPage() {
             <ProductViewers productId={product.id} />
           ) : (
             <p className="muted page-hint">
-              <EyeIcon size={14} /> Products you open are saved in your <Link to="/history">view history</Link>.
+              <EyeIcon size={14} /> Sản phẩm bạn mở được lưu trong <Link to="/history">lịch sử xem</Link>.
             </p>
           )}
         </>
