@@ -11,11 +11,11 @@ export function ProtectedRoute() {
   return user ? <Outlet /> : <Navigate to="/login" replace />;
 }
 
-/** Trang dành cho khách (login, register...): đã đăng nhập thì chuyển về profile. */
+/** Trang dành cho khách (login, register...): đã đăng nhập thì chuyển về trang chủ. */
 export function GuestRoute() {
   const { user, loading } = useAuth();
   if (loading) return <Loading />;
-  return user ? <Navigate to="/profile" replace /> : <Outlet />;
+  return user ? <Navigate to="/" replace /> : <Outlet />;
 }
 
 /** Trang chỉ dành cho ADMIN (tạo/sửa sản phẩm); đặt bên trong ProtectedRoute. */

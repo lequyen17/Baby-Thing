@@ -177,3 +177,60 @@ export const ArrowLeftIcon = (props) => (
     <path d="M19 12H5M12 19l-7-7 7-7" />
   </Icon>
 );
+
+export const HeartIcon = (props) => (
+  <Icon {...props}>
+    <path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z" />
+  </Icon>
+);
+
+export const ArrowRightIcon = (props) => (
+  <Icon {...props}>
+    <path d="M5 12h14M13 6l6 6-6 6" />
+  </Icon>
+);
+
+export const SparkleIcon = (props) => (
+  <Icon {...props}>
+    <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" />
+  </Icon>
+);
+
+export const PenIcon = (props) => (
+  <Icon {...props}>
+    <path d="M4 20h4L19 9l-4-4L4 16z" />
+  </Icon>
+);
+
+export const TagIcon = (props) => (
+  <Icon {...props}>
+    <path d="M3 12V4h8l10 10-8 8z" />
+    <circle cx="7.5" cy="8" r="1.5" />
+  </Icon>
+);
+
+export const StarIcon = (props) => (
+  <Icon {...props}>
+    <path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />
+  </Icon>
+);
+
+export const CardIcon = (props) => (
+  <Icon {...props}>
+    <rect x="3" y="6" width="18" height="13" rx="2" />
+    <path d="M3 10h18M16 15h2" />
+  </Icon>
+);
+
+/** Logo Baby Things: trái tim trong vòng tròn. */
+export const LogoMark = ({ size = 40 }) => (
+  <svg width={size} height={size} viewBox="0 0 40 40" fill="none" aria-hidden="true">
+    <circle cx="20" cy="20" r="19" fill="#F6E3DA" />
+    <path
+      d="M20 29s-8-5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 28 18c0 6-8 11-8 11z"
+      stroke="#B84F36"
+      strokeWidth="2"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
