@@ -12,12 +12,16 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import com.example.babything_api.modules.products.entity.ProductCondition;
 import com.example.babything_api.modules.products.entity.ProductStatus;
 
-/** Dùng chung cho tạo mới và cập nhật (PUT thay toàn bộ). status null = ACTIVE. */
+/**
+ * Dùng chung cho tạo mới và cập nhật (PUT thay toàn bộ). status null = ACTIVE.
+ * sku để trống: tạo mới thì server tự sinh, cập nhật thì giữ SKU cũ.
+ */
 public record ProductRequest(
-        @NotBlank(message = "SKU is required") @Size(max = 64)
-        @Pattern(regexp = "^[A-Za-z0-9_-]+$", message = "SKU may only contain letters, digits, - and _")
+        @Size(max = 64)
+        @Pattern(regexp = "^[A-Za-z0-9_-]*$", message = "SKU may only contain letters, digits, - and _")
         String sku,
         @NotBlank(message = "Name is required") @Size(max = 200) String name,
         @Size(max = 5000) String description,
@@ -27,5 +31,6 @@ public record ProductRequest(
         @Size(max = 100) String category,
         @Size(max = 500) @Pattern(regexp = "^(https?://\\S+)?$", message = "Image URL must start with http:// or https://")
         String imageUrl,
+        ProductCondition condition,
         ProductStatus status) {
 }

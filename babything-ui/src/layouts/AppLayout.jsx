@@ -2,7 +2,18 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
-import { HistoryIcon, LogoMark, PackageIcon, PlusIcon, ReceiptIcon, SearchIcon } from '../components/Icons';
+import {
+  CameraIcon,
+  CardIcon,
+  LogoMark,
+  MessageIcon,
+  OrderIcon,
+  PlusIcon,
+  SearchIcon,
+} from '../components/Icons';
+import { useMessages } from '../messages/useMessages';
+import NotificationBell from '../notifications/NotificationBell';
+import { POLICY_LIST } from '../content/pages';
 import { UserMenu } from '../components/UserMenu';
 
 /** Khung chung cho các trang sau khi đăng nhập: thanh thông báo, header, danh mục, nội dung, footer. */
@@ -15,6 +26,7 @@ export default function AppLayout() {
   const activeCategory = params.get('category') ?? '';
   const [search, setSearch] = useState(params.get('q') ?? '');
   const [categories, setCategories] = useState([]);
+  const { unread: unreadMessages } = useMessages(user.id);
 
   useEffect(() => {
     api('/products/categories')
@@ -51,28 +63,34 @@ export default function AppLayout() {
               onChange={(e) => setSearch(e.target.value)}
               aria-label="Tìm kiếm sản phẩm"
             />
+            <Link to="/image-search" className="header-search-camera" aria-label="Tìm bằng hình ảnh (AI nhận diện)">
+              <CameraIcon size={20} />
+            </Link>
             <button type="submit" className="btn btn-dark btn-sm">
               Tìm kiếm
             </button>
           </form>
 
           <nav className="app-nav" aria-label="Tài khoản">
-            <NavLink to="/products" end className="app-nav-link">
-              <PackageIcon size={24} /> <span>Sản phẩm</span>
+            <NavLink to="/messages" className="app-nav-link">
+              <span className="nav-icon">
+                <MessageIcon size={24} />
+                {unreadMessages > 0 && <span className="nav-badge">{unreadMessages > 9 ? '9+' : unreadMessages}</span>}
+              </span>
+              <span>Tin nhắn</span>
             </NavLink>
+            <NotificationBell />
             <NavLink to="/orders" className="app-nav-link">
-              <ReceiptIcon size={24} /> <span>Đơn hàng</span>
+              <OrderIcon size={24} /> <span>Đơn hàng</span>
             </NavLink>
-            <NavLink to="/history" className="app-nav-link">
-              <HistoryIcon size={24} /> <span>Đã xem</span>
+            <NavLink to="/payments" className="app-nav-link">
+              <CardIcon size={24} /> <span>Thanh toán</span>
             </NavLink>
           </nav>
 
-          {isAdmin && (
-            <Link to="/products/new" className="btn btn-accent header-sell">
-              <PlusIcon /> <span>Đăng bán</span>
-            </Link>
-          )}
+          <Link to="/products/new" className="btn btn-accent header-sell">
+            <PlusIcon /> <span>Đăng bán</span>
+          </Link>
           <UserMenu />
         </div>
       </header>
@@ -105,26 +123,65 @@ export default function AppLayout() {
           <div className="footer-brand">
             <span className="serif">Baby Things</span>
             <p>Nền tảng C2C mua bán đồ mẹ &amp; bé đã qua sử dụng.</p>
+            <NewsletterForm />
           </div>
           <div className="footer-col">
             <strong>Tài khoản</strong>
             <Link to="/profile">Hồ sơ của tôi</Link>
-            <Link to="/settings">Đổi mật khẩu</Link>
+            <Link to="/orders">Đơn mua &amp; đơn bán</Link>
+            <Link to="/payments">Lịch sử thanh toán</Link>
+            <Link to="/messages">Tin nhắn</Link>
             <Link to="/history">Sản phẩm đã xem</Link>
+            <Link to="/profile/addresses">Sổ địa chỉ</Link>
+            <Link to="/settings">Bảo mật</Link>
           </div>
           <div className="footer-col">
             <strong>Mua &amp; bán</strong>
             <Link to="/products">Tin mới đăng</Link>
-            <Link to="/orders">Đơn hàng của tôi</Link>
-            {isAdmin && <Link to="/products/new">Đăng bán sản phẩm</Link>}
+            <Link to="/products/new">Đăng bán</Link>
+            <Link to="/products?mine=1">Tin đăng của tôi</Link>
+            {isAdmin && <Link to="/products">Quản lý sản phẩm</Link>}
           </div>
           <div className="footer-col">
             <strong>Hỗ trợ</strong>
             <Link to="/#how">Cách hoạt động</Link>
+            <Link to="/guide/buy">Hướng dẫn mua</Link>
+            <Link to="/guide/sell">Hướng dẫn bán</Link>
+            <Link to="/fees">Bảng phí</Link>
+            <Link to="/faq">Câu hỏi thường gặp</Link>
+            <Link to="/feedback">Gửi góp ý</Link>
+            {POLICY_LIST.map((p) => (
+              <Link key={p.key} to={p.path}>
+                {p.title}
+              </Link>
+            ))}
           </div>
         </div>
         <div className="app-footer-bottom">© {new Date().getFullYear()} Baby Things.</div>
       </footer>
     </div>
+  );
+}
+
+/** Ô đăng ký nhận tin: chưa có backend nên chỉ báo "sắp ra mắt". */
+function NewsletterForm() {
+  const [sent, setSent] = useState(false);
+  return (
+    <form
+      className="newsletter"
+      onSubmit={(e) => {
+        e.preventDefault();
+        setSent(true);
+      }}
+    >
+      <label htmlFor="newsletter-email">Nhận thông báo tin đăng mới</label>
+      <div className="newsletter-row">
+        <input id="newsletter-email" type="email" required placeholder="Email của bạn" />
+        <button type="submit" className="btn">
+          Đăng ký
+        </button>
+      </div>
+      {sent && <small>Tính năng sắp ra mắt — cảm ơn bạn đã quan tâm!</small>}
+    </form>
   );
 }

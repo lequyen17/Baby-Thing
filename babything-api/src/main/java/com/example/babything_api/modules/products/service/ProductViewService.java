@@ -11,7 +11,7 @@ import com.example.babything_api.modules.products.dto.ProductViewerItem;
 import com.example.babything_api.modules.products.repository.ProductViewRepository;
 import com.example.babything_api.modules.users.entity.User;
 
-/** Lịch sử xem sản phẩm: của chính mình (user) và ai đã xem một sản phẩm (admin). */
+/** Lịch sử xem sản phẩm: của chính mình (user) và ai đã xem một sản phẩm (người bán hoặc admin). */
 @Service
 public class ProductViewService {
 
@@ -40,8 +40,8 @@ public class ProductViewService {
     }
 
     @Transactional(readOnly = true)
-    public ProductViewStats viewers(Long productId, int page, int size) {
-        productService.findAlive(productId);
+    public ProductViewStats viewers(User user, Long productId, int page, int size) {
+        productService.findManageable(user, productId);
         return new ProductViewStats(viewRepository.sumViews(productId),
                 PageResponse.of(viewRepository.findViewers(productId, pageRequest(page, size)),
                         ProductViewerItem::from));

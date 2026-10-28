@@ -234,3 +234,90 @@ export const LogoMark = ({ size = 40 }) => (
     />
   </svg>
 );
+
+export const MessageIcon = (props) => (
+  <Icon {...props}>
+    <path d="M4 5h16v11H9l-5 4z" />
+  </Icon>
+);
+
+export const BellIcon = (props) => (
+  <Icon {...props}>
+    <path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z" />
+    <path d="M10 20a2 2 0 0 0 4 0" />
+  </Icon>
+);
+
+export const OrderIcon = (props) => (
+  <Icon {...props}>
+    <path d="M3 7l9-4 9 4v10l-9 4-9-4z" />
+    <path d="M3 7l9 4 9-4M12 11v10" />
+  </Icon>
+);
+
+export const MapPinIcon = (props) => (
+  <Icon {...props}>
+    <path d="M12 21s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z" />
+    <circle cx="12" cy="9" r="2.5" />
+  </Icon>
+);
+
+export const BankIcon = (props) => (
+  <Icon {...props}>
+    <path d="M3 10l9-6 9 6" />
+    <path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 21h18" />
+  </Icon>
+);
+
+export const PhoneIcon = (props) => (
+  <Icon {...props}>
+    <rect x="7" y="2" width="10" height="20" rx="2" />
+    <path d="M11 18h2" />
+  </Icon>
+);
+
+export const CheckIcon = (props) => (
+  <Icon {...props}>
+    <path d="M5 12.5l4.5 4.5L19 7.5" />
+  </Icon>
+);
+
+export const TruckIcon = (props) => (
+  <Icon {...props}>
+    <path d="M2 6h11v10H2zM13 10h4l4 3v3h-8" />
+    <circle cx="7" cy="18" r="2" />
+    <circle cx="17" cy="18" r="2" />
+  </Icon>
+);
+
+export const ChevronRightIcon = (props) => (
+  <Icon {...props}>
+    <path d="M9 6l6 6-6 6" />
+  </Icon>
+);
+
+export const InfoIcon = (props) => (
+  <Icon {...props}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 11v5M12 8h.01" />
+  </Icon>
+);
+
+export const DropletIcon = (props) => (
+  <Icon {...props}>
+    <path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z" />
+  </Icon>
+);
+
+export const BoxIcon = (props) => (
+  <Icon {...props}>
+    <path d="M3 8l9-5 9 5v8l-9 5-9-5z" />
+    <path d="M3 8l9 5 9-5M12 13v8" />
+  </Icon>
+);
+
+export const XIcon = (props) => (
+  <Icon {...props}>
+    <path d="M6 6l12 12M18 6L6 18" />
+  </Icon>
+);

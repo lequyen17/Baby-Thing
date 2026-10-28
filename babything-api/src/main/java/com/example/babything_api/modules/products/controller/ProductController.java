@@ -27,7 +27,7 @@ import com.example.babything_api.modules.products.entity.ProductStatus;
 import com.example.babything_api.modules.products.service.ProductService;
 import com.example.babything_api.modules.products.service.ProductViewService;
 
-/** Ghi (POST/PUT/DELETE) và /{id}/views chỉ dành cho ADMIN, xem SecurityConfig. */
+/** Mọi thành viên đăng bán được; sửa/xoá và /{id}/views chỉ cho người bán hoặc ADMIN (kiểm tra trong service). */
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
@@ -47,11 +47,12 @@ public class ProductController {
             @RequestParam(required = false) ProductStatus status,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(defaultValue = "false") boolean mine,
             @RequestParam(defaultValue = "newest") String sort,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
         return productService.list(principal.user(),
-                new ProductService.ListQuery(q, category, status, minPrice, maxPrice, sort, page, size));
+                new ProductService.ListQuery(q, category, status, minPrice, maxPrice, mine, sort, page, size));
     }
 
     @GetMapping("/categories")
@@ -84,9 +85,9 @@ public class ProductController {
     }
 
     @GetMapping("/{id}/views")
-    ProductViewStats viewers(@PathVariable Long id,
+    ProductViewStats viewers(@AuthenticationPrincipal AuthPrincipal principal, @PathVariable Long id,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return viewService.viewers(id, page, size);
+        return viewService.viewers(principal.user(), id, page, size);
     }
 }

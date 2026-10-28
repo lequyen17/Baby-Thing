@@ -1,11 +1,13 @@
 package com.example.babything_api.modules.products.service;
 
 import java.math.BigDecimal;
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
@@ -42,6 +44,9 @@ public class ProductService {
             "name_asc", Sort.by(Sort.Order.asc("name"), Sort.Order.desc("id")),
             "name_desc", Sort.by(Sort.Order.desc("name"), Sort.Order.desc("id")));
 
+    private static final String SKU_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    private static final SecureRandom RANDOM = new SecureRandom();
+
     private final ProductRepository productRepository;
     private final ProductViewRepository viewRepository;
 
@@ -50,13 +55,14 @@ public class ProductService {
         this.viewRepository = viewRepository;
     }
 
+    /** mine = chỉ tin đăng của người đang xem (thấy cả tin đang ẩn). */
     public record ListQuery(String q, String category, ProductStatus status, BigDecimal minPrice,
-            BigDecimal maxPrice, String sort, int page, int size) {
+            BigDecimal maxPrice, boolean mine, String sort, int page, int size) {
     }
 
     // ---------------------------------------------------------------- Xem danh sách / chi tiết
 
-    /** Khách chỉ thấy sản phẩm ACTIVE; admin thấy tất cả và lọc được theo status. */
+    /** Khách chỉ thấy sản phẩm ACTIVE; admin và người bán (với tin của mình) thấy tất cả, lọc được theo status. */
     @Transactional(readOnly = true)
     public PageResponse<ProductResponse> list(User viewer, ListQuery query) {
         Sort sort = SORTS.get(query.sort() == null ? "newest" : query.sort());
@@ -66,17 +72,20 @@ public class ProductService {
         }
         int page = Math.max(query.page(), 0);
         int size = Math.max(1, Math.min(query.size(), MAX_PAGE_SIZE));
-        ProductStatus status = isAdmin(viewer) ? query.status() : ProductStatus.ACTIVE;
+        ProductStatus status = isAdmin(viewer) || query.mine() ? query.status() : ProductStatus.ACTIVE;
+        Long sellerId = query.mine() ? viewer.getId() : null;
         return PageResponse.of(
-                productRepository.findAll(filter(query, status), PageRequest.of(page, size, sort)),
+                productRepository.findAll(filter(query, status, sellerId), PageRequest.of(page, size, sort)),
                 ProductResponse::from);
     }
 
-    /** Mở trang chi tiết = một lượt xem, được ghi vào lịch sử của người đang đăng nhập. */
+    /** Mở trang chi tiết = một lượt xem, được ghi vào lịch sử của người đang đăng nhập (trừ người bán xem tin mình). */
     @Transactional
     public ProductResponse view(User viewer, Long id) {
         Product product = findVisible(viewer, id);
-        viewRepository.record(viewer.getId(), product.getId());
+        if (!Objects.equals(product.getCreatedBy(), viewer.getId())) {
+            viewRepository.record(viewer.getId(), product.getId());
+        }
         return ProductResponse.from(product);
     }
 
@@ -88,37 +97,39 @@ public class ProductService {
         return productRepository.findCategories(statuses);
     }
 
-    // ---------------------------------------------------------------- CRUD (admin)
+    // ---------------------------------------------------------------- CRUD (mọi thành viên; sửa/xoá: chủ tin hoặc admin)
 
     @Transactional
-    public ProductResponse create(User admin, ProductRequest req) {
-        String sku = normalizeSku(req.sku());
+    public ProductResponse create(User seller, ProductRequest req) {
+        String sku = blankToNull(req.sku()) == null ? generateSku() : normalizeSku(req.sku());
         if (productRepository.existsBySkuAndDeletedAtIsNull(sku)) {
             throw skuExists();
         }
         Product product = new Product();
-        product.setCreatedBy(admin.getId());
-        apply(product, req, sku, admin);
+        product.setCreatedBy(seller.getId());
+        product.setSeller(seller);
+        apply(product, req, sku, seller);
         return ProductResponse.from(save(product));
     }
 
+    /** sku để trống thì giữ SKU cũ. */
     @Transactional
-    public ProductResponse update(User admin, Long id, ProductRequest req) {
-        Product product = findAlive(id);
-        String sku = normalizeSku(req.sku());
+    public ProductResponse update(User user, Long id, ProductRequest req) {
+        Product product = findManageable(user, id);
+        String sku = blankToNull(req.sku()) == null ? product.getSku() : normalizeSku(req.sku());
         if (productRepository.existsBySkuAndDeletedAtIsNullAndIdNot(sku, id)) {
             throw skuExists();
         }
-        apply(product, req, sku, admin);
+        apply(product, req, sku, user);
         return ProductResponse.from(save(product));
     }
 
     /** Xoá mềm: sản phẩm biến mất khỏi mọi danh sách và lịch sử xem, SKU được giải phóng. */
     @Transactional
-    public void delete(User admin, Long id) {
-        Product product = findAlive(id);
+    public void delete(User user, Long id) {
+        Product product = findManageable(user, id);
         product.setDeletedAt(Instant.now());
-        product.setUpdatedBy(admin.getId());
+        product.setUpdatedBy(user.getId());
         productRepository.save(product);
     }
 
@@ -126,8 +137,18 @@ public class ProductService {
 
     Product findVisible(User viewer, Long id) {
         Product product = findAlive(id);
-        if (!isAdmin(viewer) && product.getStatus() != ProductStatus.ACTIVE) {
+        if (product.getStatus() != ProductStatus.ACTIVE && !canManage(viewer, product)) {
             throw notFound();
+        }
+        return product;
+    }
+
+    /** Tin ẩn của người khác coi như không tồn tại; tin đang hiện thì báo không có quyền. */
+    Product findManageable(User user, Long id) {
+        Product product = findVisible(user, id);
+        if (!canManage(user, product)) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "NOT_PRODUCT_OWNER",
+                    "Only the seller or an admin can change this listing");
         }
         return product;
     }
@@ -140,6 +161,10 @@ public class ProductService {
         return user.getRole() == Role.ADMIN;
     }
 
+    static boolean canManage(User user, Product product) {
+        return isAdmin(user) || Objects.equals(product.getCreatedBy(), user.getId());
+    }
+
     private Product save(Product product) {
         try {
             return productRepository.saveAndFlush(product);
@@ -149,7 +174,7 @@ public class ProductService {
         }
     }
 
-    private static void apply(Product product, ProductRequest req, String sku, User admin) {
+    private static void apply(Product product, ProductRequest req, String sku, User editor) {
         product.setSku(sku);
         product.setName(req.name().trim());
         product.setDescription(blankToNull(req.description()));
@@ -157,14 +182,18 @@ public class ProductService {
         product.setStock(req.stock());
         product.setCategory(blankToNull(req.category()));
         product.setImageUrl(blankToNull(req.imageUrl()));
+        product.setCondition(req.condition());
         product.setStatus(req.status() == null ? ProductStatus.ACTIVE : req.status());
-        product.setUpdatedBy(admin.getId());
+        product.setUpdatedBy(editor.getId());
     }
 
-    private static Specification<Product> filter(ListQuery query, ProductStatus status) {
+    private static Specification<Product> filter(ListQuery query, ProductStatus status, Long sellerId) {
         return (root, cq, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(cb.isNull(root.get("deletedAt")));
+            if (sellerId != null) {
+                predicates.add(cb.equal(root.get("createdBy"), sellerId));
+            }
             if (status != null) {
                 predicates.add(cb.equal(root.get("status"), status));
             }
@@ -191,6 +220,15 @@ public class ProductService {
 
     private static String escapeLike(String value) {
         return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+    }
+
+    /** Người bán đồ cũ thường không có SKU: sinh mã dạng BT-XXXXXXXX, trùng thì index unique chặn. */
+    private static String generateSku() {
+        StringBuilder sku = new StringBuilder("BT-");
+        for (int i = 0; i < 8; i++) {
+            sku.append(SKU_ALPHABET.charAt(RANDOM.nextInt(SKU_ALPHABET.length())));
+        }
+        return sku.toString();
     }
 
     private static String normalizeSku(String sku) {

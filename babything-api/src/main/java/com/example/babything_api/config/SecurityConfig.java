@@ -41,11 +41,7 @@ public class SecurityConfig {
                                 "/api/docs/**", "/api/swagger-ui/**", "/api/swagger-ui.html",
                                 "/error")
                         .permitAll()
-                        // Quản lý sản phẩm: khách chỉ được xem, mọi thao tác ghi và thống kê lượt xem dành cho ADMIN
-                        .requestMatchers(HttpMethod.POST, "/api/products", "/api/products/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/products/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/products/*/views").hasRole("ADMIN")
+                        // Sản phẩm: mọi thành viên đăng bán được; quyền sửa/xoá theo chủ tin kiểm tra trong ProductService
                         // Đơn hàng: quyền sở hữu kiểm tra trong OrderService, riêng đổi trạng thái dành cho ADMIN
                         .requestMatchers(HttpMethod.PATCH, "/api/orders/*/status").hasRole("ADMIN")
                         .anyRequest().authenticated())

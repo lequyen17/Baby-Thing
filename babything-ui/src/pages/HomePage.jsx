@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useOutletContext } from 'react-router-dom';
 import { api } from '../api/client';
-import { useAuth } from '../auth/AuthContext';
 import { Alert } from '../components/Form';
 import {
   ArrowRightIcon,
@@ -37,8 +36,6 @@ const AI_STEPS = [
 ];
 
 export default function HomePage() {
-  const { user } = useAuth();
-  const isAdmin = user.role === 'ADMIN';
   const { categories } = useOutletContext();
   const { hash } = useLocation();
   const [products, setProducts] = useState(null);
@@ -61,7 +58,7 @@ export default function HomePage() {
     if (filter === 'low') return p.stock > 0 && p.stock <= 5;
     return true;
   });
-  const sellTo = isAdmin ? '/products/new' : '/products';
+  const sellTo = '/products/new';
 
   return (
     <div className="home">
@@ -243,6 +240,24 @@ export default function HomePage() {
             </p>
             <Link to={sellTo}>Đăng bán sản phẩm</Link>
           </div>
+        </div>
+      </section>
+
+      <section className="feedback-band">
+        <div>
+          <h2 className="serif">Góp ý của bạn giúp Baby Things tốt hơn</h2>
+          <p>
+            Gặp vấn đề khi mua bán, hay có ý tưởng cho nền tảng? Gửi góp ý và theo dõi phản hồi của chúng tôi ngay
+            trong tài khoản.
+          </p>
+        </div>
+        <div className="feedback-actions">
+          <Link to="/feedback" className="btn btn-dark btn-lg">
+            Gửi góp ý
+          </Link>
+          <Link to="/feedback" className="btn btn-outline btn-lg">
+            Góp ý của tôi
+          </Link>
         </div>
       </section>
     </div>

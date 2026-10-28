@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Alert } from '../components/Form';
-import { PlusIcon, SearchIcon } from '../components/Icons';
+import { EditIcon, PlusIcon, SearchIcon } from '../components/Icons';
 import { Pagination } from '../components/Pagination';
 import { ProductCard } from '../components/ProductCard';
 
@@ -24,7 +24,10 @@ export default function ProductListPage() {
   const [params, setParams] = useSearchParams();
   const q = params.get('q') ?? '';
   const category = params.get('category') ?? '';
-  const status = isAdmin ? (params.get('status') ?? '') : '';
+  // ?mine=1: tin đăng của chính mình, thấy và lọc được cả tin đang ẩn
+  const mine = params.get('mine') === '1';
+  const canFilterStatus = isAdmin || mine;
+  const status = canFilterStatus ? (params.get('status') ?? '') : '';
   const sort = params.get('sort') ?? 'newest';
   const page = Number(params.get('page') ?? 0) || 0;
 
@@ -47,6 +50,7 @@ export default function ProductListPage() {
     if (q) query.set('q', q);
     if (category) query.set('category', category);
     if (status) query.set('status', status);
+    if (mine) query.set('mine', 'true');
     setError('');
     api(`/products?${query}`)
       .then((data) => !cancelled && setResult(data))
@@ -54,7 +58,7 @@ export default function ProductListPage() {
     return () => {
       cancelled = true;
     };
-  }, [q, category, status, sort, page]);
+  }, [q, category, status, mine, sort, page]);
 
   /** Đổi bộ lọc thì quay về trang đầu. */
   const updateParams = (changes) => {
@@ -73,16 +77,24 @@ export default function ProductListPage() {
     <div className="page">
       <div className="page-header page-header-row">
         <div>
-          <h1>{category || 'Tất cả sản phẩm'}</h1>
+          <h1>{mine ? 'Tin đăng của tôi' : category || 'Tất cả sản phẩm'}</h1>
           <p className="muted">
             {result ? `${result.totalItems} sản phẩm` : 'Đang tải…'}
           </p>
         </div>
-        {isAdmin && (
+        <div className="product-actions">
+          <button
+            type="button"
+            className={`btn ${mine ? 'btn-dark' : 'btn-secondary'}`}
+            aria-pressed={mine}
+            onClick={() => updateParams({ mine: mine ? '' : '1', status: '' })}
+          >
+            Tin đăng của tôi
+          </button>
           <Link to="/products/new" className="btn btn-accent">
             <PlusIcon /> Đăng bán
           </Link>
-        )}
+        </div>
       </div>
 
       <form className="card product-toolbar" onSubmit={handleSearch} role="search">
@@ -104,7 +116,7 @@ export default function ProductListPage() {
             </option>
           ))}
         </select>
-        {isAdmin && (
+        {canFilterStatus && (
           <select value={status} onChange={(e) => updateParams({ status: e.target.value })} aria-label="Trạng thái">
             <option value="">Mọi trạng thái</option>
             <option value="ACTIVE">Đang hiển thị</option>
@@ -134,7 +146,19 @@ export default function ProductListPage() {
       {result && result.items.length > 0 && (
         <div className="product-grid">
           {result.items.map((product) => (
-            <ProductCard key={product.id} product={product} showStatus={isAdmin} />
+            <ProductCard
+              key={product.id}
+              product={product}
+              showStatus={canFilterStatus}
+              footer={
+                // undefined (không phải false) để ProductCard dùng footer mặc định cho tin người khác
+                product.sellerId === user.id ? (
+                  <Link to={`/products/${product.id}/edit`} state={{ product }} className="btn btn-secondary btn-block">
+                    <EditIcon size={16} /> Sửa tin
+                  </Link>
+                ) : undefined
+              }
+            />
           ))}
         </div>
       )}

@@ -1,18 +1,21 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/client';
+import { useAuth } from '../auth/AuthContext';
 import { Alert, Field } from '../components/Form';
 import { ArrowLeftIcon } from '../components/Icons';
 import { ProductImage } from '../components/ProductImage';
+import { CONDITIONS } from '../utils/format';
 
 const EMPTY_FORM = {
   sku: '',
   name: '',
   description: '',
   price: '',
-  stock: '0',
+  stock: '1',
   category: '',
   imageUrl: '',
+  condition: '',
   status: 'ACTIVE',
 };
 
@@ -25,15 +28,17 @@ function toForm(product) {
     stock: String(product.stock),
     category: product.category ?? '',
     imageUrl: product.imageUrl ?? '',
+    condition: product.condition ?? '',
     status: product.status,
   };
 }
 
-/** Tạo mới (/products/new) và sửa (/products/:id/edit), chỉ ADMIN. */
+/** Tạo mới (/products/new, mọi thành viên) và sửa (/products/:id/edit, người bán hoặc ADMIN). */
 export default function ProductFormPage() {
   const { id } = useParams();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
+  const { user } = useAuth();
   // Đi từ trang chi tiết sang thì đã có sẵn dữ liệu, khỏi gọi GET (GET sẽ tính thêm một lượt xem)
   const passedProduct = useLocation().state?.product;
   const initial = passedProduct && String(passedProduct.id) === id ? toForm(passedProduct) : null;
@@ -55,11 +60,16 @@ export default function ProductFormPage() {
     if (loaded) return;
     api(`/products/${id}`)
       .then((product) => {
+        // Server cũng chặn (403), báo sớm để khỏi điền form vô ích
+        if (user.role !== 'ADMIN' && product.sellerId !== user.id) {
+          setError('You can only edit your own listings');
+          return;
+        }
         setForm(toForm(product));
         setLoaded(true);
       })
       .catch((err) => setError(err.message));
-  }, [id, loaded]);
+  }, [id, loaded, user]);
 
   const update = (key) => (e) => setForm({ ...form, [key]: e.target.value });
 
@@ -67,12 +77,19 @@ export default function ProductFormPage() {
     e.preventDefault();
     setError('');
     setFieldErrors({});
+    const stock = form.stock === '' ? null : Number(form.stock);
+    // Jackson tự cắt 1.5 thành 1, nên chặn số lẻ ngay ở đây
+    if (stock !== null && !Number.isInteger(stock)) {
+      setFieldErrors({ stock: 'Stock must be a whole number' });
+      return;
+    }
     setSubmitting(true);
     try {
       const body = {
         ...form,
         price: form.price === '' ? null : Number(form.price),
-        stock: form.stock === '' ? null : Number(form.stock),
+        stock,
+        condition: form.condition || null,
       };
       const saved = await api(isEdit ? `/products/${id}` : '/products', {
         method: isEdit ? 'PUT' : 'POST',
@@ -81,7 +98,7 @@ export default function ProductFormPage() {
       navigate(`/products/${saved.id}`, { replace: true });
     } catch (err) {
       setError(err.message);
-      setFieldErrors(err.fields || {});
+      setFieldErrors(err.code === 'SKU_EXISTS' ? { sku: err.message } : err.fields || {});
       setSubmitting(false);
     }
   };
@@ -92,8 +109,8 @@ export default function ProductFormPage() {
         <ArrowLeftIcon size={16} /> {isEdit ? 'Back to product' : 'All products'}
       </Link>
       <div className="page-header">
-        <h1>{isEdit ? 'Edit product' : 'New product'}</h1>
-        <p className="muted">Hidden products are only visible to admins.</p>
+        <h1>{isEdit ? 'Edit listing' : 'Sell an item'}</h1>
+        <p className="muted">Hidden listings are only visible to you and admins.</p>
       </div>
 
       <Alert>{error}</Alert>
@@ -114,8 +131,7 @@ export default function ProductFormPage() {
               value={form.sku}
               onChange={update('sku')}
               maxLength={64}
-              placeholder="e.g. BT-001"
-              required
+              placeholder={isEdit ? 'Leave empty to keep current SKU' : 'Optional, generated if empty'}
               error={fieldErrors.sku}
             />
             <Field
@@ -154,6 +170,20 @@ export default function ProductFormPage() {
                 <option key={c} value={c} />
               ))}
             </datalist>
+            <Field
+              as="select"
+              label="Condition"
+              value={form.condition}
+              onChange={update('condition')}
+              error={fieldErrors.condition}
+            >
+              <option value="">Not specified</option>
+              {CONDITIONS.map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </Field>
             <Field as="select" label="Status" value={form.status} onChange={update('status')} error={fieldErrors.status}>
               <option value="ACTIVE">Visible to customers</option>
               <option value="INACTIVE">Hidden</option>
@@ -185,7 +215,7 @@ export default function ProductFormPage() {
 
           <div className="product-actions">
             <button type="submit" className="btn btn-primary" disabled={submitting}>
-              {submitting ? 'Saving...' : isEdit ? 'Save changes' : 'Create product'}
+              {submitting ? 'Saving...' : isEdit ? 'Save changes' : 'Post listing'}
             </button>
             <Link to={isEdit ? `/products/${id}` : '/products'} className="btn btn-secondary">
               Cancel

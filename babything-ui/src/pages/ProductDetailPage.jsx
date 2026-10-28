@@ -8,9 +8,9 @@ import { ArrowLeftIcon, CartIcon, EditIcon, EyeIcon, TrashIcon } from '../compon
 import { Pagination } from '../components/Pagination';
 import { StockBadge } from '../components/ProductCard';
 import { ProductImage } from '../components/ProductImage';
-import { formatDate, formatPrice } from '../utils/format';
+import { formatCondition, formatDate, formatPrice } from '../utils/format';
 
-/** Admin: ai đã xem sản phẩm này, sắp theo lần xem gần nhất. */
+/** Người bán / admin: ai đã xem sản phẩm này, sắp theo lần xem gần nhất. */
 function ProductViewers({ productId }) {
   const [page, setPage] = useState(0);
   const [stats, setStats] = useState(null);
@@ -66,6 +66,8 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState(null);
   const [error, setError] = useState('');
   const [deleting, setDeleting] = useState(false);
+  const canManage = Boolean(product) && (isAdmin || product.sellerId === user.id);
+  const condition = product && formatCondition(product.condition);
 
   // Mỗi lần mở trang chi tiết, server ghi một lượt xem vào lịch sử của người dùng
   useEffect(() => {
@@ -103,16 +105,20 @@ export default function ProductDetailPage() {
             <div className="product-detail-info">
               {product.category && <span className="product-category">{product.category}</span>}
               <h1>{product.name}</h1>
-              <p className="muted">SKU: {product.sku}</p>
+              <p className="muted">
+                SKU: {product.sku}
+                {product.sellerName && ` · Seller: ${product.sellerId === user.id ? 'you' : product.sellerName}`}
+              </p>
               <div className="product-price product-price-lg">{formatPrice(product.price)}</div>
               <div className="badges">
                 <StockBadge stock={product.stock} />
-                {isAdmin && (
+                {condition && <span className="badge">{condition}</span>}
+                {canManage && (
                   <span className={`badge ${product.status === 'ACTIVE' ? 'badge-success' : 'badge-muted'}`}>
                     {product.status === 'ACTIVE' ? 'Visible' : 'Hidden'}
                   </span>
                 )}
-                {isAdmin && <span className="badge">Stock: {product.stock}</span>}
+                {canManage && <span className="badge">Stock: {product.stock}</span>}
               </div>
               {product.description && <p className="product-description">{product.description}</p>}
               {product.status === 'ACTIVE' && product.stock > 0 && (
@@ -122,7 +128,7 @@ export default function ProductDetailPage() {
                   </Link>
                 </div>
               )}
-              {isAdmin && (
+              {canManage && (
                 <>
                   <p className="muted product-meta">
                     Created {formatDate(product.createdAt)} · Updated {formatDate(product.updatedAt)}
@@ -140,7 +146,7 @@ export default function ProductDetailPage() {
             </div>
           </section>
 
-          {isAdmin ? (
+          {canManage ? (
             <ProductViewers productId={product.id} />
           ) : (
             <p className="muted page-hint">

@@ -9,10 +9,15 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+
+import com.example.babything_api.modules.users.entity.User;
 
 @Entity
 @Table(name = "products")
@@ -46,8 +51,18 @@ public class Product {
     @Column(nullable = false)
     private ProductStatus status = ProductStatus.ACTIVE;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "item_condition", length = 20)
+    private ProductCondition condition;
+
+    /** Người bán (chủ tin đăng). */
     @Column(name = "created_by", updatable = false)
     private Long createdBy;
+
+    /** Chỉ đọc, để lấy tên người bán; ghi qua createdBy. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by", insertable = false, updatable = false)
+    private User seller;
 
     @Column(name = "updated_by")
     private Long updatedBy;
@@ -138,6 +153,23 @@ public class Product {
 
     public void setStatus(ProductStatus status) {
         this.status = status;
+    }
+
+    public ProductCondition getCondition() {
+        return condition;
+    }
+
+    public void setCondition(ProductCondition condition) {
+        this.condition = condition;
+    }
+
+    public User getSeller() {
+        return seller;
+    }
+
+    /** Gán cùng createdBy khi tạo mới để response có ngay tên người bán. */
+    public void setSeller(User seller) {
+        this.seller = seller;
     }
 
     public Long getCreatedBy() {
