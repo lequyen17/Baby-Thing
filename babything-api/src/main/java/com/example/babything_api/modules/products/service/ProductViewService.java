@@ -25,7 +25,9 @@ public class ProductViewService {
 
     @Transactional(readOnly = true)
     public PageResponse<ProductHistoryItem> myHistory(User user, int page, int size) {
-        return PageResponse.of(viewRepository.findHistory(user.getId(), pageRequest(page, size)),
+        // Tin đang ẩn chỉ người bán (không bao giờ có lượt xem tin mình) và admin được thấy
+        return PageResponse.of(
+                viewRepository.findHistory(user.getId(), ProductService.isAdmin(user), pageRequest(page, size)),
                 ProductHistoryItem::from);
     }
 
@@ -42,9 +44,10 @@ public class ProductViewService {
     @Transactional(readOnly = true)
     public ProductViewStats viewers(User user, Long productId, int page, int size) {
         productService.findManageable(user, productId);
+        boolean includeEmail = ProductService.isAdmin(user);
         return new ProductViewStats(viewRepository.sumViews(productId),
                 PageResponse.of(viewRepository.findViewers(productId, pageRequest(page, size)),
-                        ProductViewerItem::from));
+                        v -> ProductViewerItem.from(v, includeEmail)));
     }
 
     private static PageRequest pageRequest(int page, int size) {

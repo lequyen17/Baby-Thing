@@ -38,6 +38,7 @@ function fromOrder(order) {
       quantity: i.quantity,
     })),
     sellerId: order.seller?.id ?? null,
+    buyerId: order.customer.id,
     shipping: {
       recipientName: order.recipientName,
       phone: order.phone,
@@ -49,9 +50,10 @@ function fromOrder(order) {
 
 /**
  * Tìm sản phẩm theo tên/SKU để thêm vào đơn. Dùng GET /products (danh sách) nên không tính lượt xem.
+ * buyerId: người mua của đơn (admin sửa đơn của người khác thì khác user đang đăng nhập).
  * onlySellerId: khi sửa đơn, chỉ thêm được hàng của người bán của đơn đó.
  */
-function ProductPicker({ userId, onlySellerId, onPick }) {
+function ProductPicker({ buyerId, onlySellerId, onPick }) {
   const [q, setQ] = useState('');
   const [results, setResults] = useState([]);
 
@@ -86,7 +88,7 @@ function ProductPicker({ userId, onlySellerId, onPick }) {
         <ul className="order-picker-results">
           {results.map((p) => {
             // Server cũng chặn (OWN_PRODUCT, DIFFERENT_SELLER)
-            const own = p.sellerId === userId;
+            const own = p.sellerId === buyerId;
             const otherSeller = onlySellerId !== undefined && p.sellerId !== onlySellerId;
             return (
               <li key={p.id}>
@@ -138,6 +140,7 @@ export default function OrderFormPage() {
   );
   // Người bán của đơn đang sửa; undefined = tạo mới, hàng của ai cũng được
   const [orderSellerId, setOrderSellerId] = useState(passed ? passed.sellerId : undefined);
+  const [buyerId, setBuyerId] = useState(passed ? passed.buyerId : user.id);
   const [loaded, setLoaded] = useState(!isEdit || Boolean(passed));
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
@@ -154,6 +157,7 @@ export default function OrderFormPage() {
         const data = fromOrder(order);
         setItems(data.items);
         setOrderSellerId(data.sellerId);
+        setBuyerId(data.buyerId);
         setShipping(data.shipping);
         setLoaded(true);
       })
@@ -165,7 +169,10 @@ export default function OrderFormPage() {
       const existing = current.find((i) => i.productId === product.id);
       if (!existing) return [...current, fromProduct(product)];
       return current.map((i) =>
-        i.productId === product.id ? { ...i, stock: product.stock, quantity: Math.min(i.quantity + 1, MAX_QUANTITY) } : i,
+        // Tăng số lượng thì server tính lại cả dòng theo giá hiện tại
+        i.productId === product.id
+          ? { ...i, price: Number(product.price), stock: product.stock, quantity: Math.min(Number(i.quantity) + 1, MAX_QUANTITY) }
+          : i,
       );
     });
   };
@@ -224,7 +231,7 @@ export default function OrderFormPage() {
         <h1>{isEdit ? `Edit order #${id}` : 'New order'}</h1>
         <p className="muted">
           {isEdit
-            ? 'Pending orders can still be changed. Prices are updated to the current price when you save.'
+            ? 'Pending orders can still be changed. Items you keep or reduce keep their original price; new items and increased quantities use the current price.'
             : 'Stock is reserved as soon as the order is placed.'}
         </p>
       </div>
@@ -235,7 +242,7 @@ export default function OrderFormPage() {
         <form className="order-form" onSubmit={handleSubmit} noValidate>
           <section className="card">
             <h2 className="card-title">Products</h2>
-            <ProductPicker userId={user.id} onlySellerId={orderSellerId} onPick={addProduct} />
+            <ProductPicker buyerId={buyerId} onlySellerId={orderSellerId} onPick={addProduct} />
             {!isEdit && sellerCount > 1 && (
               <p className="muted">
                 These items come from {sellerCount} sellers, so they will be placed as {sellerCount} separate orders.

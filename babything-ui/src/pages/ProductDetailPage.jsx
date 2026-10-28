@@ -39,7 +39,7 @@ function ProductViewers({ productId }) {
                   <Avatar user={v} size={32} />
                   <div className="viewer-identity">
                     <strong>{v.displayName}</strong>
-                    <span className="muted">{v.email}</span>
+                    {v.email && <span className="muted">{v.email}</span>}
                   </div>
                   <div className="viewer-meta">
                     <span>

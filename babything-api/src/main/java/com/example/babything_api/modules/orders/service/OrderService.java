@@ -107,7 +107,7 @@ public class OrderService {
     @Transactional
     public List<OrderResponse> create(User customer, OrderRequest req) {
         Map<Long, List<Reserved>> bySeller = new LinkedHashMap<>();
-        reserve(customer, req.items()).forEach(r ->
+        reserve(customer, quantities(req.items())).forEach(r ->
                 bySeller.computeIfAbsent(r.seller() == null ? null : r.seller().getId(), k -> new ArrayList<>()).add(r));
 
         List<OrderResponse> created = new ArrayList<>();
@@ -123,8 +123,10 @@ public class OrderService {
     }
 
     /**
-     * Chỉ người mua (hoặc admin), khi đơn còn PENDING. Hoàn kho các dòng cũ rồi trừ lại theo dòng mới, giá lấy theo
-     * giá hiện tại. Mọi sản phẩm phải cùng người bán với đơn; muốn mua của người khác thì đặt đơn mới.
+     * Chỉ người mua (hoặc admin), khi đơn còn PENDING. Dòng giữ nguyên hoặc giảm số lượng thì giữ giá lúc đặt và chỉ
+     * hoàn phần bớt đi, nên vẫn sửa được khi sản phẩm đã bị ẩn / xoá. Dòng mới hoặc tăng số lượng thì hoàn kho dòng
+     * cũ rồi trừ lại toàn bộ theo giá hiện tại. Mọi sản phẩm phải cùng người bán với đơn; muốn mua của người khác
+     * thì đặt đơn mới.
      */
     @Transactional
     public OrderResponse update(User viewer, Long id, OrderRequest req) {
@@ -136,9 +138,29 @@ public class OrderService {
             throw new ApiException(HttpStatus.CONFLICT, "ORDER_NOT_EDITABLE",
                     "Only pending orders can be changed");
         }
-        release(order);
         applyShipping(order, req);
-        List<Reserved> reserved = reserve(order.getUser(), req.items());
+
+        Map<Long, Integer> wanted = quantities(req.items());
+        Map<Long, Integer> toReserve = new TreeMap<>(wanted);
+        List<OrderItem> kept = new ArrayList<>();
+        order.getItems().stream()
+                .sorted(Comparator.comparing(OrderItem::getProductId))
+                .forEach(item -> {
+                    Integer quantity = wanted.get(item.getProductId());
+                    if (quantity != null && quantity <= item.getQuantity()) {
+                        if (quantity < item.getQuantity()) {
+                            productRepository.increaseStock(item.getProductId(), item.getQuantity() - quantity);
+                            item.setQuantity(quantity);
+                            item.setLineTotal(item.getUnitPrice().multiply(BigDecimal.valueOf(quantity)));
+                        }
+                        kept.add(item);
+                        toReserve.remove(item.getProductId());
+                    } else {
+                        productRepository.increaseStock(item.getProductId(), item.getQuantity());
+                    }
+                });
+
+        List<Reserved> reserved = reserve(order.getUser(), toReserve);
         Long sellerId = sellerId(order);
         reserved.stream()
                 .filter(r -> !Objects.equals(r.seller() == null ? null : r.seller().getId(), sellerId))
@@ -148,7 +170,10 @@ public class OrderService {
                             "\"" + r.item().getProductName() + "\" is sold by someone else. "
                                     + "Place a new order for it instead");
                 });
-        order.replaceItems(reserved.stream().map(Reserved::item).toList());
+        List<OrderItem> items = new ArrayList<>(kept);
+        reserved.forEach(r -> items.add(r.item()));
+        items.sort(Comparator.comparing(OrderItem::getProductId));
+        order.replaceItems(items);
         return toResponse(viewer, orderRepository.saveAndFlush(order));
     }
 
@@ -195,14 +220,18 @@ public class OrderService {
 
     // ---------------------------------------------------------------- Tồn kho
 
-    /**
-     * Gộp các dòng trùng sản phẩm, trừ kho theo thứ tự productId (tránh deadlock giữa hai đơn cùng lúc)
-     * và chụp lại tên / giá sản phẩm vào dòng hàng. Người mua không được đặt tin đăng của chính mình.
-     */
-    private List<Reserved> reserve(User buyer, List<OrderItemRequest> requested) {
+    /** Gộp các dòng trùng sản phẩm; TreeMap để trừ kho theo thứ tự productId (tránh deadlock giữa hai đơn cùng lúc). */
+    private static Map<Long, Integer> quantities(List<OrderItemRequest> requested) {
         Map<Long, Integer> quantities = new TreeMap<>();
         requested.forEach(i -> quantities.merge(i.productId(), i.quantity(), Integer::sum));
+        return quantities;
+    }
 
+    /**
+     * Trừ kho theo thứ tự của quantities và chụp lại tên / giá sản phẩm vào dòng hàng.
+     * Người mua không được đặt tin đăng của chính mình.
+     */
+    private List<Reserved> reserve(User buyer, Map<Long, Integer> quantities) {
         List<Reserved> items = new ArrayList<>();
         quantities.forEach((productId, quantity) -> {
             Product product = productRepository.findByIdAndDeletedAtIsNull(productId)

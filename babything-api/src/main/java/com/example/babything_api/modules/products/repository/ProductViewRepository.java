@@ -20,15 +20,20 @@ public interface ProductViewRepository extends JpaRepository<ProductView, Long> 
             nativeQuery = true)
     void record(@Param("userId") Long userId, @Param("productId") Long productId);
 
-    /** Lịch sử của một user, bỏ qua sản phẩm đã xoá. */
+    /** Lịch sử của một user, bỏ qua sản phẩm đã xoá; bỏ cả sản phẩm đang ẩn trừ khi includeHidden. */
     @Query(value = """
             select v from ProductView v join fetch v.product p
             where v.user.id = :userId and p.deletedAt is null
+            and (:includeHidden = true
+                 or p.status = com.example.babything_api.modules.products.entity.ProductStatus.ACTIVE)
             order by v.lastViewedAt desc""",
             countQuery = """
             select count(v) from ProductView v
-            where v.user.id = :userId and v.product.deletedAt is null""")
-    Page<ProductView> findHistory(@Param("userId") Long userId, Pageable pageable);
+            where v.user.id = :userId and v.product.deletedAt is null
+            and (:includeHidden = true
+                 or v.product.status = com.example.babything_api.modules.products.entity.ProductStatus.ACTIVE)""")
+    Page<ProductView> findHistory(@Param("userId") Long userId, @Param("includeHidden") boolean includeHidden,
+            Pageable pageable);
 
     /** Những ai đã xem một sản phẩm (cho admin). */
     @Query(value = """

@@ -130,7 +130,7 @@ Mục **Orders** (`/orders`) trên header:
 - **Danh sách đơn**: tab **Purchases** (đơn bạn đặt) và **Sales** (đơn người khác đặt tin của bạn); ADMIN có thêm tab **All orders**. Tìm theo mã đơn (`#12`), tên người nhận, số điện thoại (ADMIN tìm được cả email người mua), lọc theo trạng thái, sắp xếp theo ngày/tổng tiền.
 - **Tạo đơn**: nút **New order** hoặc **Order now** ở trang chi tiết sản phẩm. Chọn sản phẩm, số lượng, nhập thông tin giao hàng. Tồn kho bị trừ ngay khi đặt; không đủ hàng thì báo lỗi. Không đặt được tin đăng của chính mình.
 - **Xem đơn**: dòng hàng (tên, giá được lưu lại lúc đặt), tổng tiền, người bán, thông tin giao hàng, tiến trình xử lý. Người bán thấy tên người mua và thông tin giao hàng, không thấy email tài khoản.
-- **Sửa đơn**: người mua (hoặc ADMIN), chỉ khi đơn còn **Pending**. Sửa được sản phẩm, số lượng và thông tin giao hàng; giá được cập nhật theo giá hiện tại. Chỉ thêm được hàng của cùng người bán; hàng của người khác thì đặt đơn mới.
+- **Sửa đơn**: người mua (hoặc ADMIN), chỉ khi đơn còn **Pending**. Sửa được sản phẩm, số lượng và thông tin giao hàng. Dòng giữ nguyên hoặc giảm số lượng thì giữ giá lúc đặt (sửa được cả khi sản phẩm đã bị ẩn/xoá); dòng mới hoặc tăng số lượng thì tính theo giá hiện tại. Chỉ thêm được hàng của cùng người bán; hàng của người khác thì đặt đơn mới.
 - **Huỷ đơn**: người mua huỷ được khi **Pending**; người bán và ADMIN huỷ được cả khi **Confirmed**. Huỷ thì hàng được cộng lại vào kho.
 - Người bán (hoặc ADMIN) chuyển trạng thái theo thứ tự **Pending → Confirmed → Shipping → Delivered**.
 
