@@ -6,7 +6,6 @@ import java.nio.charset.StandardCharsets;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -42,8 +41,7 @@ public class SecurityConfig {
                                 "/error")
                         .permitAll()
                         // Sản phẩm: mọi thành viên đăng bán được; quyền sửa/xoá theo chủ tin kiểm tra trong ProductService
-                        // Đơn hàng: quyền sở hữu kiểm tra trong OrderService, riêng đổi trạng thái dành cho ADMIN
-                        .requestMatchers(HttpMethod.PATCH, "/api/orders/*/status").hasRole("ADMIN")
+                        // Đơn hàng: quyền người mua / người bán / admin kiểm tra trong OrderService
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, e) -> writeError(response,

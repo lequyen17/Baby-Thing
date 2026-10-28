@@ -18,12 +18,12 @@ import com.example.babything_api.modules.orders.entity.Order;
 
 public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecificationExecutor<Order> {
 
-    /** Nạp kèm khách hàng để trang danh sách không truy vấn users từng dòng. */
+    /** Nạp kèm người mua và người bán để trang danh sách không truy vấn users từng dòng. */
     @Override
-    @EntityGraph(attributePaths = "user")
+    @EntityGraph(attributePaths = { "user", "seller" })
     Page<Order> findAll(Specification<Order> spec, Pageable pageable);
 
-    @EntityGraph(attributePaths = { "user", "items" })
+    @EntityGraph(attributePaths = { "user", "seller", "items" })
     @Query("select o from ShopOrder o where o.id = :id")
     Optional<Order> findDetail(@Param("id") Long id);
 

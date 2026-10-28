@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Alert } from '../components/Form';
@@ -24,11 +24,20 @@ function itemSummary(items) {
   return rest.length > 0 ? `${first.productName} + ${rest.length} more` : first.productName;
 }
 
-/** Khách thấy đơn của mình, admin thấy tất cả. Bộ lọc nằm trên URL giống trang Products. */
+/** Tab ứng với tham số view của API; '' = tất cả (chỉ admin). */
+const VIEWS = [
+  ['buying', 'Purchases'],
+  ['selling', 'Sales'],
+];
+
+/** Đơn mua / đơn bán của mình; admin có thêm tab tất cả. Bộ lọc nằm trên URL giống trang Products. */
 export default function OrderListPage() {
   const { user } = useAuth();
   const isAdmin = user.role === 'ADMIN';
+  const notice = useLocation().state?.notice ?? '';
   const [params, setParams] = useSearchParams();
+  const view = params.get('view') ?? (isAdmin ? '' : 'buying');
+  const views = isAdmin ? [['', 'All orders'], ...VIEWS] : VIEWS;
   const q = params.get('q') ?? '';
   const status = params.get('status') ?? '';
   const sort = params.get('sort') ?? 'newest';
@@ -43,6 +52,7 @@ export default function OrderListPage() {
   useEffect(() => {
     let cancelled = false;
     const query = new URLSearchParams({ sort, page: String(page), size: String(PAGE_SIZE) });
+    if (view) query.set('view', view);
     if (q) query.set('q', q);
     if (status) query.set('status', status);
     setError('');
@@ -52,7 +62,7 @@ export default function OrderListPage() {
     return () => {
       cancelled = true;
     };
-  }, [q, status, sort, page]);
+  }, [view, q, status, sort, page]);
 
   const updateParams = (changes) => {
     const next = new URLSearchParams(params);
@@ -67,12 +77,14 @@ export default function OrderListPage() {
   };
 
   const filtered = Boolean(q || status);
+  const selling = view === 'selling';
 
   return (
     <div className="page">
+      <Alert type="success">{notice}</Alert>
       <div className="page-header page-header-row">
         <div>
-          <h1>{isAdmin ? 'All orders' : 'My orders'}</h1>
+          <h1>Orders</h1>
           <p className="muted">
             {result ? `${result.totalItems} order${result.totalItems === 1 ? '' : 's'}` : 'Loading...'}
           </p>
@@ -80,6 +92,22 @@ export default function OrderListPage() {
         <Link to="/orders/new" className="btn btn-primary">
           <PlusIcon /> New order
         </Link>
+      </div>
+
+      <div className="segmented" role="tablist">
+        {views.map(([value, label]) => (
+          <button
+            key={value || 'all'}
+            type="button"
+            role="tab"
+            aria-selected={view === value}
+            className={view === value ? 'is-active' : undefined}
+            // Tab mặc định không cần ghi lên URL; admin chọn "tất cả" cũng vậy
+            onClick={() => updateParams({ view: value === (isAdmin ? '' : 'buying') ? '' : value })}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       <form className="card product-toolbar" onSubmit={handleSearch} role="search">
@@ -120,6 +148,10 @@ export default function OrderListPage() {
           <p className="muted">
             {filtered ? (
               'No orders match your filters.'
+            ) : selling ? (
+              <>
+                Nobody has ordered your listings yet. <Link to="/products/new">Sell an item</Link>
+              </>
             ) : (
               <>
                 You have no orders yet. <Link to="/products">Browse products</Link>
@@ -146,7 +178,9 @@ export default function OrderListPage() {
                   <span className="order-row-items">{itemSummary(order.items)}</span>
                   <span className="muted order-row-meta">
                     {formatDate(order.createdAt)} · {order.totalQuantity} item{order.totalQuantity === 1 ? '' : 's'}
-                    {isAdmin && ` · ${order.customer.email}`}
+                    {view === 'buying'
+                      ? order.seller && ` · Seller: ${order.seller.displayName}`
+                      : ` · Buyer: ${order.customer.email ?? order.customer.displayName}`}
                   </span>
                 </div>
                 <span className="product-price order-row-total">{formatPrice(order.totalAmount)}</span>

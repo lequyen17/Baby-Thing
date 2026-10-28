@@ -41,6 +41,11 @@ public class Order {
     @JoinColumn(name = "user_id", nullable = false, updatable = false)
     private User user;
 
+    /** Người bán của mọi dòng hàng trong đơn; null khi tin đăng không còn người bán. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "seller_id", updatable = false)
+    private User seller;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OrderStatus status = OrderStatus.PENDING;
@@ -134,6 +139,14 @@ public class Order {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public User getSeller() {
+        return seller;
+    }
+
+    public void setSeller(User seller) {
+        this.seller = seller;
     }
 
     public OrderStatus getStatus() {

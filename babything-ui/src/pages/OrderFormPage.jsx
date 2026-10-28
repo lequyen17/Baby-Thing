@@ -17,6 +17,8 @@ function fromProduct(product, quantity = 1) {
     imageUrl: product.imageUrl,
     price: Number(product.price),
     stock: product.stock,
+    sellerId: product.sellerId,
+    sellerName: product.sellerName,
     quantity,
   };
 }
@@ -31,8 +33,11 @@ function fromOrder(order) {
       price: Number(i.unitPrice),
       // Kho hiện tại đã trừ phần của đơn này, nên không giới hạn được chính xác ở client
       stock: null,
+      sellerId: order.seller?.id ?? null,
+      sellerName: order.seller?.displayName ?? null,
       quantity: i.quantity,
     })),
+    sellerId: order.seller?.id ?? null,
     shipping: {
       recipientName: order.recipientName,
       phone: order.phone,
@@ -42,8 +47,11 @@ function fromOrder(order) {
   };
 }
 
-/** Tìm sản phẩm theo tên/SKU để thêm vào đơn. Dùng GET /products (danh sách) nên không tính lượt xem. */
-function ProductPicker({ userId, onPick }) {
+/**
+ * Tìm sản phẩm theo tên/SKU để thêm vào đơn. Dùng GET /products (danh sách) nên không tính lượt xem.
+ * onlySellerId: khi sửa đơn, chỉ thêm được hàng của người bán của đơn đó.
+ */
+function ProductPicker({ userId, onlySellerId, onPick }) {
   const [q, setQ] = useState('');
   const [results, setResults] = useState([]);
 
@@ -77,21 +85,28 @@ function ProductPicker({ userId, onPick }) {
       {results.length > 0 && (
         <ul className="order-picker-results">
           {results.map((p) => {
-            // Server cũng chặn (OWN_PRODUCT)
+            // Server cũng chặn (OWN_PRODUCT, DIFFERENT_SELLER)
             const own = p.sellerId === userId;
+            const otherSeller = onlySellerId !== undefined && p.sellerId !== onlySellerId;
             return (
               <li key={p.id}>
                 <button
                   type="button"
                   className="order-picker-item"
                   onClick={() => onPick(p)}
-                  disabled={own || p.stock <= 0}
+                  disabled={own || otherSeller || p.stock <= 0}
                   aria-label={`Add ${p.name}`}
                 >
                   <ProductImage product={p} className="order-picker-thumb" />
                   <span className="order-picker-name">{p.name}</span>
                   <span className="muted">
-                    {own ? 'Your listing' : p.stock > 0 ? `${p.stock} in stock` : 'Out of stock'}
+                    {own
+                      ? 'Your listing'
+                      : otherSeller
+                        ? 'Different seller'
+                        : p.stock > 0
+                          ? `${p.stock} in stock`
+                          : 'Out of stock'}
                   </span>
                   <span className="product-price">{formatPrice(p.price)}</span>
                   <PlusIcon size={16} />
@@ -121,6 +136,8 @@ export default function OrderFormPage() {
   const [shipping, setShipping] = useState(
     passed?.shipping ?? { recipientName: user.displayName ?? '', phone: '', address: '', note: '' },
   );
+  // Người bán của đơn đang sửa; undefined = tạo mới, hàng của ai cũng được
+  const [orderSellerId, setOrderSellerId] = useState(passed ? passed.sellerId : undefined);
   const [loaded, setLoaded] = useState(!isEdit || Boolean(passed));
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
@@ -136,6 +153,7 @@ export default function OrderFormPage() {
         }
         const data = fromOrder(order);
         setItems(data.items);
+        setOrderSellerId(data.sellerId);
         setShipping(data.shipping);
         setLoaded(true);
       })
@@ -160,6 +178,8 @@ export default function OrderFormPage() {
   const updateShipping = (key) => (e) => setShipping({ ...shipping, [key]: e.target.value });
 
   const total = items.reduce((sum, i) => sum + i.price * (Number(i.quantity) || 0), 0);
+  // Server tách một đơn cho mỗi người bán
+  const sellerCount = new Set(items.map((i) => i.sellerId)).size;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -172,10 +192,17 @@ export default function OrderFormPage() {
         items: items.map((i) => ({ productId: i.productId, quantity: Number(i.quantity) || null })),
       };
       const saved = await api(isEdit ? `/orders/${id}` : '/orders', { method: isEdit ? 'PUT' : 'POST', body });
-      navigate(`/orders/${saved.id}`, {
-        replace: true,
-        state: { notice: isEdit ? 'Order updated.' : 'Order placed successfully.' },
-      });
+      if (isEdit) {
+        navigate(`/orders/${saved.id}`, { replace: true, state: { notice: 'Order updated.' } });
+      } else if (saved.length === 1) {
+        navigate(`/orders/${saved[0].id}`, { replace: true, state: { notice: 'Order placed successfully.' } });
+      } else {
+        const ids = saved.map((o) => `#${o.id}`).join(', ');
+        navigate('/orders', {
+          replace: true,
+          state: { notice: `Placed ${saved.length} orders, one for each seller: ${ids}.` },
+        });
+      }
     } catch (err) {
       const fields = err.fields || {};
       // Lỗi từng dòng hàng (items[0].quantity) gộp vào thông báo chung
@@ -208,7 +235,12 @@ export default function OrderFormPage() {
         <form className="order-form" onSubmit={handleSubmit} noValidate>
           <section className="card">
             <h2 className="card-title">Products</h2>
-            <ProductPicker userId={user.id} onPick={addProduct} />
+            <ProductPicker userId={user.id} onlySellerId={orderSellerId} onPick={addProduct} />
+            {!isEdit && sellerCount > 1 && (
+              <p className="muted">
+                These items come from {sellerCount} sellers, so they will be placed as {sellerCount} separate orders.
+              </p>
+            )}
             {fieldErrors.items && <small className="field-error">{fieldErrors.items}</small>}
 
             {items.length === 0 ? (
@@ -223,6 +255,7 @@ export default function OrderFormPage() {
                       <span className="muted">
                         {formatPrice(item.price)}
                         {item.stock !== null && ` · ${item.stock} in stock`}
+                        {item.sellerName && ` · Seller: ${item.sellerName}`}
                       </span>
                     </div>
                     <input

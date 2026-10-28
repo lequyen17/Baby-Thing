@@ -11,7 +11,7 @@ public enum OrderStatus {
     DELIVERED,
     CANCELLED;
 
-    /** Các bước admin được chuyển tới bằng PATCH /status. Huỷ đi qua endpoint /cancel riêng để hoàn kho. */
+    /** Các bước người bán / admin được chuyển tới bằng PATCH /status. Huỷ đi qua endpoint /cancel riêng để hoàn kho. */
     private static final Map<OrderStatus, Set<OrderStatus>> NEXT = Map.of(
             PENDING, Set.of(CONFIRMED),
             CONFIRMED, Set.of(SHIPPING),
@@ -23,12 +23,13 @@ public enum OrderStatus {
         return NEXT.get(this).contains(next);
     }
 
-    /** Khách chỉ sửa / huỷ được khi shop chưa xác nhận. */
+    /** Người mua chỉ sửa / huỷ được khi người bán chưa xác nhận. */
     public boolean isEditable() {
         return this == PENDING;
     }
 
-    public boolean isCancellableByAdmin() {
+    /** Người bán / admin huỷ được khi chưa giao cho vận chuyển. */
+    public boolean isCancellableBySeller() {
         return this == PENDING || this == CONFIRMED;
     }
 }

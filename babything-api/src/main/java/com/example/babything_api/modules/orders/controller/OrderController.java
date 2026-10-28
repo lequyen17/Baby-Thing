@@ -1,5 +1,7 @@
 package com.example.babything_api.modules.orders.controller;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,7 +26,7 @@ import com.example.babything_api.modules.orders.dto.OrderStatusRequest;
 import com.example.babything_api.modules.orders.entity.OrderStatus;
 import com.example.babything_api.modules.orders.service.OrderService;
 
-/** Khách chỉ thấy đơn của mình (kiểm tra trong OrderService); PATCH /{id}/status chỉ dành cho ADMIN. */
+/** Quyền người mua / người bán / admin kiểm tra trong OrderService. */
 @RestController
 @RequestMapping("/api/orders")
 public class OrderController {
@@ -37,12 +39,13 @@ public class OrderController {
 
     @GetMapping
     PageResponse<OrderResponse> list(@AuthenticationPrincipal AuthPrincipal principal,
+            @RequestParam(required = false) String view,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) OrderStatus status,
             @RequestParam(defaultValue = "newest") String sort,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return orderService.list(principal.user(), new OrderService.ListQuery(q, status, sort, page, size));
+        return orderService.list(principal.user(), new OrderService.ListQuery(view, q, status, sort, page, size));
     }
 
     @GetMapping("/{id}")
@@ -50,9 +53,10 @@ public class OrderController {
         return orderService.get(principal.user(), id);
     }
 
+    /** Trả về danh sách: hàng của nhiều người bán được tách thành một đơn cho mỗi người bán. */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    OrderResponse create(@AuthenticationPrincipal AuthPrincipal principal, @Valid @RequestBody OrderRequest req) {
+    List<OrderResponse> create(@AuthenticationPrincipal AuthPrincipal principal, @Valid @RequestBody OrderRequest req) {
         return orderService.create(principal.user(), req);
     }
 

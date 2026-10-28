@@ -123,25 +123,29 @@ API (chi tiết xem Swagger):
 
 ## Quản lý đơn hàng
 
+Mỗi đơn có một người mua và **một người bán**. Đặt cùng lúc hàng của nhiều người bán thì hệ thống tách thành nhiều đơn, mỗi người bán một đơn, mỗi đơn xử lý riêng.
+
 Mục **Orders** (`/orders`) trên header:
 
-- **Danh sách đơn**: khách thấy đơn của mình, ADMIN thấy tất cả. Tìm theo mã đơn (`#12`), tên người nhận, số điện thoại (ADMIN tìm được cả email khách), lọc theo trạng thái, sắp xếp theo ngày/tổng tiền.
-- **Tạo đơn**: nút **New order** hoặc **Order now** ở trang chi tiết sản phẩm. Chọn sản phẩm, số lượng, nhập thông tin giao hàng. Tồn kho bị trừ ngay khi đặt; không đủ hàng thì báo lỗi.
-- **Xem đơn**: dòng hàng (tên, giá được lưu lại lúc đặt), tổng tiền, thông tin giao hàng, tiến trình xử lý.
-- **Sửa đơn**: chỉ khi đơn còn **Pending**. Sửa được sản phẩm, số lượng và thông tin giao hàng; giá được cập nhật theo giá hiện tại.
-- **Huỷ đơn**: khách huỷ được khi **Pending**, ADMIN huỷ được cả khi **Confirmed**. Huỷ thì hàng được cộng lại vào kho.
-- ADMIN chuyển trạng thái theo thứ tự **Pending → Confirmed → Shipping → Delivered**.
+- **Danh sách đơn**: tab **Purchases** (đơn bạn đặt) và **Sales** (đơn người khác đặt tin của bạn); ADMIN có thêm tab **All orders**. Tìm theo mã đơn (`#12`), tên người nhận, số điện thoại (ADMIN tìm được cả email người mua), lọc theo trạng thái, sắp xếp theo ngày/tổng tiền.
+- **Tạo đơn**: nút **New order** hoặc **Order now** ở trang chi tiết sản phẩm. Chọn sản phẩm, số lượng, nhập thông tin giao hàng. Tồn kho bị trừ ngay khi đặt; không đủ hàng thì báo lỗi. Không đặt được tin đăng của chính mình.
+- **Xem đơn**: dòng hàng (tên, giá được lưu lại lúc đặt), tổng tiền, người bán, thông tin giao hàng, tiến trình xử lý. Người bán thấy tên người mua và thông tin giao hàng, không thấy email tài khoản.
+- **Sửa đơn**: người mua (hoặc ADMIN), chỉ khi đơn còn **Pending**. Sửa được sản phẩm, số lượng và thông tin giao hàng; giá được cập nhật theo giá hiện tại. Chỉ thêm được hàng của cùng người bán; hàng của người khác thì đặt đơn mới.
+- **Huỷ đơn**: người mua huỷ được khi **Pending**; người bán và ADMIN huỷ được cả khi **Confirmed**. Huỷ thì hàng được cộng lại vào kho.
+- Người bán (hoặc ADMIN) chuyển trạng thái theo thứ tự **Pending → Confirmed → Shipping → Delivered**.
 
 | Method | Đường dẫn | Quyền |
 | ------ | --------- | ----- |
-| `GET` | `/api/orders?q=&status=&sort=&page=&size=` | Đã đăng nhập (khách chỉ thấy đơn của mình) |
-| `GET` | `/api/orders/{id}` | Chủ đơn hoặc ADMIN |
-| `POST` | `/api/orders` | Đã đăng nhập |
-| `PUT` | `/api/orders/{id}` | Chủ đơn hoặc ADMIN, đơn đang `PENDING` |
-| `POST` | `/api/orders/{id}/cancel` (body tuỳ chọn `{"reason": "..."}`) | Chủ đơn (`PENDING`) hoặc ADMIN (`PENDING`/`CONFIRMED`) |
-| `PATCH` | `/api/orders/{id}/status` (body `{"status": "CONFIRMED"}`) | ADMIN |
+| `GET` | `/api/orders?view=&q=&status=&sort=&page=&size=` | Đã đăng nhập. `view=buying` (mặc định) / `selling`; ADMIN bỏ trống `view` thì thấy tất cả |
+| `GET` | `/api/orders/{id}` | Người mua, người bán hoặc ADMIN |
+| `POST` | `/api/orders` (trả về **mảng** đơn, một đơn mỗi người bán) | Đã đăng nhập |
+| `PUT` | `/api/orders/{id}` | Người mua hoặc ADMIN, đơn đang `PENDING` |
+| `POST` | `/api/orders/{id}/cancel` (body tuỳ chọn `{"reason": "..."}`) | Người mua (`PENDING`), người bán hoặc ADMIN (`PENDING`/`CONFIRMED`) |
+| `PATCH` | `/api/orders/{id}/status` (body `{"status": "CONFIRMED"}`) | Người bán hoặc ADMIN |
 
 `status` nhận `PENDING`, `CONFIRMED`, `SHIPPING`, `DELIVERED`, `CANCELLED`. `sort` nhận `newest` (mặc định), `oldest`, `total_desc`, `total_asc`.
+
+Đơn tạo trước khi có tính năng tách đơn mà chứa hàng của nhiều người bán được migration `V5` tách sẵn, giữ nguyên người mua, thông tin giao hàng, trạng thái và thời gian.
 
 ## Lệnh thường dùng
 

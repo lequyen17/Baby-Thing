@@ -26,7 +26,6 @@ function OrderProgress({ status }) {
 export default function OrderDetailPage() {
   const { id } = useParams();
   const { user } = useAuth();
-  const isAdmin = user.role === 'ADMIN';
   const location = useLocation();
   const [order, setOrder] = useState(null);
   const [error, setError] = useState('');
@@ -67,11 +66,11 @@ export default function OrderDetailPage() {
       `Order is now ${ORDER_STATUSES[step.status].label.toLowerCase()}.`,
     );
 
-  const perms = order ? orderPermissions(order, isAdmin) : null;
+  const perms = order ? orderPermissions(order, user) : null;
 
   return (
     <div className="page">
-      <Link to="/orders" className="back-link">
+      <Link to={perms?.isSeller ? '/orders?view=selling' : '/orders'} className="back-link">
         <ArrowLeftIcon size={16} /> All orders
       </Link>
       <Alert type="success">{notice}</Alert>
@@ -87,6 +86,12 @@ export default function OrderDetailPage() {
               </h1>
               <p className="muted">
                 Placed {formatDate(order.createdAt)} · Updated {formatDate(order.updatedAt)}
+                {order.seller && !perms.isSeller && (
+                  <>
+                    {' · Seller: '}
+                    <Link to={`/sellers/${order.seller.id}`}>{order.seller.displayName}</Link>
+                  </>
+                )}
               </p>
             </div>
             <div className="product-actions order-actions">
@@ -160,13 +165,18 @@ export default function OrderDetailPage() {
                     <dd>{order.note}</dd>
                   </>
                 )}
-                {isAdmin && (
+                {!perms.isBuyer && (
                   <>
-                    <dt>Customer</dt>
+                    <dt>Buyer</dt>
                     <dd>
                       {order.customer.displayName}
-                      <br />
-                      <span className="muted">{order.customer.email}</span>
+                      {/* Server chỉ trả email cho admin */}
+                      {order.customer.email && (
+                        <>
+                          <br />
+                          <span className="muted">{order.customer.email}</span>
+                        </>
+                      )}
                     </dd>
                   </>
                 )}

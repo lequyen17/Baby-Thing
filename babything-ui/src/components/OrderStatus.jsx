@@ -7,7 +7,7 @@ export const ORDER_STATUSES = {
   CANCELLED: { label: 'Cancelled', badge: 'badge-muted' },
 };
 
-/** Admin bấm nút này để đẩy đơn sang bước tiếp theo. */
+/** Người bán / admin bấm nút này để đẩy đơn sang bước tiếp theo. */
 export const NEXT_STEP = {
   PENDING: { status: 'CONFIRMED', label: 'Confirm order' },
   CONFIRMED: { status: 'SHIPPING', label: 'Mark as shipping' },
@@ -21,11 +21,20 @@ export function OrderStatusBadge({ status }) {
   return <span className={`badge ${info.badge}`}>{info.label}</span>;
 }
 
-/** Quyền thao tác giống OrderService: khách sửa/huỷ khi PENDING, admin huỷ được cả CONFIRMED. */
-export function orderPermissions(order, isAdmin) {
+/**
+ * Quyền thao tác giống OrderService: người mua sửa/huỷ khi PENDING; người bán và admin chuyển bước,
+ * huỷ được cả khi CONFIRMED.
+ */
+export function orderPermissions(order, user) {
+  const isAdmin = user.role === 'ADMIN';
+  const isBuyer = order.customer.id === user.id;
+  const isSeller = order.seller?.id === user.id;
+  const canManage = isAdmin || isSeller;
   return {
-    canEdit: order.status === 'PENDING',
-    canCancel: order.status === 'PENDING' || (isAdmin && order.status === 'CONFIRMED'),
-    nextStep: isAdmin ? NEXT_STEP[order.status] : undefined,
+    isBuyer,
+    isSeller,
+    canEdit: order.status === 'PENDING' && (isBuyer || isAdmin),
+    canCancel: canManage ? order.status === 'PENDING' || order.status === 'CONFIRMED' : order.status === 'PENDING',
+    nextStep: canManage ? NEXT_STEP[order.status] : undefined,
   };
 }
