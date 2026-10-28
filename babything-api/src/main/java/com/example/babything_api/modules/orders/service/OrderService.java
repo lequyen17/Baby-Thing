@@ -32,6 +32,7 @@ import com.example.babything_api.modules.orders.entity.Order;
 import com.example.babything_api.modules.orders.entity.OrderItem;
 import com.example.babything_api.modules.orders.entity.OrderStatus;
 import com.example.babything_api.modules.orders.repository.OrderRepository;
+import com.example.babything_api.modules.notifications.service.NotificationService;
 import com.example.babything_api.modules.products.entity.Product;
 import com.example.babything_api.modules.products.entity.ProductStatus;
 import com.example.babything_api.modules.products.repository.ProductRepository;
@@ -61,9 +62,24 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
 
-    public OrderService(OrderRepository orderRepository, ProductRepository productRepository) {
+    private final NotificationService notifications;
+
+    public OrderService(OrderRepository orderRepository, ProductRepository productRepository,
+            NotificationService notifications) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
+        this.notifications = notifications;
+    }
+
+    /** Báo cho người bán có đơn mới, hoặc cho bên còn lại khi đơn đổi trạng thái / bị huỷ (không báo cho chính người thao tác). */
+    private void notifyOrder(Order order, User actor, String title, String body) {
+        String link = "/orders/" + order.getId();
+        if (order.getUser() != null && !order.getUser().getId().equals(actor.getId())) {
+            notifications.notify(order.getUser().getId(), NotificationService.ORDER, title, body, link);
+        }
+        if (order.getSeller() != null && !order.getSeller().getId().equals(actor.getId())) {
+            notifications.notify(order.getSeller().getId(), NotificationService.ORDER, title, body, link);
+        }
     }
 
     public record ListQuery(String view, String q, OrderStatus status, String sort, int page, int size) {
@@ -120,7 +136,14 @@ public class OrderService {
             order.setSeller(group.get(0).seller());
             applyShipping(order, req);
             order.replaceItems(group.stream().map(Reserved::item).toList());
-            created.add(toResponse(customer, orderRepository.saveAndFlush(order)));
+            Order saved = orderRepository.saveAndFlush(order);
+            if (saved.getSeller() != null) {
+                notifications.notify(saved.getSeller().getId(), NotificationService.ORDER,
+                        "Bạn có đơn hàng mới #" + saved.getId(),
+                        customer.getDisplayName() + " vừa đặt mua " + saved.getItems().size() + " sản phẩm của bạn.",
+                        "/orders/" + saved.getId());
+            }
+            created.add(toResponse(customer, saved));
         }
         return created;
     }
@@ -205,7 +228,10 @@ public class OrderService {
         order.setCancelReason(blankToNull(reason));
         order.setCancelledBy(viewer.getId());
         order.setCancelledAt(Instant.now());
-        return toResponse(viewer, orderRepository.saveAndFlush(order));
+        Order saved = orderRepository.saveAndFlush(order);
+        notifyOrder(saved, viewer, "Đơn hàng #" + saved.getId() + " đã bị huỷ",
+                saved.getCancelReason() == null ? "Đơn đã được huỷ." : "Lý do: " + saved.getCancelReason());
+        return toResponse(viewer, saved);
     }
 
     /** Người bán / admin đẩy đơn sang bước kế tiếp. Huỷ phải đi qua cancel() để hoàn kho. */
@@ -225,7 +251,10 @@ public class OrderService {
                     "Không thể chuyển đơn từ \"" + order.getStatus().label() + "\" sang \"" + status.label() + "\"");
         }
         order.setStatus(status);
-        return toResponse(viewer, orderRepository.saveAndFlush(order));
+        Order saved = orderRepository.saveAndFlush(order);
+        notifyOrder(saved, viewer, "Đơn hàng #" + saved.getId() + " chuyển sang \"" + status.label() + "\"",
+                "Mở đơn hàng để xem chi tiết.");
+        return toResponse(viewer, saved);
     }
 
     // ---------------------------------------------------------------- Tồn kho

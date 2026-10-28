@@ -11,7 +11,8 @@ import {
   PlusIcon,
   SearchIcon,
 } from '../components/Icons';
-import { useMessages } from '../messages/useMessages';
+import { useUnreadMessages } from '../messages/useMessages';
+import { useRealtime } from '../realtime/useRealtime';
 import NotificationBell from '../notifications/NotificationBell';
 import { POLICY_LIST } from '../content/pages';
 import { UserMenu } from '../components/UserMenu';
@@ -26,7 +27,8 @@ export default function AppLayout() {
   const activeCategory = params.get('category') ?? '';
   const [search, setSearch] = useState(params.get('q') ?? '');
   const [categories, setCategories] = useState([]);
-  const { unread: unreadMessages } = useMessages(user.id);
+  useRealtime(user.id);
+  const unreadMessages = useUnreadMessages(user.id);
 
   useEffect(() => {
     api('/products/categories')

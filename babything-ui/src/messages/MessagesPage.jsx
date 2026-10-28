@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { Avatar } from '../components/Avatar';
 import { ArrowLeftIcon, CameraIcon, InfoIcon, MessageIcon, SearchIcon, XIcon } from '../components/Icons';
 import { categoryArt } from '../utils/categoryArt';
 import { formatPrice, timeAgo } from '../utils/format';
-import { MAX_IMAGES, MAX_TEXT, hasOffPlatformContact, lastMessage, unreadCount, useMessages } from './useMessages';
+import { MAX_IMAGES, MAX_TEXT, hasOffPlatformContact, useMessages, useThread } from './useMessages';
 
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 
-const fakeUser = (name) => ({ displayName: name, avatarUrl: null });
+const asUser = (peer) => ({ displayName: peer.name, avatarUrl: peer.avatarUrl });
 
-function ConversationList({ conversations, activeId, onSelect }) {
+function ConversationList({ conversations, loading, activeId, onSelect }) {
   const [query, setQuery] = useState('');
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -29,23 +29,23 @@ function ConversationList({ conversations, activeId, onSelect }) {
         </label>
       </div>
       {shown.length === 0 ? (
-        <p className="muted chat-list-empty">{query ? 'Không tìm thấy hội thoại phù hợp.' : 'Chưa có hội thoại nào.'}</p>
+        <p className="muted chat-list-empty">{loading ? 'Đang tải…' : query ? 'Không tìm thấy hội thoại phù hợp.' : 'Chưa có hội thoại nào. Mở một sản phẩm và bấm "Nhắn tin" để bắt đầu.'}</p>
       ) : (
         <ul>
           {shown.map((c) => {
-            const last = lastMessage(c);
-            const unread = unreadCount(c);
+            const last = c.lastMessage;
+            const unread = c.unread;
             return (
               <li key={c.id}>
                 <button type="button" className={`chat-row${c.id === activeId ? ' is-active' : ''}${unread ? ' is-unread' : ''}`} onClick={() => onSelect(c.id)}>
-                  <Avatar user={fakeUser(c.peer.name)} size={44} />
+                  <Avatar user={asUser(c.peer)} size={44} />
                   <span className="chat-row-text">
                     <span className="chat-row-top">
                       <strong>{c.peer.name}</strong>
                       {last && <small>{timeAgo(last.at)}</small>}
                     </span>
                     <span className="chat-row-product">{c.product?.name}</span>
-                    <span className="chat-row-preview">{last ? `${last.from === 'me' ? 'Bạn: ' : ''}${last.text || '[Hình ảnh]'}` : 'Hãy gửi tin nhắn đầu tiên'}</span>
+                    <span className="chat-row-preview">{last ? `${last.mine ? 'Bạn: ' : ''}${last.text || '[Hình ảnh]'}` : 'Hãy gửi tin nhắn đầu tiên'}</span>
                   </span>
                   {unread > 0 && <span className="count-pill">{unread}</span>}
                 </button>
@@ -61,23 +61,24 @@ function ConversationList({ conversations, activeId, onSelect }) {
 function ProductStrip({ product }) {
   if (!product) return null;
   return (
-    <div className="chat-product">
+    <Link to={`/products/${product.id}`} className="chat-product" aria-label={`Xem sản phẩm ${product.name}`}>
       <span className="chat-product-thumb" style={{ background: categoryArt(product.category).tint }}>
-        <MessageIcon size={18} />
+        {product.imageUrl ? <img src={product.imageUrl} alt="" /> : <MessageIcon size={18} />}
       </span>
       <div>
         <strong>{product.name}</strong>
         <span className="product-price">{formatPrice(product.price)}</span>
       </div>
-    </div>
+    </Link>
   );
 }
 
-function Thread({ conversation, onBack, onSend, onBlock }) {
+function Thread({ conversation, onBack, onSend, onBlock, onReport }) {
   const [text, setText] = useState('');
   const [images, setImages] = useState([]);
   const [error, setError] = useState('');
   const [reported, setReported] = useState(false);
+  const [sending, setSending] = useState(false);
   const bottomRef = useRef(null);
   const fileRef = useRef(null);
 
@@ -101,17 +102,25 @@ function Thread({ conversation, onBack, onSend, onBlock }) {
     if (images.length + files.length > MAX_IMAGES) return setError(`Mỗi lần gửi tối đa ${MAX_IMAGES} ảnh.`);
     if (files.some((f) => !f.type.startsWith('image/'))) return setError('Chỉ gửi được file ảnh.');
     if (files.some((f) => f.size > MAX_IMAGE_BYTES)) return setError('Mỗi ảnh tối đa 5 MB.');
-    setImages((prev) => [...prev, ...files.map((f) => ({ name: f.name, url: URL.createObjectURL(f) }))]);
+    setImages((prev) => [...prev, ...files.map((f) => ({ file: f, name: f.name, url: URL.createObjectURL(f) }))]);
   };
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     const body = text.trim();
-    if (!body && images.length === 0) return;
-    onSend(body, images.map((i) => i.url));
-    setText('');
-    setImages([]);
+    if ((!body && images.length === 0) || sending) return;
+    setSending(true);
     setError('');
+    try {
+      await onSend(body, images.map((i) => i.file));
+      images.forEach((i) => URL.revokeObjectURL(i.url));
+      setText('');
+      setImages([]);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSending(false);
+    }
   };
 
   const blocked = conversation.blocked;
@@ -122,13 +131,13 @@ function Thread({ conversation, onBack, onSend, onBlock }) {
         <button type="button" className="icon-btn chat-back" onClick={onBack} aria-label="Quay lại danh sách">
           <ArrowLeftIcon size={20} />
         </button>
-        <Avatar user={fakeUser(conversation.peer.name)} size={40} />
+        <Avatar user={asUser(conversation.peer)} size={40} />
         <div className="chat-thread-title">
           <strong>{conversation.peer.name}</strong>
-          <small className="muted">Người bán</small>
+          <small className="muted">{conversation.role === 'SELLER' ? 'Người mua' : 'Người bán'}</small>
         </div>
         <div className="chat-thread-actions">
-          <button type="button" className="btn btn-secondary btn-sm" onClick={() => setReported(true)} disabled={reported}>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => onReport().then(() => setReported(true), (err) => setError(err.message))} disabled={reported}>
             {reported ? 'Đã báo cáo' : 'Báo cáo'}
           </button>
           <button type="button" className="btn btn-secondary btn-sm" onClick={() => onBlock(!blocked)}>
@@ -145,7 +154,7 @@ function Thread({ conversation, onBack, onSend, onBlock }) {
         </p>
         {conversation.messages.length === 0 && <p className="muted text-center">Hãy hỏi người bán về tình trạng, kích thước hoặc cách giao hàng.</p>}
         {conversation.messages.map((m) => (
-          <div key={m.id} className={`bubble-row ${m.from === 'me' ? 'is-me' : 'is-peer'}`}>
+          <div key={m.id} className={`bubble-row ${m.mine ? 'is-me' : 'is-peer'}`}>
             <div className="bubble">
               {m.images?.length > 0 && (
                 <div className="bubble-images">
@@ -162,7 +171,9 @@ function Thread({ conversation, onBack, onSend, onBlock }) {
         <div ref={bottomRef} />
       </div>
 
-      {blocked ? (
+      {conversation.blockedByPeer ? (
+        <div className="chat-blocked">Bạn không thể nhắn tin cho {conversation.peer.name} nữa.</div>
+      ) : blocked ? (
         <div className="chat-blocked">Bạn đã chặn {conversation.peer.name}. Bỏ chặn để tiếp tục nhắn tin.</div>
       ) : (
         <form className="chat-composer" onSubmit={submit}>
@@ -200,7 +211,7 @@ function Thread({ conversation, onBack, onSend, onBlock }) {
                 if (e.key === 'Enter' && !e.shiftKey) submit(e);
               }}
             />
-            <button type="submit" className="btn btn-accent" disabled={!text.trim() && images.length === 0}>
+            <button type="submit" className="btn btn-accent" disabled={sending || (!text.trim() && images.length === 0)}>
               Gửi
             </button>
           </div>
@@ -213,24 +224,42 @@ function Thread({ conversation, onBack, onSend, onBlock }) {
   );
 }
 
+/** Tải riêng hội thoại đang mở (kèm tin nhắn) rồi hiển thị khung chat. */
+function ActiveThread({ id, onBack, onBlock, onReport }) {
+  const { conversation, error, send } = useThread(id);
+  if (error && !conversation) {
+    return (
+      <div className="chat-empty">
+        <strong>Không mở được hội thoại</strong>
+        <p className="muted">{error}</p>
+        <button type="button" className="btn btn-secondary" onClick={onBack}>
+          Về danh sách
+        </button>
+      </div>
+    );
+  }
+  if (!conversation) return <div className="chat-empty muted">Đang tải…</div>;
+  return <Thread key={conversation.id} conversation={conversation} onBack={onBack} onSend={send} onBlock={onBlock} onReport={onReport} />;
+}
+
 /** Hộp thư hai cột (FR-MSG-01..07). Trên điện thoại hiển thị lần lượt danh sách rồi hội thoại. */
 export default function MessagesPage() {
   const { user } = useAuth();
   const { conversationId } = useParams();
   const navigate = useNavigate();
-  const { conversations, send, markRead, setBlocked } = useMessages(user.id);
-  const active = conversations.find((c) => c.id === conversationId);
-
-  useEffect(() => {
-    if (active) markRead(active.id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active?.id, active?.messages.length]);
+  const { conversations, loading, setBlocked, report } = useMessages(user.id);
 
   return (
-    <div className={`chat-shell${active ? ' has-active' : ''}`}>
-      <ConversationList conversations={conversations} activeId={conversationId} onSelect={(id) => navigate(`/messages/${id}`)} />
-      {active ? (
-        <Thread key={active.id} conversation={active} onBack={() => navigate('/messages')} onSend={(t, imgs) => send(active.id, t, imgs)} onBlock={(b) => setBlocked(active.id, b)} />
+    <div className={`chat-shell${conversationId ? ' has-active' : ''}`}>
+      <ConversationList conversations={conversations} loading={loading} activeId={conversationId} onSelect={(id) => navigate(`/messages/${id}`)} />
+      {conversationId ? (
+        <ActiveThread
+          key={conversationId}
+          id={conversationId}
+          onBack={() => navigate('/messages')}
+          onBlock={(blocked) => setBlocked(conversationId, blocked)}
+          onReport={() => report(conversationId)}
+        />
       ) : (
         <div className="chat-empty">
           <span className="empty-icon">

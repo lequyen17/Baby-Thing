@@ -4,7 +4,8 @@ import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Avatar } from '../components/Avatar';
 import { Alert } from '../components/Form';
-import { ArrowLeftIcon, CartIcon, EditIcon, EyeIcon, TrashIcon } from '../components/Icons';
+import { ArrowLeftIcon, CartIcon, EditIcon, EyeIcon, MessageIcon, TrashIcon } from '../components/Icons';
+import { useContactSeller } from '../messages/useMessages';
 import { Pagination } from '../components/Pagination';
 import { StockBadge } from '../components/ProductCard';
 import { ProductImage } from '../components/ProductImage';
@@ -60,6 +61,7 @@ export default function ProductDetailPage() {
   const { user } = useAuth();
   const isAdmin = user.role === 'ADMIN';
   const navigate = useNavigate();
+  const contactSeller = useContactSeller();
   const [product, setProduct] = useState(null);
   const [error, setError] = useState('');
   const [deleting, setDeleting] = useState(false);
@@ -104,7 +106,12 @@ export default function ProductDetailPage() {
               <h1>{product.name}</h1>
               <p className="muted">
                 SKU: {product.sku}
-                {product.sellerName && ` · Người bán: ${product.sellerId === user.id ? 'bạn' : product.sellerName}`}
+                {product.sellerName && (
+                  <>
+                    {' · Người bán: '}
+                    {product.sellerId === user.id ? 'bạn' : <Link to={`/sellers/${product.sellerId}`}>{product.sellerName}</Link>}
+                  </>
+                )}
               </p>
               <div className="product-price product-price-lg">{formatPrice(product.price)}</div>
               <div className="badges">
@@ -118,11 +125,16 @@ export default function ProductDetailPage() {
                 {canManage && <span className="badge">Tồn kho: {product.stock}</span>}
               </div>
               {product.description && <p className="product-description">{product.description}</p>}
-              {product.status === 'ACTIVE' && product.stock > 0 && product.sellerId !== user.id && (
+              {product.sellerId !== user.id && (
                 <div className="product-actions">
-                  <Link to="/orders/new" state={{ product }} className="btn btn-primary">
-                    <CartIcon /> Đặt mua ngay
-                  </Link>
+                  <button type="button" className="btn btn-secondary" onClick={() => contactSeller({ productId: product.id }).catch((err) => setError(err.message))}>
+                    <MessageIcon /> Nhắn tin cho người bán
+                  </button>
+                  {product.status === 'ACTIVE' && product.stock > 0 && (
+                    <Link to="/orders/new" state={{ product }} className="btn btn-primary">
+                      <CartIcon /> Đặt mua ngay
+                    </Link>
+                  )}
                 </div>
               )}
               {canManage && (

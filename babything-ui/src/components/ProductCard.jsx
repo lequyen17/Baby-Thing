@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { useContactSeller } from '../messages/useMessages';
 import { formatPrice } from '../utils/format';
 import { categoryArt } from '../utils/categoryArt';
 import { HeartIcon, MessageIcon } from './Icons';
@@ -25,6 +26,7 @@ export function ProductCard({ product, showStatus = false, footer }) {
   // Lưu tin chưa có backend: chỉ đổi trạng thái trên giao diện
   const [saved, setSaved] = useState(false);
   const unavailable = unavailableReason(product, user);
+  const contactSeller = useContactSeller();
 
   return (
     <article className="product-card">
@@ -57,9 +59,15 @@ export function ProductCard({ product, showStatus = false, footer }) {
       <div className="product-card-footer">
         {footer ?? (
           <div className="product-card-actions">
-            <Link to="/messages" className="btn btn-secondary">
-              <MessageIcon size={16} /> Nhắn tin
-            </Link>
+            {product.sellerId === user.id ? (
+              <button type="button" className="btn btn-secondary" disabled>
+                <MessageIcon size={16} /> Nhắn tin
+              </button>
+            ) : (
+              <button type="button" className="btn btn-secondary" onClick={() => contactSeller({ productId: product.id }).catch((err) => window.alert(err.message))}>
+                <MessageIcon size={16} /> Nhắn tin
+              </button>
+            )}
             {unavailable ? (
               <button type="button" className="btn btn-dark" disabled>
                 {unavailable}
