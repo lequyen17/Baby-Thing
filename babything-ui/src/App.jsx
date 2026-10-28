@@ -18,6 +18,7 @@ import LoginVerifyPage from './pages/LoginVerifyPage';
 import OrderDetailPage from './pages/OrderDetailPage';
 import OrderFormPage from './pages/OrderFormPage';
 import OrderListPage from './pages/OrderListPage';
+import PaymentListPage from './pages/PaymentListPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import ProductFormPage from './pages/ProductFormPage';
 import ProductListPage from './pages/ProductListPage';
@@ -67,6 +68,7 @@ export default function App() {
           <Route path="/orders/new" element={<OrderFormPage />} />
           <Route path="/orders/:id" element={<OrderDetailPage />} />
           <Route path="/orders/:id/edit" element={<OrderFormPage />} />
+          <Route path="/payments" element={<PaymentListPage />} />
           {Object.keys(COMING_SOON).map((feature) => (
             <Route key={feature} path={`/${feature}`} element={<ComingSoonPage feature={feature} />} />
           ))}

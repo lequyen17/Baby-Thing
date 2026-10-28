@@ -149,6 +149,20 @@ Mục **Orders** (`/orders`) trên header:
 
 Đơn tạo trước khi có tính năng tách đơn mà chứa hàng của nhiều người bán được migration `V5` tách sẵn, giữ nguyên người mua, thông tin giao hàng, trạng thái và thời gian.
 
+## Thanh toán
+
+Mục **Thanh toán** (`/payments`) trên header là lịch sử thanh toán của chính bạn: thống kê tổng đã trả / đang chờ / đã hoàn, danh sách giao dịch kèm đơn hàng, hình thức, mã giao dịch, trạng thái. Tìm theo mã đơn (`#12`) hoặc mã giao dịch, lọc theo trạng thái và hình thức, sắp xếp theo ngày/số tiền. Bấm vào dòng để mở đơn hàng.
+
+Bảng `payments` (migration `V6`) đã sẵn sàng; giao dịch sẽ được tạo khi tích hợp cổng thanh toán. Một đơn có thể có nhiều lần thanh toán nhưng chỉ một lần `PAID`.
+
+| Method | Đường dẫn | Quyền |
+| ------ | --------- | ----- |
+| `GET` | `/api/payments?q=&status=&method=&sort=&page=&size=` | Đã đăng nhập, chỉ thấy giao dịch của mình |
+| `GET` | `/api/payments/summary` | Đã đăng nhập |
+| `GET` | `/api/payments/{id}` | Người trả tiền hoặc ADMIN |
+
+`status` nhận `PENDING`, `PAID`, `FAILED`, `EXPIRED`, `REFUNDED`. `method` nhận `QR`, `ATM_CARD`, `E_WALLET`. `sort` nhận `newest` (mặc định), `oldest`, `amount_desc`, `amount_asc`.
+
 ## Lệnh thường dùng
 
 ```bash

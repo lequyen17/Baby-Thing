@@ -2,13 +2,11 @@ import { Link } from 'react-router-dom';
 import {
   ArrowRightIcon,
   CameraIcon,
-  CardIcon,
   PenIcon,
 } from '../components/Icons';
 
 /** Các mục có trong thiết kế nhưng backend chưa hỗ trợ: hiển thị trang "sắp ra mắt". */
 export const COMING_SOON = {
-  payments: [CardIcon, 'tone-sky', 'Thanh toán', 'Thanh toán an toàn và xem lại toàn bộ lịch sử giao dịch.'],
   'image-search': [CameraIcon, 'tone-sage', 'Tìm bằng hình ảnh', 'Chụp ảnh món đồ, AI tìm những tin đăng tương tự cho bạn.'],
   feedback: [PenIcon, 'tone-peach', 'Góp ý', 'Gửi góp ý và theo dõi phản hồi của Baby Things ngay trong tài khoản.'],
 };
