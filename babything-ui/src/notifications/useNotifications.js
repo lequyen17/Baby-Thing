@@ -1,9 +1,10 @@
-import { useCallback } from 'react';
-import { newId, useUserStore } from '../api/localStore';
+import { useCallback, useEffect, useState } from 'react';
+import { api } from '../api/client';
+import { NOTIFICATIONS_EVENT, pollWhileOffline } from '../realtime/events';
 
 /**
  * Nhóm thông báo (FR-NOTI-04/05): nhóm `locked` luôn bật, các nhóm còn lại người dùng tự bật/tắt.
- * channels: kênh gửi ngoài web (FR-NOTI-02: email cho sự kiện quan trọng; SMS chỉ dùng cho OTP).
+ * email: nhóm được gửi kèm email (FR-NOTI-02; SMS chỉ dùng cho OTP). Danh sách nhóm khớp NotificationService ở backend.
  */
 export const GROUPS = [
   { id: 'listing', label: 'Tin đăng', desc: 'Tin được duyệt, bị từ chối hoặc cần chỉnh sửa.', locked: true, email: true },
@@ -20,34 +21,85 @@ export const GROUPS = [
 
 export const groupOf = (id) => GROUPS.find((g) => g.id === id);
 
-const ago = (minutes) => new Date(Date.now() - minutes * 60000).toISOString();
+const POLL_MS = 30000;
 
-const SEED = [
-  { id: 'n1', group: 'listing', title: 'Tin đăng đã được duyệt', body: 'Bộ body cotton 3–6 tháng của bạn đã hiển thị trên trang chủ.', to: '/products', at: ago(12), read: false },
-  { id: 'n2', group: 'message', title: 'Mai Anh đã nhắn cho bạn', body: '“Bạn ơi chiếc xe đẩy còn không ạ, mình ở Cầu Giấy.”', to: '/messages', at: ago(45), read: false },
-  { id: 'n3', group: 'order', title: 'Đơn #BT2410-0187 sắp quá hạn xác nhận', body: 'Hãy xác nhận đơn trong 3 giờ tới để không bị tự huỷ.', to: '/orders', at: ago(190), read: false },
-  { id: 'n4', group: 'payout', title: 'Đã chuyển tiền đợt tuần này', body: '1.240.000đ đã được chuyển vào tài khoản nhận tiền của bạn.', to: '/profile/payout', at: ago(60 * 26), read: true },
-  { id: 'n5', group: 'promo', title: 'Voucher đơn đầu: giảm 30.000đ phí ship', body: 'Áp dụng cho đơn đầu tiên đến hết tháng này.', to: '/products', at: ago(60 * 50), read: true },
-  { id: 'n6', group: 'security', title: 'Đăng nhập từ thiết bị mới', body: 'Nếu không phải bạn, hãy đổi mật khẩu ngay.', to: '/settings', at: ago(60 * 24 * 5), read: true },
-];
+/** Cùng lúc có nhiều nơi dùng hook (chuông, trang thông báo): thao tác ở đâu cũng báo cho các nơi khác tải lại. */
+const broadcast = () => window.dispatchEvent(new Event(NOTIFICATIONS_EVENT));
 
-/** Danh sách thông báo của người dùng + thao tác đánh dấu đã đọc (FR-NOTI-01). */
+/** Danh sách thông báo của người dùng + thao tác đánh dấu đã đọc (FR-NOTI-01). Cập nhật tức thì nhờ kết nối realtime; chỉ hỏi định kỳ khi kết nối đó đứt. */
 export function useNotifications(userId) {
-  const [items, setItems] = useUserStore(userId, 'notifications', SEED);
-  const [prefs, setPrefs] = useUserStore(userId, 'notification-prefs', {});
+  const [feed, setFeed] = useState({ items: [], unread: 0 });
+  const [prefs, setPrefs] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(() => {
+    api('/notifications?size=50')
+      .then(setFeed)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    load();
+    api('/notifications/preferences').then(setPrefs).catch(() => {});
+    window.addEventListener(NOTIFICATIONS_EVENT, load);
+    const stopPolling = pollWhileOffline(load, POLL_MS);
+    return () => {
+      window.removeEventListener(NOTIFICATIONS_EVENT, load);
+      stopPolling();
+    };
+  }, [userId, load]);
+
+  // Cập nhật giao diện ngay rồi gọi API; xong (kể cả lỗi) thì tải lại để khớp trạng thái trên server
+  const mutate = useCallback((optimistic, request) => {
+    setFeed(optimistic);
+    request().then(broadcast, broadcast);
+  }, []);
+
+  const markRead = useCallback(
+    (id) =>
+      mutate(
+        (f) => {
+          const target = f.items.find((n) => n.id === id);
+          return target && !target.read
+            ? { ...f, unread: Math.max(0, f.unread - 1), items: f.items.map((n) => (n.id === id ? { ...n, read: true } : n)) }
+            : f;
+        },
+        () => api(`/notifications/${id}/read`, { method: 'POST' }),
+      ),
+    [mutate],
+  );
+
+  const markAllRead = useCallback(
+    () =>
+      mutate(
+        (f) => ({ ...f, unread: 0, items: f.items.map((n) => ({ ...n, read: true })) }),
+        () => api('/notifications/read-all', { method: 'POST' }),
+      ),
+    [mutate],
+  );
+
+  const remove = useCallback(
+    (id) =>
+      mutate(
+        (f) => {
+          const target = f.items.find((n) => n.id === id);
+          return { ...f, unread: target && !target.read ? Math.max(0, f.unread - 1) : f.unread, items: f.items.filter((n) => n.id !== id) };
+        },
+        () => api(`/notifications/${id}`, { method: 'DELETE' }),
+      ),
+    [mutate],
+  );
+
+  const setPref = useCallback((id, on) => {
+    setPrefs((p) => ({ ...p, [id]: on }));
+    api(`/notifications/preferences/${id}`, { method: 'PUT', body: { enabled: on } })
+      .then(setPrefs)
+      .catch(() => api('/notifications/preferences').then(setPrefs).catch(() => {}));
+  }, []);
 
   const enabled = (id) => (groupOf(id)?.locked ? true : prefs[id] !== false);
-  const visible = items.filter((n) => enabled(n.group));
-  const unread = visible.filter((n) => !n.read).length;
+  const items = feed.items.map((n) => ({ ...n, to: n.link || '/notifications' }));
 
-  const markRead = useCallback((id) => setItems((list) => list.map((n) => (n.id === id ? { ...n, read: true } : n))), [setItems]);
-  const markAllRead = useCallback(() => setItems((list) => list.map((n) => ({ ...n, read: true }))), [setItems]);
-  const remove = useCallback((id) => setItems((list) => list.filter((n) => n.id !== id)), [setItems]);
-  const push = useCallback(
-    (n) => setItems((list) => [{ id: newId(), at: new Date().toISOString(), read: false, ...n }, ...list]),
-    [setItems],
-  );
-  const setPref = useCallback((id, on) => setPrefs((p) => ({ ...p, [id]: on })), [setPrefs]);
-
-  return { items: visible, unread, prefs, enabled, markRead, markAllRead, remove, push, setPref };
+  return { items, unread: feed.unread, loading, enabled, markRead, markAllRead, remove, setPref };
 }

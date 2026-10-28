@@ -1,19 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { useExtraProfile } from '../account/useAccountData';
 import { useAuth } from '../auth/AuthContext';
 import { Avatar } from '../components/Avatar';
 import { CalendarIcon, MapPinIcon, MessageIcon, ShieldCheckIcon, StarIcon } from '../components/Icons';
 import { ProductCard } from '../components/ProductCard';
-import { useMessages } from '../messages/useMessages';
+import { useContactSeller } from '../messages/useMessages';
 import { formatDate } from '../utils/format';
-
-/** Hồ sơ công khai chưa có API: người bán khác dùng dữ liệu mẫu, hồ sơ của chính mình lấy từ tài khoản. */
-const DEMO_SELLERS = {
-  'demo-mai-anh': { name: 'Mai Anh', district: 'Cầu Giấy', bio: 'Mẹ bé 18 tháng. Đồ giặt kỹ, phơi nắng, ảnh thật 100%.', rating: 4.9, reviews: 38, deals: 52, complaintRate: 0, joined: '2025-03-12' },
-  'demo-thu-ha': { name: 'Thu Hà', district: 'Hai Bà Trưng', bio: 'Chuyên đồ sơ sinh, còn nhiều bộ như mới.', rating: 4.7, reviews: 14, deals: 19, complaintRate: 2.1, joined: '2025-08-02' },
-};
 
 const MIN_REVIEWS = 3; // FR-FB-06: dưới 3 đánh giá hiển thị "Seller mới"
 
@@ -30,20 +24,34 @@ function Stat({ value, label }) {
 export default function SellerProfilePage() {
   const { id } = useParams();
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const { open } = useMessages(user.id);
+  const contactSeller = useContactSeller();
   const [extra] = useExtraProfile(user.id);
+  // undefined = đang tải, null = không tìm thấy
+  const [publicProfile, setPublicProfile] = useState(undefined);
+  const [chatError, setChatError] = useState('');
   // { items, totalItems } của tin đang hiện của người bán này
   const [products, setProducts] = useState(null);
 
   const isMe = String(user.id) === id;
+  // Chưa có API đánh giá / giao dịch nên các chỉ số thống kê để 0 và người bán hiện là "Seller mới" (FR-FB-06)
+  const stats = { rating: 0, reviews: 0, deals: 0, complaintRate: 0 };
   const seller = isMe
-    ? { name: user.displayName, avatarUrl: user.avatarUrl, district: extra.district, bio: extra.bio, rating: 0, reviews: 0, deals: 0, complaintRate: 0, joined: user.createdAt, verified: Boolean(user.emailVerifiedAt) }
-    : DEMO_SELLERS[id] && { ...DEMO_SELLERS[id], verified: true };
+    ? { ...stats, name: user.displayName, avatarUrl: user.avatarUrl, district: extra.district, bio: extra.bio, joined: user.createdAt, verified: Boolean(user.emailVerifiedAt) }
+    : publicProfile && { ...stats, name: publicProfile.displayName, avatarUrl: publicProfile.avatarUrl, joined: publicProfile.joinedAt, verified: publicProfile.verified };
+
+  useEffect(() => {
+    if (isMe || !/^\d+$/.test(id)) {
+      setPublicProfile(isMe ? undefined : null);
+      return;
+    }
+    setPublicProfile(undefined);
+    api(`/users/${id}/public`)
+      .then(setPublicProfile)
+      .catch(() => setPublicProfile(null));
+  }, [id, isMe]);
 
   useEffect(() => {
     const empty = { items: [], totalItems: 0 };
-    // Người bán mẫu (id dạng demo-...) không có tài khoản thật nên không có tin
     if (!/^\d+$/.test(id)) {
       setProducts(empty);
       return;
@@ -56,6 +64,7 @@ export default function SellerProfilePage() {
       .catch(() => setProducts(empty));
   }, [id]);
 
+  if (!isMe && publicProfile === undefined) return <p className="muted">Đang tải…</p>;
   if (!seller) {
     return (
       <div className="card empty-block">
@@ -69,10 +78,11 @@ export default function SellerProfilePage() {
   }
 
   const isNew = seller.reviews < MIN_REVIEWS;
-  const startChat = () => navigate(`/messages/${open({ id, name: seller.name }, null)}`);
+  const startChat = () => contactSeller({ sellerId: Number(id) }).catch((err) => setChatError(err.message));
 
   return (
     <div className="page">
+      {chatError && <div className="alert alert-error">{chatError}</div>}
       <section className="card seller-hero">
         <Avatar user={{ displayName: seller.name, avatarUrl: seller.avatarUrl }} size={96} />
         <div className="seller-hero-body">

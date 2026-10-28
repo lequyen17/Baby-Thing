@@ -33,6 +33,7 @@ import com.example.babything_api.modules.orders.entity.Order;
 import com.example.babything_api.modules.orders.entity.OrderItem;
 import com.example.babything_api.modules.orders.entity.OrderStatus;
 import com.example.babything_api.modules.orders.repository.OrderRepository;
+import com.example.babything_api.modules.notifications.service.NotificationService;
 import com.example.babything_api.modules.payments.entity.PaymentStatus;
 import com.example.babything_api.modules.payments.service.PaymentService;
 import com.example.babything_api.modules.settlements.service.SettlementService;
@@ -68,14 +69,28 @@ public class OrderService {
     private final PaymentService paymentService;
     private final SettlementService settlementService;
     private final AppProperties.Marketplace marketplace;
+    private final NotificationService notifications;
 
     public OrderService(OrderRepository orderRepository, ProductRepository productRepository,
-            PaymentService paymentService, SettlementService settlementService, AppProperties props) {
+            PaymentService paymentService, SettlementService settlementService, AppProperties props,
+            NotificationService notifications) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.paymentService = paymentService;
         this.settlementService = settlementService;
         this.marketplace = props.marketplace();
+        this.notifications = notifications;
+    }
+
+    /** Báo cho người bán có đơn mới, hoặc cho bên còn lại khi đơn đổi trạng thái / bị huỷ (không báo cho chính người thao tác). */
+    private void notifyOrder(Order order, User actor, String title, String body) {
+        String link = "/orders/" + order.getId();
+        if (order.getUser() != null && !order.getUser().getId().equals(actor.getId())) {
+            notifications.notify(order.getUser().getId(), NotificationService.ORDER, title, body, link);
+        }
+        if (order.getSeller() != null && !order.getSeller().getId().equals(actor.getId())) {
+            notifications.notify(order.getSeller().getId(), NotificationService.ORDER, title, body, link);
+        }
     }
 
     public record ListQuery(String view, String q, OrderStatus status, String sort, int page, int size) {
@@ -134,7 +149,14 @@ public class OrderService {
             order.setPaymentDueAt(paymentDueAt);
             applyShipping(order, req);
             order.replaceItems(group.stream().map(Reserved::item).toList());
-            created.add(toResponse(customer, orderRepository.saveAndFlush(order)));
+            Order saved = orderRepository.saveAndFlush(order);
+            if (saved.getSeller() != null) {
+                notifications.notify(saved.getSeller().getId(), NotificationService.ORDER,
+                        "Bạn có đơn hàng mới #" + saved.getId(),
+                        customer.getDisplayName() + " vừa đặt mua " + saved.getItems().size() + " sản phẩm của bạn.",
+                        "/orders/" + saved.getId());
+            }
+            created.add(toResponse(customer, saved));
         }
         return created;
     }
@@ -220,7 +242,10 @@ public class OrderService {
                             : "Đơn hàng này không thể huỷ được nữa");
         }
         doCancel(order, viewer.getId(), blankToNull(reason));
-        return toResponse(viewer, orderRepository.saveAndFlush(order));
+        Order saved = orderRepository.saveAndFlush(order);
+        notifyOrder(saved, viewer, "Đơn hàng #" + saved.getId() + " đã bị huỷ",
+                saved.getCancelReason() == null ? "Đơn đã được huỷ." : "Lý do: " + saved.getCancelReason());
+        return toResponse(viewer, saved);
     }
 
     /**
@@ -254,7 +279,10 @@ public class OrderService {
             order.setTrackingCode(code);
         }
         order.setStatus(status);
-        return toResponse(viewer, orderRepository.saveAndFlush(order));
+        Order saved = orderRepository.saveAndFlush(order);
+        notifyOrder(saved, viewer, "Đơn hàng #" + saved.getId() + " chuyển sang \"" + status.label() + "\"",
+                "Mở đơn hàng để xem chi tiết.");
+        return toResponse(viewer, saved);
     }
 
     /**

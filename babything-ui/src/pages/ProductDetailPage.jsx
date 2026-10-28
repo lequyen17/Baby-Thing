@@ -4,8 +4,9 @@ import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Avatar } from '../components/Avatar';
 import { Alert } from '../components/Form';
-import { ArrowLeftIcon, CartIcon, CheckIcon, EditIcon, EyeIcon, TrashIcon, XCircleIcon } from '../components/Icons';
+import { ArrowLeftIcon, CartIcon, CheckIcon, EditIcon, EyeIcon, MessageIcon, TrashIcon, XCircleIcon } from '../components/Icons';
 import { ListingSpecs } from '../components/ListingSpecs';
+import { useContactSeller } from '../messages/useMessages';
 import { Pagination } from '../components/Pagination';
 import { StockBadge } from '../components/ProductCard';
 import { ProductImage } from '../components/ProductImage';
@@ -89,6 +90,7 @@ export default function ProductDetailPage() {
   const isAdmin = user.role === 'ADMIN';
   const navigate = useNavigate();
   const location = useLocation();
+  const contactSeller = useContactSeller();
   const [product, setProduct] = useState(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState(location.state?.notice ?? '');
@@ -209,11 +211,16 @@ export default function ProductDetailPage() {
               </div>
               <ListingSpecs item={product} />
               {product.description && <p className="product-description">{product.description}</p>}
-              {product.status === 'ACTIVE' && product.stock > 0 && product.sellerId !== user.id && (
+              {!isOwner && (
                 <div className="product-actions">
-                  <Link to="/orders/new" state={{ product }} className="btn btn-primary">
-                    <CartIcon /> Đặt mua ngay
-                  </Link>
+                  <button type="button" className="btn btn-secondary" onClick={() => contactSeller({ productId: product.id }).catch((err) => setError(err.message))}>
+                    <MessageIcon /> Nhắn tin cho người bán
+                  </button>
+                  {product.status === 'ACTIVE' && product.stock > 0 && (
+                    <Link to="/orders/new" state={{ product }} className="btn btn-primary">
+                      <CartIcon /> Đặt mua ngay
+                    </Link>
+                  )}
                 </div>
               )}
               {canManage && (

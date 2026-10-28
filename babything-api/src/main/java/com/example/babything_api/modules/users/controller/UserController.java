@@ -4,6 +4,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.babything_api.core.security.AuthPrincipal;
+import com.example.babything_api.modules.users.dto.PublicProfileResponse;
 import com.example.babything_api.modules.users.dto.UpdateProfileRequest;
 import com.example.babything_api.modules.users.dto.UserProfileResponse;
 import com.example.babything_api.modules.users.service.UserAvatarService;
@@ -34,6 +36,12 @@ public class UserController {
     @GetMapping("/me")
     UserProfileResponse me(@AuthenticationPrincipal AuthPrincipal principal) {
         return UserProfileResponse.from(principal.user(), avatarService.uploadEnabled());
+    }
+
+    /** Hồ sơ công khai của người bán (FR-USER-10). Tài khoản không tồn tại hoặc không hoạt động trả 404. */
+    @GetMapping("/{id}/public")
+    PublicProfileResponse publicProfile(@PathVariable Long id) {
+        return profileService.publicProfile(id);
     }
 
     @PatchMapping("/me")
