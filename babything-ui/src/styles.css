@@ -1897,6 +1897,16 @@ a:hover {
   flex-shrink: 0;
 }
 
+/* ---------------------------------------------------------------- Payments */
+
+.payment-stats {
+  margin-bottom: 18px;
+}
+
+.payment-failure {
+  color: var(--danger);
+}
+
 .order-title {
   display: flex;
   align-items: center;
