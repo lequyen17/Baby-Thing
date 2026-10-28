@@ -24,6 +24,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
+import com.example.babything_api.modules.care.entity.CareItem;
 import com.example.babything_api.modules.users.entity.User;
 
 @Entity
@@ -108,6 +109,11 @@ public class Product {
 
     @Column(name = "updated_by")
     private Long updatedBy;
+
+    /** Tin tạo từ một món ký gửi Care (nhãn BabyThings Renewed); null = tin tự đăng. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "care_item_id")
+    private CareItem careItem;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -301,6 +307,18 @@ public class Product {
 
     public void setUpdatedBy(Long updatedBy) {
         this.updatedBy = updatedBy;
+    }
+
+    public CareItem getCareItem() {
+        return careItem;
+    }
+
+    public void setCareItem(CareItem careItem) {
+        this.careItem = careItem;
+    }
+
+    public boolean isCare() {
+        return careItem != null;
     }
 
     public Instant getCreatedAt() {

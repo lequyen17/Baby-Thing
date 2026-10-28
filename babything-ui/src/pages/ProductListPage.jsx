@@ -31,6 +31,8 @@ export default function ProductListPage() {
   const status = canFilterStatus ? (params.get('status') ?? '') : '';
   const sort = params.get('sort') ?? 'newest';
   const page = Number(params.get('page') ?? 0) || 0;
+  // ?renewed=true: chỉ hàng BabyThings Care đã kiểm tra, làm sạch
+  const renewed = params.get('renewed') === 'true';
 
   const [search, setSearch] = useState(q);
   const [categories, setCategories] = useState([]);
@@ -52,6 +54,7 @@ export default function ProductListPage() {
     if (category) query.set('category', category);
     if (status) query.set('status', status);
     if (mine) query.set('mine', 'true');
+    if (renewed) query.set('renewed', 'true');
     setError('');
     api(`/products?${query}`)
       .then((data) => !cancelled && setResult(data))
@@ -59,7 +62,7 @@ export default function ProductListPage() {
     return () => {
       cancelled = true;
     };
-  }, [q, category, status, mine, sort, page]);
+  }, [q, category, status, mine, renewed, sort, page]);
 
   /** Đổi bộ lọc thì quay về trang đầu. */
   const updateParams = (changes) => {
@@ -78,12 +81,20 @@ export default function ProductListPage() {
     <div className="page">
       <div className="page-header page-header-row">
         <div>
-          <h1>{mine ? 'Tin đăng của tôi' : category || 'Tất cả sản phẩm'}</h1>
+          <h1>{mine ? 'Tin đăng của tôi' : category || (renewed ? 'Hàng Renewed' : 'Tất cả sản phẩm')}</h1>
           <p className="muted">
             {result ? `${result.totalItems} sản phẩm` : 'Đang tải…'}
           </p>
         </div>
         <div className="product-actions">
+          <button
+            type="button"
+            className={`btn ${renewed ? 'btn-dark' : 'btn-secondary'}`}
+            aria-pressed={renewed}
+            onClick={() => updateParams({ renewed: renewed ? '' : 'true' })}
+          >
+            Hàng Renewed
+          </button>
           <button
             type="button"
             className={`btn ${mine ? 'btn-dark' : 'btn-secondary'}`}
@@ -156,7 +167,11 @@ export default function ProductListPage() {
               showStatus={canFilterStatus}
               footer={
                 // undefined (không phải false) để ProductCard dùng footer mặc định cho tin người khác
-                product.sellerId === user.id ? (
+                product.sellerId === user.id && product.care ? (
+                  <Link to="/care" className="btn btn-secondary btn-block">
+                    Ký gửi Care · lô {product.care.batchCode}
+                  </Link>
+                ) : product.sellerId === user.id ? (
                   <Link to={`/products/${product.id}/edit`} state={{ product }} className="btn btn-secondary btn-block">
                     <EditIcon size={16} /> Sửa tin
                   </Link>

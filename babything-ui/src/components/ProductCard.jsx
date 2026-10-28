@@ -51,6 +51,7 @@ export function ProductCard({ product, showStatus = false, footer }) {
           <ProductImage product={product} />
           <div className="product-card-badges">
             <StockBadge stock={product.stock} />
+            {product.care && <span className="badge badge-renewed">Renewed · {product.care.grade}</span>}
             {showStatus && product.status !== 'ACTIVE' && (
               <span className={`badge ${PRODUCT_STATUSES[product.status]?.badge ?? 'badge-muted'}`}>
                 {PRODUCT_STATUSES[product.status]?.label ?? product.status}

@@ -41,6 +41,7 @@ import com.example.babything_api.modules.orders.entity.OrderItem;
 import com.example.babything_api.modules.orders.entity.OrderStatus;
 import com.example.babything_api.modules.orders.repository.OrderRepository;
 import com.example.babything_api.modules.cart.service.CartService;
+import com.example.babything_api.modules.care.service.CareService;
 import com.example.babything_api.modules.notifications.service.NotificationService;
 import com.example.babything_api.modules.payments.entity.PaymentStatus;
 import com.example.babything_api.modules.payments.service.PaymentService;
@@ -79,11 +80,13 @@ public class OrderService {
     private final AppProperties.Marketplace marketplace;
     private final NotificationService notifications;
     private final CartService cartService;
+    private final CareService careService;
 
     public OrderService(OrderRepository orderRepository, ProductRepository productRepository,
             PaymentService paymentService, SettlementService settlementService, AppProperties props,
-            NotificationService notifications, CartService cartService) {
+            NotificationService notifications, CartService cartService, CareService careService) {
         this.orderRepository = orderRepository;
+        this.careService = careService;
         this.productRepository = productRepository;
         this.paymentService = paymentService;
         this.settlementService = settlementService;
@@ -134,8 +137,12 @@ public class OrderService {
     public record StatusCount(long count, BigDecimal amount) {
     }
 
-    /** Dòng hàng vừa trừ kho, kèm người bán để tách đơn. */
-    private record Reserved(User seller, OrderItem item) {
+    /** Dòng hàng vừa trừ kho, kèm người bán và loại hàng (Care / tự đăng) để tách đơn. */
+    private record Reserved(User seller, OrderItem item, boolean care) {
+
+        String groupKey() {
+            return (seller == null ? "-" : seller.getId()) + (care ? ":care" : ":self");
+        }
     }
 
     // ---------------------------------------------------------------- Xem danh sách / chi tiết
@@ -198,12 +205,15 @@ public class OrderService {
 
     // ---------------------------------------------------------------- Tạo / sửa / huỷ
 
-    /** Trả về một đơn cho mỗi người bán, theo thứ tự sản phẩm đầu tiên của người bán đó trong yêu cầu. */
+    /**
+     * Trả về một đơn cho mỗi người bán, theo thứ tự sản phẩm đầu tiên của người bán đó trong yêu cầu.
+     * Hàng Care của cùng người bán tách thành đơn riêng vì do Baby Things giao từ kho ký gửi.
+     */
     @Transactional
     public List<OrderResponse> create(User customer, OrderRequest req) {
-        Map<Long, List<Reserved>> bySeller = new LinkedHashMap<>();
+        Map<String, List<Reserved>> bySeller = new LinkedHashMap<>();
         reserve(customer, quantities(req.items())).forEach(r ->
-                bySeller.computeIfAbsent(r.seller() == null ? null : r.seller().getId(), k -> new ArrayList<>()).add(r));
+                bySeller.computeIfAbsent(r.groupKey(), k -> new ArrayList<>()).add(r));
 
         List<OrderResponse> created = new ArrayList<>();
         Instant paymentDueAt = Instant.now().plus(marketplace.paymentWindow());
@@ -211,6 +221,7 @@ public class OrderService {
             Order order = new Order();
             order.setUser(customer);
             order.setSeller(group.get(0).seller());
+            order.setCare(group.get(0).care());
             order.setPaymentDueAt(paymentDueAt);
             applyShipping(order, req);
             order.replaceItems(group.stream().map(Reserved::item).toList());
@@ -279,12 +290,14 @@ public class OrderService {
 
         Long sellerId = sellerId(order);
         reserved.stream()
-                .filter(r -> !Objects.equals(r.seller() == null ? null : r.seller().getId(), sellerId))
+                .filter(r -> !Objects.equals(r.seller() == null ? null : r.seller().getId(), sellerId)
+                        || r.care() != order.isCare())
                 .findFirst()
                 .ifPresent(r -> {
                     throw new ApiException(HttpStatus.BAD_REQUEST, "DIFFERENT_SELLER",
-                            "\"" + r.item().getProductName() + "\" thuộc người bán khác. "
-                                    + "Hãy đặt một đơn mới cho sản phẩm này");
+                            "\"" + r.item().getProductName() + "\" "
+                                    + (r.care() != order.isCare() ? "khác hình thức bán (Care / tự đăng)" : "thuộc người bán khác")
+                                    + ". Hãy đặt một đơn mới cho sản phẩm này");
                 });
         order.replaceItems(items);
         // Tổng tiền có thể đã đổi: giao dịch đang mở chụp số tiền cũ nên phải tạo lại
@@ -299,6 +312,7 @@ public class OrderService {
     @Transactional
     public OrderResponse cancel(User viewer, Long id, String reason) {
         Order order = findForUpdate(viewer, id);
+        checkNotCareSeller(viewer, order);
         boolean allowed = isAdmin(viewer) || isSeller(viewer, order)
                 ? order.getStatus().isCancellableBySeller()
                 : order.getStatus().isCancellableByBuyer();
@@ -330,6 +344,7 @@ public class OrderService {
             throw new ApiException(HttpStatus.FORBIDDEN, "NOT_ORDER_SELLER",
                     "Chỉ người bán hoặc quản trị viên mới cập nhật được đơn này");
         }
+        checkNotCareSeller(viewer, order);
         if (!order.getStatus().canMoveTo(status)) {
             throw new ApiException(HttpStatus.CONFLICT, "INVALID_STATUS_TRANSITION",
                     order.getStatus() == OrderStatus.AWAITING_PAYMENT
@@ -429,6 +444,17 @@ public class OrderService {
     private void complete(Order order) {
         order.setStatus(OrderStatus.COMPLETED);
         settlementService.createFor(order);
+        if (order.isCare()) {
+            careService.onOrderCompleted(order.getItems().stream().map(OrderItem::getProductId).toList());
+        }
+    }
+
+    /** Đơn Care do Baby Things xử lý (xác nhận, giao, huỷ); người bán chỉ theo dõi. */
+    private static void checkNotCareSeller(User viewer, Order order) {
+        if (order.isCare() && !isAdmin(viewer) && isSeller(viewer, order)) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "CARE_ORDER",
+                    "Đơn hàng Care do Baby Things xử lý và giao từ kho ký gửi");
+        }
     }
 
     // ---------------------------------------------------------------- Tồn kho
@@ -464,7 +490,7 @@ public class OrderService {
             item.snapshot(product);
             item.setQuantity(quantity);
             item.setLineTotal(product.getPrice().multiply(BigDecimal.valueOf(quantity)));
-            items.add(new Reserved(product.getSeller(), item));
+            items.add(new Reserved(product.getSeller(), item, product.isCare()));
         });
         return items;
     }

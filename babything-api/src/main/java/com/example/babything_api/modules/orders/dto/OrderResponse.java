@@ -11,10 +11,12 @@ import com.example.babything_api.modules.orders.entity.OrderStatus;
  * Dùng cho cả danh sách và chi tiết; danh sách cũng trả items để hiển thị tóm tắt.
  * seller null khi tin đăng không còn người bán. customer.email chỉ có khi người xem là chính người mua hoặc admin.
  * inspectionEndsAt: hết mốc này mà người mua chưa xác nhận thì đơn tự hoàn tất (chỉ có khi DELIVERED).
+ * care = đơn hàng BabyThings Care, do Baby Things xác nhận và giao từ kho ký gửi.
  */
 public record OrderResponse(
         Long id,
         OrderStatus status,
+        boolean care,
         Customer customer,
         Seller seller,
         String recipientName,
@@ -47,7 +49,7 @@ public record OrderResponse(
     public static OrderResponse from(Order o, boolean showCustomerEmail, Instant inspectionEndsAt) {
         var u = o.getUser();
         var s = o.getSeller();
-        return new OrderResponse(o.getId(), o.getStatus(),
+        return new OrderResponse(o.getId(), o.getStatus(), o.isCare(),
                 new Customer(u.getId(), u.getDisplayName(), showCustomerEmail ? u.getEmail() : null, u.getAvatarUrl()),
                 s == null ? null : new Seller(s.getId(), s.getDisplayName(), s.getAvatarUrl()),
                 o.getRecipientName(), o.getPhone(), o.getAddress(), o.getNote(), o.getTotalAmount(),

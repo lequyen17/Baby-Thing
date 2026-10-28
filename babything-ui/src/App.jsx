@@ -1,10 +1,14 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import AccountLayout from './account/AccountLayout';
+import AdminCarePage from './admin/AdminCarePage';
 import AdminLayout from './admin/AdminLayout';
 import AdminOrdersPage from './admin/AdminOrdersPage';
 import AdminPaymentsPage from './admin/AdminPaymentsPage';
 import AdminProductsPage from './admin/AdminProductsPage';
 import AdminSettlementsPage from './admin/AdminSettlementsPage';
+import CareBatchPage from './care/CareBatchPage';
+import CareNewPage from './care/CareNewPage';
+import CarePage from './care/CarePage';
 import CartPage from './cart/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import MockGatewayPage from './pages/MockGatewayPage';
@@ -81,12 +85,18 @@ export default function App() {
           <Route path="/orders/:id/pay" element={<CheckoutPage />} />
           <Route path="/payments" element={<PaymentListPage />} />
           <Route path="/sales" element={<SalesPage />} />
+          <Route path="/care" element={<CarePage />} />
+          <Route path="/care/new" element={<CareNewPage />} />
+          <Route path="/care/:id" element={<CareBatchPage />} />
+          {/* Chi tiết lô dùng chung trang với người bán, kèm bảng thao tác quản trị */}
+          <Route path="/admin/care/:id" element={<CareBatchPage />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Navigate to="/admin/products" replace />} />
             <Route path="products" element={<AdminProductsPage />} />
             <Route path="orders" element={<AdminOrdersPage />} />
             <Route path="payments" element={<AdminPaymentsPage />} />
             <Route path="settlements" element={<AdminSettlementsPage />} />
+            <Route path="care" element={<AdminCarePage />} />
           </Route>
           {Object.keys(COMING_SOON).map((feature) => (
             <Route key={feature} path={`/${feature}`} element={<ComingSoonPage feature={feature} />} />

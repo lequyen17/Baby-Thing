@@ -29,7 +29,9 @@ function OrderProgress({ order }) {
 function NextHint({ order, perms }) {
   const { status } = order;
   let text = null;
-  if (status === 'AWAITING_PAYMENT') {
+  if (order.care && perms.isSeller && !['COMPLETED', 'CANCELLED'].includes(status)) {
+    text = 'Đơn hàng ký gửi Care: Baby Things xác nhận, đóng gói và giao hàng giúp bạn. Hoàn tất thì tiền bán (đã trừ hoa hồng) được ghi nhận vào Doanh thu.';
+  } else if (status === 'AWAITING_PAYMENT') {
     text = perms.isBuyer
       ? `Thanh toán trước ${formatDate(order.paymentDueAt)} để giữ hàng; quá hạn đơn sẽ tự huỷ.`
       : `Người mua chưa thanh toán (hạn ${formatDate(order.paymentDueAt)}).`;
@@ -135,6 +137,7 @@ export default function OrderDetailPage() {
             <div>
               <h1 className="order-title">
                 Đơn #{order.id} <OrderStatusBadge status={order.status} />
+                {order.care && <span className="badge badge-renewed">Care · Renewed</span>}
               </h1>
               <p className="muted">
                 Đặt lúc {formatDate(order.createdAt)} · Cập nhật {formatDate(order.updatedAt)}

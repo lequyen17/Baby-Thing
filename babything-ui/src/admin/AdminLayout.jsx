@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navigate, NavLink, Outlet } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
-import { BankIcon, CardIcon, CheckSquareIcon, OrderIcon } from '../components/Icons';
+import { BankIcon, CardIcon, CheckSquareIcon, DropletIcon, OrderIcon } from '../components/Icons';
 import { formatPrice } from '../utils/format';
 
 /** Khu vực quản trị; server chặn /api/admin/** và các thao tác kiểm duyệt với người không phải ADMIN. */
@@ -20,8 +20,9 @@ export default function AdminLayout() {
       api('/admin/payments/summary'),
       api('/admin/settlements/summary'),
       api('/admin/orders/stats'),
+      api('/admin/care/stats'),
     ])
-      .then(([review, payments, settlements, orders]) => setStats({ review, payments, settlements, orders }))
+      .then(([review, payments, settlements, orders, care]) => setStats({ review, payments, settlements, orders, care }))
       .catch(() => setStats(null));
   }, [isAdmin, version]);
 
@@ -33,6 +34,13 @@ export default function AdminLayout() {
     ['/admin/orders', 'Đơn hàng', OrderIcon, stats && Object.values(stats.orders.attention).reduce((a, b) => a + b, 0)],
     ['/admin/payments', 'Thanh toán', CardIcon],
     ['/admin/settlements', 'Chi trả người bán', BankIcon, stats?.settlements.pendingCount],
+    // Số trên tab = lô đang chờ admin xử lý (sàng lọc, nhận hàng, kiểm tra, làm sạch, hoàn trả)
+    [
+      '/admin/care',
+      'Kho Care',
+      DropletIcon,
+      stats && ['SUBMITTED', 'AWAITING_DROPOFF', 'RECEIVED', 'CLEANING', 'RETURNING'].reduce((sum, s) => sum + (stats.care.byStatus[s] ?? 0), 0),
+    ],
   ];
 
   return (

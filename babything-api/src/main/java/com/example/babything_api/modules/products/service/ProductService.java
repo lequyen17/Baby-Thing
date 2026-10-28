@@ -61,9 +61,10 @@ public class ProductService {
     /**
      * mine = chỉ tin đăng của người đang xem (thấy cả tin đang ẩn).
      * sellerId = tin của một người bán (hồ sơ người bán); như danh sách chung, khách chỉ thấy tin ACTIVE.
+     * renewed = true chỉ lấy hàng Care (BabyThings Renewed), false chỉ lấy hàng tự đăng, null = tất cả.
      */
     public record ListQuery(String q, String category, ProductStatus status, BigDecimal minPrice,
-            BigDecimal maxPrice, boolean mine, Long sellerId, String sort, int page, int size) {
+            BigDecimal maxPrice, boolean mine, Long sellerId, String sort, int page, int size, Boolean renewed) {
     }
 
     // ---------------------------------------------------------------- Xem danh sách / chi tiết
@@ -273,12 +274,20 @@ public class ProductService {
         return product;
     }
 
-    /** Tin ẩn của người khác coi như không tồn tại; tin đang hiện thì báo không có quyền. */
+    /**
+     * Tin ẩn của người khác coi như không tồn tại; tin đang hiện thì báo không có quyền.
+     * Tin Care do Baby Things đăng và bán hộ nên người bán không tự sửa / ẩn / xoá (đổi giá, kết thúc ký gửi
+     * thực hiện ở trang Care).
+     */
     private static Product checkManageable(User user, Product product) {
         checkVisible(user, product);
         if (!canManage(user, product)) {
             throw new ApiException(HttpStatus.FORBIDDEN, "NOT_PRODUCT_OWNER",
                     "Chỉ người bán hoặc quản trị viên mới sửa được tin đăng này");
+        }
+        if (product.isCare() && !isAdmin(user)) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "CARE_MANAGED",
+                    "Tin BabyThings Care do Baby Things quản lý. Theo dõi và kết thúc ký gửi tại trang Care");
         }
         return product;
     }
@@ -364,6 +373,9 @@ public class ProductService {
             }
             if (query.maxPrice() != null) {
                 predicates.add(cb.lessThanOrEqualTo(root.get("price"), query.maxPrice()));
+            }
+            if (query.renewed() != null) {
+                predicates.add(query.renewed() ? cb.isNotNull(root.get("careItem")) : cb.isNull(root.get("careItem")));
             }
             return cb.and(predicates.toArray(Predicate[]::new));
         };

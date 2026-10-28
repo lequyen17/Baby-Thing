@@ -4,7 +4,7 @@ import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Avatar } from '../components/Avatar';
 import { Alert } from '../components/Form';
-import { ArrowLeftIcon, CartIcon, CheckIcon, EditIcon, EyeIcon, MessageIcon, TrashIcon, XCircleIcon } from '../components/Icons';
+import { ArrowLeftIcon, CartIcon, CheckIcon, EditIcon, EyeIcon, MessageIcon, SparkleIcon, TrashIcon, XCircleIcon } from '../components/Icons';
 import { ListingSpecs } from '../components/ListingSpecs';
 import { useContactSeller } from '../messages/useMessages';
 import { addToCart } from '../cart/useCart';
@@ -97,7 +97,8 @@ export default function ProductDetailPage() {
   const [notice, setNotice] = useState(location.state?.notice ?? '');
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const canManage = Boolean(product) && (isAdmin || product.sellerId === user.id);
+  // Tin Care thuộc người ký gửi nhưng chỉ Baby Things sửa / ẩn / xoá
+  const canManage = Boolean(product) && (isAdmin || (product.sellerId === user.id && !product.care));
   const isOwner = Boolean(product) && product.sellerId === user.id;
   const statusInfo = product && PRODUCT_STATUSES[product.status];
 
@@ -224,6 +225,18 @@ export default function ProductDetailPage() {
                 {canManage && statusInfo && <span className={`badge ${statusInfo.badge}`}>{statusInfo.label}</span>}
                 {canManage && <span className="badge">Tồn kho: {product.stock}</span>}
               </div>
+              {product.care && (
+                <div className="care-renewed">
+                  <strong>
+                    <SparkleIcon size={18} /> BabyThings Renewed · Cấp {product.care.gradeLabel}
+                  </strong>
+                  <span>
+                    Baby Things đã kiểm tra, làm sạch theo quy trình và chụp ảnh thật
+                    {product.care.cleanedAt && ` (${formatDate(product.care.cleanedAt, true)})`}. Lô ký gửi {product.care.batchCode}.
+                  </span>
+                  {isOwner && <span className="muted">Tin ký gửi của bạn do Baby Things quản lý. Theo dõi tại <Link to="/care">BabyThings Care</Link>.</span>}
+                </div>
+              )}
               <ListingSpecs item={product} />
               {product.description && <p className="product-description">{product.description}</p>}
               {!isOwner && (

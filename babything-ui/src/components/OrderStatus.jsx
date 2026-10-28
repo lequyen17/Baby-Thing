@@ -39,7 +39,8 @@ export function orderPermissions(order, user) {
   const isAdmin = user.role === 'ADMIN';
   const isBuyer = order.customer.id === user.id;
   const isSeller = order.seller?.id === user.id;
-  const canManage = isAdmin || isSeller;
+  // Đơn hàng Care do Baby Things xử lý, người ký gửi chỉ theo dõi
+  const canManage = isAdmin || (isSeller && !order.care);
   const sellerCancellable = ['AWAITING_PAYMENT', 'PENDING', 'CONFIRMED'].includes(order.status);
   const buyerCancellable = ['AWAITING_PAYMENT', 'PENDING'].includes(order.status);
   return {

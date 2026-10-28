@@ -66,11 +66,12 @@ public class ProductController {
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(defaultValue = "false") boolean mine,
             @RequestParam(required = false) Long sellerId,
+            @RequestParam(required = false) Boolean renewed,
             @RequestParam(defaultValue = "newest") String sort,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
         return productService.list(principal.user(), new ProductService.ListQuery(q, category, status, minPrice,
-                maxPrice, mine, sellerId, sort, page, size));
+                maxPrice, mine, sellerId, sort, page, size, renewed));
     }
 
     @GetMapping("/categories")

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { Avatar } from './Avatar';
-import { BankIcon, BellIcon, ChevronDownIcon, HistoryIcon, MapPinIcon, LogoutIcon, ReceiptIcon, SettingsIcon, UserIcon } from './Icons';
+import { BankIcon, BellIcon, ChevronDownIcon, DropletIcon, HistoryIcon, MapPinIcon, LogoutIcon, ReceiptIcon, SettingsIcon, UserIcon } from './Icons';
 
 export function UserMenu() {
   const { user, signOut } = useAuth();
@@ -64,6 +64,11 @@ export function UserMenu() {
           <NavLink to="/sales" className="user-menu-item" role="menuitem">
             <ReceiptIcon /> Doanh thu bán hàng
           </NavLink>
+          {user.role !== 'ADMIN' && (
+            <NavLink to="/care" className="user-menu-item" role="menuitem">
+              <DropletIcon /> Ký gửi Care
+            </NavLink>
+          )}
           <NavLink to="/profile/notifications" className="user-menu-item" role="menuitem">
             <BellIcon /> Cài đặt thông báo
           </NavLink>

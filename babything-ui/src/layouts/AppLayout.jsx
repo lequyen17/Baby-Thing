@@ -28,6 +28,7 @@ export default function AppLayout() {
   const { pathname } = useLocation();
   const [params] = useSearchParams();
   const activeCategory = params.get('category') ?? '';
+  const renewed = params.get('renewed') === 'true';
   const [search, setSearch] = useState(params.get('q') ?? '');
   const [categories, setCategories] = useState([]);
   useRealtime(user.id);
@@ -118,8 +119,11 @@ export default function AppLayout() {
       {categories.length > 0 && (
         <nav className="category-bar" aria-label="Danh mục">
           <div className="category-bar-inner">
-            <Link to="/products" className={pathname === '/products' && !activeCategory ? 'is-active' : undefined}>
+            <Link to="/products" className={pathname === '/products' && !activeCategory && !renewed ? 'is-active' : undefined}>
               Mới đăng
+            </Link>
+            <Link to="/products?renewed=true" className={pathname === '/products' && renewed ? 'is-active' : undefined}>
+              Renewed
             </Link>
             {categories.map((c) => (
               <Link
@@ -161,6 +165,7 @@ export default function AppLayout() {
             <Link to="/products/new">Đăng bán</Link>
             <Link to="/products?mine=1">Tin đăng của tôi</Link>
             <Link to="/sales">Doanh thu bán hàng</Link>
+            {isAdmin ? <Link to="/admin/care">Kho Care</Link> : <Link to="/care">Ký gửi BabyThings Care</Link>}
             {isAdmin && <Link to="/admin/products">Duyệt tin đăng</Link>}
           </div>
           <div className="footer-col">

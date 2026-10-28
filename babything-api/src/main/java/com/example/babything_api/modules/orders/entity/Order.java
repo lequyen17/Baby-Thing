@@ -50,6 +50,10 @@ public class Order {
     @Column(nullable = false)
     private OrderStatus status = OrderStatus.AWAITING_PAYMENT;
 
+    /** Đơn hàng Care: Baby Things lấy hàng từ kho ký gửi và giao, người bán chỉ theo dõi. */
+    @Column(nullable = false, updatable = false)
+    private boolean care;
+
     /** Chưa thanh toán trước mốc này thì đơn tự huỷ và trả hàng về kho. */
     @Column(name = "payment_due_at")
     private Instant paymentDueAt;
@@ -167,6 +171,14 @@ public class Order {
 
     public void setSeller(User seller) {
         this.seller = seller;
+    }
+
+    public boolean isCare() {
+        return care;
+    }
+
+    public void setCare(boolean care) {
+        this.care = care;
     }
 
     public OrderStatus getStatus() {
