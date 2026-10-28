@@ -5,6 +5,7 @@ import App from './App';
 import { AuthProvider } from './auth/AuthContext';
 import './styles.css';
 import './styles-account.css';
+import './styles-market.css';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

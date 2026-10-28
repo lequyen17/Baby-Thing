@@ -6,6 +6,7 @@ import { Alert } from '../components/Form';
 import { EditIcon, PlusIcon, SearchIcon } from '../components/Icons';
 import { Pagination } from '../components/Pagination';
 import { ProductCard } from '../components/ProductCard';
+import { PRODUCT_STATUSES } from '../utils/format';
 
 const PAGE_SIZE = 12;
 
@@ -119,8 +120,11 @@ export default function ProductListPage() {
         {canFilterStatus && (
           <select value={status} onChange={(e) => updateParams({ status: e.target.value })} aria-label="Trạng thái">
             <option value="">Mọi trạng thái</option>
-            <option value="ACTIVE">Đang hiển thị</option>
-            <option value="INACTIVE">Đang ẩn</option>
+            {Object.entries(PRODUCT_STATUSES).map(([value, { label }]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
           </select>
         )}
         <select value={sort} onChange={(e) => updateParams({ sort: e.target.value })} aria-label="Sắp xếp">

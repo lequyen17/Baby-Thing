@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { maskAccount, usePayoutAccount } from '../account/useAccountData';
-import { useAuth } from '../auth/AuthContext';
+import { useEffect, useState } from 'react';
+import { maskAccount, PAYOUT_CHANGED_EVENT } from '../account/useAccountData';
+import { api } from '../api/client';
 import { Alert, Field } from '../components/Form';
 import { BankIcon, InfoIcon, LockIcon } from '../components/Icons';
 import { BANKS } from '../data/vnLocations';
@@ -8,16 +8,27 @@ import { BANKS } from '../data/vnLocations';
 // Chưa có dịch vụ OTP cho thao tác này: dùng mã cố định để demo luồng giao diện.
 const DEMO_OTP = '123456';
 
-/** FR-USER-08: tài khoản nhận tiền của Seller; đổi thông tin cần OTP. */
+/** FR-USER-08: tài khoản nhận tiền quyết toán của Seller (lưu ở server, admin dùng để chi trả); đổi thông tin cần OTP. */
 export default function PayoutPage() {
-  const { user } = useAuth();
-  const [payout, setPayout] = usePayoutAccount(user.id);
-  const [mode, setMode] = useState(payout ? 'view' : 'edit');
+  const [payout, setPayout] = useState(null);
+  const [loaded, setLoaded] = useState(false);
+  const [mode, setMode] = useState('edit');
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ bankCode: '', accountNo: '', holderName: '' });
   const [pending, setPending] = useState(null);
   const [otp, setOtp] = useState('');
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    api('/payout-account')
+      .then((data) => {
+        setPayout(data);
+        setMode(data ? 'view' : 'edit');
+      })
+      .catch((err) => setErrors({ load: err.message }))
+      .finally(() => setLoaded(true));
+  }, []);
 
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
 
@@ -33,17 +44,26 @@ export default function PayoutPage() {
     setOtp('');
   };
 
-  const confirm = (e) => {
+  const confirm = async (e) => {
     e.preventDefault();
     if (otp !== DEMO_OTP) {
       setErrors({ otp: 'Mã OTP không đúng. Vui lòng kiểm tra lại.' });
       return;
     }
-    setPayout({ ...pending, updatedAt: new Date().toISOString() });
-    setPending(null);
-    setErrors({});
-    setMode('view');
-    setMessage('Đã lưu tài khoản nhận tiền.');
+    setSaving(true);
+    try {
+      setPayout(await api('/payout-account', { method: 'PUT', body: pending }));
+      window.dispatchEvent(new Event(PAYOUT_CHANGED_EVENT));
+      setPending(null);
+      setErrors({});
+      setMode('view');
+      setMessage('Đã lưu tài khoản nhận tiền.');
+    } catch (err) {
+      setPending(null);
+      setErrors({ ...err.fields, load: err.message });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const startEdit = () => {
@@ -65,8 +85,11 @@ export default function PayoutPage() {
           </div>
         </div>
         <Alert type="success">{message}</Alert>
+        <Alert>{errors.load}</Alert>
 
-        {pending ? (
+        {!loaded ? (
+          <p className="muted">Đang tải…</p>
+        ) : pending ? (
           <form onSubmit={confirm} className="otp-box" noValidate>
             <span className="empty-icon">
               <LockIcon size={26} />
@@ -85,7 +108,7 @@ export default function PayoutPage() {
             />
             <small className="muted">Bản demo: dùng mã {DEMO_OTP}.</small>
             <div className="form-actions">
-              <button type="submit" className="btn btn-primary" disabled={otp.length !== 6}>
+              <button type="submit" className="btn btn-primary" disabled={otp.length !== 6 || saving}>
                 Xác nhận
               </button>
               <button type="button" className="btn btn-secondary" onClick={() => setPending(null)}>

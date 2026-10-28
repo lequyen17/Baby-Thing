@@ -10,6 +10,7 @@ import com.example.babything_api.modules.orders.entity.OrderStatus;
 /**
  * Dùng cho cả danh sách và chi tiết; danh sách cũng trả items để hiển thị tóm tắt.
  * seller null khi tin đăng không còn người bán. customer.email chỉ có khi người xem là chính người mua hoặc admin.
+ * inspectionEndsAt: hết mốc này mà người mua chưa xác nhận thì đơn tự hoàn tất (chỉ có khi DELIVERED).
  */
 public record OrderResponse(
         Long id,
@@ -23,8 +24,16 @@ public record OrderResponse(
         BigDecimal totalAmount,
         int totalQuantity,
         List<OrderItemResponse> items,
+        String trackingCode,
         String cancelReason,
         Instant cancelledAt,
+        Instant paymentDueAt,
+        Instant paidAt,
+        Instant confirmedAt,
+        Instant shippedAt,
+        Instant deliveredAt,
+        Instant inspectionEndsAt,
+        Instant completedAt,
         Instant createdAt,
         Instant updatedAt) {
 
@@ -35,7 +44,7 @@ public record OrderResponse(
     }
 
     /** Gọi trong transaction: user và seller là quan hệ lazy. */
-    public static OrderResponse from(Order o, boolean showCustomerEmail) {
+    public static OrderResponse from(Order o, boolean showCustomerEmail, Instant inspectionEndsAt) {
         var u = o.getUser();
         var s = o.getSeller();
         return new OrderResponse(o.getId(), o.getStatus(),
@@ -44,6 +53,8 @@ public record OrderResponse(
                 o.getRecipientName(), o.getPhone(), o.getAddress(), o.getNote(), o.getTotalAmount(),
                 o.getItems().stream().mapToInt(i -> i.getQuantity()).sum(),
                 o.getItems().stream().map(OrderItemResponse::from).toList(),
-                o.getCancelReason(), o.getCancelledAt(), o.getCreatedAt(), o.getUpdatedAt());
+                o.getTrackingCode(), o.getCancelReason(), o.getCancelledAt(), o.getPaymentDueAt(), o.getPaidAt(),
+                o.getConfirmedAt(), o.getShippedAt(), o.getDeliveredAt(), inspectionEndsAt, o.getCompletedAt(),
+                o.getCreatedAt(), o.getUpdatedAt());
     }
 }

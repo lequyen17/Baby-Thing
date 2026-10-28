@@ -35,6 +35,8 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
 
     boolean existsBySkuAndDeletedAtIsNull(String sku);
 
+    long countByStatusAndDeletedAtIsNull(ProductStatus status);
+
     boolean existsBySkuAndDeletedAtIsNullAndIdNot(String sku, Long id);
 
     /** statuses rỗng không được phép, nên gọi với danh sách trạng thái người dùng được xem. */

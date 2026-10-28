@@ -48,7 +48,30 @@ public class Order {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private OrderStatus status = OrderStatus.PENDING;
+    private OrderStatus status = OrderStatus.AWAITING_PAYMENT;
+
+    /** Chưa thanh toán trước mốc này thì đơn tự huỷ và trả hàng về kho. */
+    @Column(name = "payment_due_at")
+    private Instant paymentDueAt;
+
+    @Column(name = "paid_at")
+    private Instant paidAt;
+
+    @Column(name = "confirmed_at")
+    private Instant confirmedAt;
+
+    @Column(name = "shipped_at")
+    private Instant shippedAt;
+
+    @Column(name = "delivered_at")
+    private Instant deliveredAt;
+
+    @Column(name = "completed_at")
+    private Instant completedAt;
+
+    /** Mã vận đơn của đơn vị vận chuyển, người bán nhập khi giao hàng. */
+    @Column(name = "tracking_code", length = 50)
+    private String trackingCode;
 
     @Column(name = "recipient_name", nullable = false, length = 100)
     private String recipientName;
@@ -112,10 +135,7 @@ public class Order {
                 target = item;
                 target.setOrder(this);
             } else {
-                target.setProductName(item.getProductName());
-                target.setProductSku(item.getProductSku());
-                target.setImageUrl(item.getImageUrl());
-                target.setUnitPrice(item.getUnitPrice());
+                target.copySnapshot(item);
                 target.setQuantity(item.getQuantity());
                 target.setLineTotal(item.getLineTotal());
             }
@@ -153,8 +173,55 @@ public class Order {
         return status;
     }
 
+    /** Chuyển trạng thái và ghi lại thời điểm của bước đó. */
     public void setStatus(OrderStatus status) {
         this.status = status;
+        Instant now = Instant.now();
+        switch (status) {
+            case PENDING -> paidAt = now;
+            case CONFIRMED -> confirmedAt = now;
+            case SHIPPING -> shippedAt = now;
+            case DELIVERED -> deliveredAt = now;
+            case COMPLETED -> completedAt = now;
+            default -> {
+            }
+        }
+    }
+
+    public Instant getPaymentDueAt() {
+        return paymentDueAt;
+    }
+
+    public void setPaymentDueAt(Instant paymentDueAt) {
+        this.paymentDueAt = paymentDueAt;
+    }
+
+    public Instant getPaidAt() {
+        return paidAt;
+    }
+
+    public Instant getConfirmedAt() {
+        return confirmedAt;
+    }
+
+    public Instant getShippedAt() {
+        return shippedAt;
+    }
+
+    public Instant getDeliveredAt() {
+        return deliveredAt;
+    }
+
+    public Instant getCompletedAt() {
+        return completedAt;
+    }
+
+    public String getTrackingCode() {
+        return trackingCode;
+    }
+
+    public void setTrackingCode(String trackingCode) {
+        this.trackingCode = trackingCode;
     }
 
     public String getRecipientName() {

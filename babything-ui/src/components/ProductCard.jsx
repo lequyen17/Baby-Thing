@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { formatPrice } from '../utils/format';
+import { formatPrice, PRODUCT_STATUSES } from '../utils/format';
 import { categoryArt } from '../utils/categoryArt';
 import { HeartIcon, MessageIcon } from './Icons';
 import { ProductImage } from './ProductImage';
@@ -15,7 +15,7 @@ export function StockBadge({ stock }) {
 /** Lý do không đặt được (giống điều kiện ở trang chi tiết); null = đặt được. */
 function unavailableReason(product, user) {
   if (product.sellerId === user.id) return 'Tin của bạn';
-  if (product.status !== 'ACTIVE') return 'Đang ẩn';
+  if (product.status !== 'ACTIVE') return PRODUCT_STATUSES[product.status]?.label ?? 'Đang ẩn';
   if (product.stock <= 0) return 'Hết hàng';
   return null;
 }
@@ -33,7 +33,11 @@ export function ProductCard({ product, showStatus = false, footer }) {
           <ProductImage product={product} />
           <div className="product-card-badges">
             <StockBadge stock={product.stock} />
-            {showStatus && product.status !== 'ACTIVE' && <span className="badge badge-muted">Đang ẩn</span>}
+            {showStatus && product.status !== 'ACTIVE' && (
+              <span className={`badge ${PRODUCT_STATUSES[product.status]?.badge ?? 'badge-muted'}`}>
+                {PRODUCT_STATUSES[product.status]?.label ?? product.status}
+              </span>
+            )}
           </div>
         </div>
         <div className="product-card-body">

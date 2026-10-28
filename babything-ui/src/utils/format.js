@@ -21,6 +21,33 @@ export function formatCondition(value) {
   return CONDITIONS.find(([key]) => key === value)?.[1] ?? null;
 }
 
+/** Độ tuổi phù hợp, khớp enum AgeRange ở backend. */
+export const AGE_RANGES = [
+  ['NEWBORN', 'Sơ sinh'],
+  ['M0_6', '0–6 tháng'],
+  ['M6_12', '6–12 tháng'],
+  ['Y1_2', '1–2 tuổi'],
+  ['Y2_3', '2–3 tuổi'],
+  ['Y3_PLUS', 'Trên 3 tuổi'],
+];
+
+export function formatAgeRange(value) {
+  return AGE_RANGES.find(([key]) => key === value)?.[1] ?? null;
+}
+
+/** Trạng thái tin đăng, khớp ProductStatus ở backend. */
+export const PRODUCT_STATUSES = {
+  PENDING_REVIEW: { label: 'Chờ duyệt', badge: 'badge-warning' },
+  ACTIVE: { label: 'Đang hiển thị', badge: 'badge-success' },
+  INACTIVE: { label: 'Đang ẩn', badge: 'badge-muted' },
+  REJECTED: { label: 'Bị từ chối', badge: 'badge-danger' },
+};
+
+/** Số phần trăm từ tỉ lệ 0.1 → "10%". */
+export function formatPercent(rate) {
+  return `${Math.round(Number(rate) * 1000) / 10}%`;
+}
+
 export function formatPrice(value) {
   return value === null || value === undefined ? '—' : priceFormat.format(Number(value));
 }

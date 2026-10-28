@@ -75,6 +75,12 @@ public class OrderController {
     @PatchMapping("/{id}/status")
     OrderResponse updateStatus(@AuthenticationPrincipal AuthPrincipal principal, @PathVariable Long id,
             @Valid @RequestBody OrderStatusRequest req) {
-        return orderService.updateStatus(principal.user(), id, req.status());
+        return orderService.updateStatus(principal.user(), id, req.status(), req.trackingCode());
+    }
+
+    /** Người mua xác nhận đã nhận hàng đúng mô tả. */
+    @PostMapping("/{id}/receive")
+    OrderResponse receive(@AuthenticationPrincipal AuthPrincipal principal, @PathVariable Long id) {
+        return orderService.receive(principal.user(), id);
     }
 }

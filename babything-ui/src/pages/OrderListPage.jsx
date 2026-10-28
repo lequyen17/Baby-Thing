@@ -180,6 +180,11 @@ export default function OrderListPage() {
                       ? order.seller && ` · Người bán: ${order.seller.displayName}`
                       : ` · Người mua: ${order.customer.email ?? order.customer.displayName}`}
                   </span>
+                  {order.status === 'AWAITING_PAYMENT' && order.paymentDueAt && (
+                    <span className="payment-failure">
+                      {view === 'selling' ? 'Người mua cần thanh toán' : 'Thanh toán'} trước {formatDate(order.paymentDueAt)}, quá hạn đơn tự huỷ
+                    </span>
+                  )}
                 </div>
                 <span className="product-price order-row-total">{formatPrice(order.totalAmount)}</span>
               </Link>

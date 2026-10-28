@@ -166,7 +166,7 @@ export default function OrderFormPage() {
     if (loaded) return;
     api(`/orders/${id}`)
       .then((order) => {
-        if (order.status !== 'PENDING') {
+        if (order.status !== 'AWAITING_PAYMENT') {
           navigate(`/orders/${id}`, { replace: true });
           return;
         }
@@ -220,12 +220,14 @@ export default function OrderFormPage() {
       if (isEdit) {
         navigate(`/orders/${saved.id}`, { replace: true, state: { notice: 'Đã cập nhật đơn hàng.' } });
       } else if (saved.length === 1) {
-        navigate(`/orders/${saved[0].id}`, { replace: true, state: { notice: 'Đặt hàng thành công.' } });
+        navigate(`/orders/${saved[0].id}/pay`, { replace: true });
       } else {
         const ids = saved.map((o) => `#${o.id}`).join(', ');
-        navigate('/orders', {
+        navigate('/orders?status=AWAITING_PAYMENT', {
           replace: true,
-          state: { notice: `Đã tạo ${saved.length} đơn, mỗi người bán một đơn: ${ids}.` },
+          state: {
+            notice: `Đã tạo ${saved.length} đơn, mỗi người bán một đơn: ${ids}. Vui lòng thanh toán từng đơn trong 30 phút, quá hạn đơn sẽ tự huỷ.`,
+          },
         });
       }
     } catch (err) {
@@ -249,8 +251,8 @@ export default function OrderFormPage() {
         <h1>{isEdit ? `Sửa đơn #${id}` : 'Tạo đơn mới'}</h1>
         <p className="muted">
           {isEdit
-            ? 'Đơn đang chờ xác nhận thì vẫn sửa được. Sản phẩm giữ nguyên hoặc giảm số lượng thì giữ giá lúc đặt; sản phẩm mới hoặc tăng số lượng thì tính theo giá hiện tại.'
-            : 'Hàng được giữ cho bạn ngay khi đặt đơn.'}
+            ? 'Đơn chưa thanh toán thì vẫn sửa được. Sản phẩm giữ nguyên hoặc giảm số lượng thì giữ giá lúc đặt; sản phẩm mới hoặc tăng số lượng thì tính theo giá hiện tại.'
+            : 'Hàng được giữ cho bạn 30 phút sau khi đặt; thanh toán online trong thời gian này để người bán xác nhận đơn.'}
         </p>
       </div>
 
@@ -355,7 +357,7 @@ export default function OrderFormPage() {
 
             <div className="product-actions">
               <button type="submit" className="btn btn-primary" disabled={submitting || items.length === 0}>
-                {submitting ? 'Đang lưu…' : isEdit ? 'Lưu thay đổi' : 'Đặt hàng'}
+                {submitting ? 'Đang lưu…' : isEdit ? 'Lưu thay đổi' : 'Đặt hàng & thanh toán'}
               </button>
               <Link to={backTo} className="btn btn-secondary">
                 Quay lại

@@ -1,6 +1,9 @@
 package com.example.babything_api.modules.products.entity;
 
-/** INACTIVE = ẩn khỏi danh sách của khách, chỉ admin thấy. */
+/**
+ * Khách chỉ thấy ACTIVE. Tin người bán tạo / sửa vào PENDING_REVIEW, admin duyệt thành ACTIVE hoặc từ chối
+ * thành REJECTED. INACTIVE = người bán tự ẩn tin.
+ */
 public enum ProductStatus {
-    ACTIVE, INACTIVE
+    PENDING_REVIEW, ACTIVE, INACTIVE, REJECTED
 }

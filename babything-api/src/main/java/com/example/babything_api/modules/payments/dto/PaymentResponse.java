@@ -10,7 +10,8 @@ import com.example.babything_api.modules.payments.entity.PaymentStatus;
 
 /**
  * Dùng cho cả danh sách và chi tiết. order là tóm tắt đơn để hiển thị, chi tiết đầy đủ xem /api/orders/{id}.
- * Không trả providerTxnId: mã nội bộ của cổng thanh toán chỉ dùng để đối soát.
+ * payer là người mua (chính người xem, hoặc để admin đối soát). Không trả providerTxnId: mã nội bộ của cổng
+ * thanh toán chỉ dùng để đối soát.
  */
 public record PaymentResponse(
         Long id,
@@ -20,6 +21,7 @@ public record PaymentResponse(
         PaymentStatus status,
         String provider,
         String failureReason,
+        Payer payer,
         OrderSummary order,
         Instant expiresAt,
         Instant paidAt,
@@ -35,10 +37,14 @@ public record PaymentResponse(
     public record Seller(Long id, String displayName) {
     }
 
-    /** Gọi trong transaction: order, seller và items là quan hệ lazy. */
+    public record Payer(Long id, String displayName, String email) {
+    }
+
+    /** Gọi trong transaction: user, order, seller và items là quan hệ lazy. */
     public static PaymentResponse from(Payment p) {
         var o = p.getOrder();
         var s = o.getSeller();
+        var u = p.getUser();
         var first = o.getItems().isEmpty() ? null : o.getItems().get(0);
         var order = new OrderSummary(o.getId(), o.getStatus(),
                 s == null ? null : new Seller(s.getId(), s.getDisplayName()),
@@ -46,7 +52,7 @@ public record PaymentResponse(
                 first == null ? null : first.getImageUrl(),
                 o.getItems().size());
         return new PaymentResponse(p.getId(), p.getTransactionRef(), p.getAmount(), p.getMethod(), p.getStatus(),
-                p.getProvider(), p.getFailureReason(), order, p.getExpiresAt(), p.getPaidAt(), p.getRefundedAt(),
-                p.getCreatedAt(), p.getUpdatedAt());
+                p.getProvider(), p.getFailureReason(), new Payer(u.getId(), u.getDisplayName(), u.getEmail()), order,
+                p.getExpiresAt(), p.getPaidAt(), p.getRefundedAt(), p.getCreatedAt(), p.getUpdatedAt());
     }
 }

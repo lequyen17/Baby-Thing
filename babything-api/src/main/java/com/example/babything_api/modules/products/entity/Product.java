@@ -2,8 +2,15 @@ package com.example.babything_api.modules.products.entity;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.hibernate.annotations.BatchSize;
+
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -54,6 +61,41 @@ public class Product {
     @Enumerated(EnumType.STRING)
     @Column(name = "item_condition", length = 20)
     private ProductCondition condition;
+
+    @Column(length = 100)
+    private String brand;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "age_range", length = 20)
+    private AgeRange ageRange;
+
+    @Column(length = 30)
+    private String size;
+
+    /** Lỗi / khuyết điểm người bán khai báo ("Không có" nếu không có). */
+    @Column(length = 1000)
+    private String defects;
+
+    @Column(name = "usage_duration", length = 50)
+    private String usageDuration;
+
+    /** Ảnh thật theo thứ tự hiển thị; imageUrl luôn là ảnh đầu tiên. */
+    @ElementCollection
+    @CollectionTable(name = "product_images", joinColumns = @JoinColumn(name = "product_id"))
+    @OrderColumn(name = "position")
+    @Column(name = "url", length = 500)
+    @BatchSize(size = 50)
+    private List<String> imageUrls = new ArrayList<>();
+
+    @Column(name = "reject_reason", length = 500)
+    private String rejectReason;
+
+    @Column(name = "reviewed_by")
+    private Long reviewedBy;
+
+    /** null = nội dung hiện tại chưa được admin duyệt. */
+    @Column(name = "reviewed_at")
+    private Instant reviewedAt;
 
     /** Người bán (chủ tin đăng). */
     @Column(name = "created_by", updatable = false)
@@ -161,6 +203,79 @@ public class Product {
 
     public void setCondition(ProductCondition condition) {
         this.condition = condition;
+    }
+
+    public String getBrand() {
+        return brand;
+    }
+
+    public void setBrand(String brand) {
+        this.brand = brand;
+    }
+
+    public AgeRange getAgeRange() {
+        return ageRange;
+    }
+
+    public void setAgeRange(AgeRange ageRange) {
+        this.ageRange = ageRange;
+    }
+
+    public String getSize() {
+        return size;
+    }
+
+    public void setSize(String size) {
+        this.size = size;
+    }
+
+    public String getDefects() {
+        return defects;
+    }
+
+    public void setDefects(String defects) {
+        this.defects = defects;
+    }
+
+    public String getUsageDuration() {
+        return usageDuration;
+    }
+
+    public void setUsageDuration(String usageDuration) {
+        this.usageDuration = usageDuration;
+    }
+
+    public List<String> getImageUrls() {
+        return imageUrls;
+    }
+
+    /** Thay danh sách ảnh và cập nhật ảnh bìa. */
+    public void replaceImages(List<String> urls) {
+        imageUrls.clear();
+        imageUrls.addAll(urls);
+        imageUrl = urls.isEmpty() ? null : urls.get(0);
+    }
+
+    public String getRejectReason() {
+        return rejectReason;
+    }
+
+    public void setRejectReason(String rejectReason) {
+        this.rejectReason = rejectReason;
+    }
+
+    public Long getReviewedBy() {
+        return reviewedBy;
+    }
+
+    public Instant getReviewedAt() {
+        return reviewedAt;
+    }
+
+    /** reviewer null = huỷ trạng thái đã duyệt (người bán vừa sửa nội dung). */
+    public void markReviewed(Long reviewer) {
+        reviewedBy = reviewer;
+        reviewedAt = reviewer == null ? null : Instant.now();
     }
 
     public User getSeller() {

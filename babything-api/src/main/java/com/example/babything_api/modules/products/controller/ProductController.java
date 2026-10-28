@@ -2,12 +2,14 @@ package com.example.babything_api.modules.products.controller;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -29,6 +31,8 @@ import com.example.babything_api.modules.products.dto.ProductImageResponse;
 import com.example.babything_api.modules.products.dto.ProductRequest;
 import com.example.babything_api.modules.products.dto.ProductResponse;
 import com.example.babything_api.modules.products.dto.ProductViewStats;
+import com.example.babything_api.modules.products.dto.ReviewRequest;
+import com.example.babything_api.modules.products.dto.VisibilityRequest;
 import com.example.babything_api.modules.products.entity.ProductStatus;
 import com.example.babything_api.modules.products.service.ProductService;
 import com.example.babything_api.modules.products.service.ProductViewService;
@@ -108,6 +112,30 @@ public class ProductController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void delete(@AuthenticationPrincipal AuthPrincipal principal, @PathVariable Long id) {
         productService.delete(principal.user(), id);
+    }
+
+    @PatchMapping("/{id}/visibility")
+    ProductResponse setVisibility(@AuthenticationPrincipal AuthPrincipal principal, @PathVariable Long id,
+            @Valid @RequestBody VisibilityRequest req) {
+        return productService.setVisibility(principal.user(), id, req.visible());
+    }
+
+    // ---------------------------------------------------------------- Kiểm duyệt (chỉ ADMIN, kiểm tra trong service)
+
+    @GetMapping("/review-count")
+    Map<String, Long> reviewCount(@AuthenticationPrincipal AuthPrincipal principal) {
+        return Map.of("pending", productService.countPendingReview(principal.user()));
+    }
+
+    @PostMapping("/{id}/approve")
+    ProductResponse approve(@AuthenticationPrincipal AuthPrincipal principal, @PathVariable Long id) {
+        return productService.approve(principal.user(), id);
+    }
+
+    @PostMapping("/{id}/reject")
+    ProductResponse reject(@AuthenticationPrincipal AuthPrincipal principal, @PathVariable Long id,
+            @Valid @RequestBody ReviewRequest req) {
+        return productService.reject(principal.user(), id, req.reason());
     }
 
     @GetMapping("/{id}/views")

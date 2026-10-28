@@ -1,5 +1,12 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import AccountLayout from './account/AccountLayout';
+import AdminLayout from './admin/AdminLayout';
+import AdminPaymentsPage from './admin/AdminPaymentsPage';
+import AdminProductsPage from './admin/AdminProductsPage';
+import AdminSettlementsPage from './admin/AdminSettlementsPage';
+import CheckoutPage from './pages/CheckoutPage';
+import MockGatewayPage from './pages/MockGatewayPage';
+import SalesPage from './pages/SalesPage';
 import ContentPage from './content/ContentPage';
 import { CONTENT } from './content/pages';
 import MessagesPage from './messages/MessagesPage';
@@ -68,11 +75,21 @@ export default function App() {
           <Route path="/orders/new" element={<OrderFormPage />} />
           <Route path="/orders/:id" element={<OrderDetailPage />} />
           <Route path="/orders/:id/edit" element={<OrderFormPage />} />
+          <Route path="/orders/:id/pay" element={<CheckoutPage />} />
           <Route path="/payments" element={<PaymentListPage />} />
+          <Route path="/sales" element={<SalesPage />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Navigate to="/admin/products" replace />} />
+            <Route path="products" element={<AdminProductsPage />} />
+            <Route path="payments" element={<AdminPaymentsPage />} />
+            <Route path="settlements" element={<AdminSettlementsPage />} />
+          </Route>
           {Object.keys(COMING_SOON).map((feature) => (
             <Route key={feature} path={`/${feature}`} element={<ComingSoonPage feature={feature} />} />
           ))}
         </Route>
+        {/* Trang cổng thanh toán giả lập đứng riêng, không có header của sàn */}
+        <Route path="/pay/:ref" element={<MockGatewayPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

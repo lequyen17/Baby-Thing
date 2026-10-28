@@ -43,6 +43,7 @@ public class SecurityConfig {
                         .permitAll()
                         // Ảnh lưu trên ổ đĩa: <img> không gửi kèm access token
                         .requestMatchers(HttpMethod.GET, "/api/uploads/**").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // Sản phẩm: mọi thành viên đăng bán được; quyền sửa/xoá theo chủ tin kiểm tra trong ProductService
                         // Đơn hàng: quyền người mua / người bán / admin kiểm tra trong OrderService
                         .anyRequest().authenticated())

@@ -1,5 +1,6 @@
 package com.example.babything_api.config;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -16,9 +17,21 @@ public record AppProperties(
         Login login,
         @DefaultValue Google google,
         @DefaultValue R2 r2,
-        @DefaultValue Uploads uploads) {
+        @DefaultValue Uploads uploads,
+        @DefaultValue Marketplace marketplace) {
 
     public record Mail(String from, boolean enabled) {
+    }
+
+    /**
+     * commissionRate: hoa hồng trừ vào tiền người bán nhận. paymentWindow: đơn chưa thanh toán quá hạn này thì tự huỷ.
+     * paymentTtl: thời hạn của một lần thanh toán. inspectionPeriod: người mua không xác nhận / khiếu nại thì tự hoàn tất.
+     */
+    public record Marketplace(
+            @DefaultValue("0.10") BigDecimal commissionRate,
+            @DefaultValue("30m") Duration paymentWindow,
+            @DefaultValue("15m") Duration paymentTtl,
+            @DefaultValue("48h") Duration inspectionPeriod) {
     }
 
     public record Jwt(String secret, Duration accessTtl, Duration refreshTtl, Duration sessionMaxAge) {

@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.criteria.Predicate;
 
+import com.example.babything_api.config.AppProperties;
 import com.example.babything_api.core.dto.PageResponse;
 import com.example.babything_api.core.exceptions.ApiException;
 import com.example.babything_api.modules.orders.dto.OrderItemRequest;
@@ -32,6 +33,9 @@ import com.example.babything_api.modules.orders.entity.Order;
 import com.example.babything_api.modules.orders.entity.OrderItem;
 import com.example.babything_api.modules.orders.entity.OrderStatus;
 import com.example.babything_api.modules.orders.repository.OrderRepository;
+import com.example.babything_api.modules.payments.entity.PaymentStatus;
+import com.example.babything_api.modules.payments.service.PaymentService;
+import com.example.babything_api.modules.settlements.service.SettlementService;
 import com.example.babything_api.modules.products.entity.Product;
 import com.example.babything_api.modules.products.entity.ProductStatus;
 import com.example.babything_api.modules.products.repository.ProductRepository;
@@ -40,8 +44,9 @@ import com.example.babything_api.modules.users.entity.User;
 
 /**
  * Mỗi đơn thuộc một người mua và một người bán; đặt hàng của nhiều người bán cùng lúc thì tách thành nhiều đơn.
- * Người mua xem / sửa / huỷ đơn của mình khi còn PENDING. Người bán xem đơn bán, chuyển trạng thái và huỷ được
- * cả khi đã CONFIRMED. Admin làm được mọi việc trên mọi đơn.
+ * Luồng (OrderStatus): đặt → thanh toán (PaymentService) → người bán xác nhận / giao → người mua xác nhận nhận hàng
+ * → quyết toán người bán (SettlementService). Người mua sửa đơn khi chưa thanh toán, huỷ khi người bán chưa xác nhận;
+ * người bán huỷ được cả khi đã CONFIRMED. Huỷ đơn đã thanh toán thì hoàn tiền. Admin làm được mọi việc trên mọi đơn.
  * Tồn kho bị trừ ngay khi đặt và được hoàn lại khi huỷ hoặc khi sửa bớt hàng.
  */
 @Service
@@ -60,10 +65,17 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final PaymentService paymentService;
+    private final SettlementService settlementService;
+    private final AppProperties.Marketplace marketplace;
 
-    public OrderService(OrderRepository orderRepository, ProductRepository productRepository) {
+    public OrderService(OrderRepository orderRepository, ProductRepository productRepository,
+            PaymentService paymentService, SettlementService settlementService, AppProperties props) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
+        this.paymentService = paymentService;
+        this.settlementService = settlementService;
+        this.marketplace = props.marketplace();
     }
 
     public record ListQuery(String view, String q, OrderStatus status, String sort, int page, int size) {
@@ -114,10 +126,12 @@ public class OrderService {
                 bySeller.computeIfAbsent(r.seller() == null ? null : r.seller().getId(), k -> new ArrayList<>()).add(r));
 
         List<OrderResponse> created = new ArrayList<>();
+        Instant paymentDueAt = Instant.now().plus(marketplace.paymentWindow());
         for (List<Reserved> group : bySeller.values()) {
             Order order = new Order();
             order.setUser(customer);
             order.setSeller(group.get(0).seller());
+            order.setPaymentDueAt(paymentDueAt);
             applyShipping(order, req);
             order.replaceItems(group.stream().map(Reserved::item).toList());
             created.add(toResponse(customer, orderRepository.saveAndFlush(order)));
@@ -139,7 +153,7 @@ public class OrderService {
         }
         if (!order.getStatus().isEditable()) {
             throw new ApiException(HttpStatus.CONFLICT, "ORDER_NOT_EDITABLE",
-                    "Chỉ sửa được đơn đang chờ xác nhận");
+                    "Chỉ sửa được đơn chưa thanh toán");
         }
         applyShipping(order, req);
 
@@ -184,33 +198,37 @@ public class OrderService {
                                     + "Hãy đặt một đơn mới cho sản phẩm này");
                 });
         order.replaceItems(items);
+        // Tổng tiền có thể đã đổi: giao dịch đang mở chụp số tiền cũ nên phải tạo lại
+        paymentService.closePending(order, PaymentStatus.EXPIRED, "Đơn hàng đã được sửa");
         return toResponse(viewer, orderRepository.saveAndFlush(order));
     }
 
-    /** Người mua huỷ được khi PENDING; người bán / admin huỷ được cả khi đã CONFIRMED (chưa giao cho vận chuyển). */
+    /**
+     * Người mua huỷ được khi người bán chưa xác nhận; người bán / admin huỷ được cả khi đã CONFIRMED
+     * (chưa giao cho vận chuyển). Đơn đã thanh toán thì hoàn tiền cho người mua.
+     */
     @Transactional
     public OrderResponse cancel(User viewer, Long id, String reason) {
         Order order = findForUpdate(viewer, id);
         boolean allowed = isAdmin(viewer) || isSeller(viewer, order)
                 ? order.getStatus().isCancellableBySeller()
-                : order.getStatus().isEditable();
+                : order.getStatus().isCancellableByBuyer();
         if (!allowed) {
             throw new ApiException(HttpStatus.CONFLICT, "ORDER_NOT_CANCELLABLE",
                     order.getStatus() == OrderStatus.CANCELLED
                             ? "Đơn hàng này đã bị huỷ"
                             : "Đơn hàng này không thể huỷ được nữa");
         }
-        release(order);
-        order.setStatus(OrderStatus.CANCELLED);
-        order.setCancelReason(blankToNull(reason));
-        order.setCancelledBy(viewer.getId());
-        order.setCancelledAt(Instant.now());
+        doCancel(order, viewer.getId(), blankToNull(reason));
         return toResponse(viewer, orderRepository.saveAndFlush(order));
     }
 
-    /** Người bán / admin đẩy đơn sang bước kế tiếp. Huỷ phải đi qua cancel() để hoàn kho. */
+    /**
+     * Người bán / admin đẩy đơn sang bước kế tiếp. Huỷ phải đi qua cancel() để hoàn kho / hoàn tiền;
+     * PENDING chỉ đến được bằng thanh toán, COMPLETED bằng receive().
+     */
     @Transactional
-    public OrderResponse updateStatus(User viewer, Long id, OrderStatus status) {
+    public OrderResponse updateStatus(User viewer, Long id, OrderStatus status, String trackingCode) {
         if (status == OrderStatus.CANCELLED) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "USE_CANCEL",
                     "Dùng POST /api/orders/{id}/cancel để huỷ đơn");
@@ -222,10 +240,100 @@ public class OrderService {
         }
         if (!order.getStatus().canMoveTo(status)) {
             throw new ApiException(HttpStatus.CONFLICT, "INVALID_STATUS_TRANSITION",
-                    "Không thể chuyển đơn từ \"" + order.getStatus().label() + "\" sang \"" + status.label() + "\"");
+                    order.getStatus() == OrderStatus.AWAITING_PAYMENT
+                            ? "Người mua chưa thanh toán đơn này"
+                            : "Không thể chuyển đơn từ \"" + order.getStatus().label() + "\" sang \""
+                                    + status.label() + "\"");
+        }
+        if (status == OrderStatus.SHIPPING) {
+            String code = blankToNull(trackingCode);
+            if (code == null) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "TRACKING_CODE_REQUIRED",
+                        "Vui lòng nhập mã vận đơn khi giao hàng cho đơn vị vận chuyển");
+            }
+            order.setTrackingCode(code);
         }
         order.setStatus(status);
         return toResponse(viewer, orderRepository.saveAndFlush(order));
+    }
+
+    /**
+     * Người mua (hoặc admin) xác nhận đã nhận hàng đúng mô tả: đơn hoàn tất và người bán được ghi nhận khoản
+     * quyết toán. Không xác nhận thì job tự hoàn tất khi hết thời hạn kiểm hàng.
+     */
+    @Transactional
+    public OrderResponse receive(User viewer, Long id) {
+        Order order = findForUpdate(viewer, id);
+        if (!isAdmin(viewer) && !isBuyer(viewer, order)) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "NOT_ORDER_BUYER",
+                    "Chỉ người mua mới xác nhận đã nhận hàng");
+        }
+        if (order.getStatus() != OrderStatus.DELIVERED) {
+            throw new ApiException(HttpStatus.CONFLICT, "ORDER_NOT_DELIVERED",
+                    "Chỉ xác nhận được khi đơn đã được giao");
+        }
+        complete(order);
+        return toResponse(viewer, orderRepository.saveAndFlush(order));
+    }
+
+    // ---------------------------------------------------------------- Job (OrderJobs)
+
+    /** Huỷ đơn quá hạn thanh toán, trả hàng về kho. Trả false nếu đơn đã được thanh toán / huỷ trong lúc chờ. */
+    @Transactional
+    public boolean expireUnpaid(Long id) {
+        Order order = orderRepository.findForUpdate(id).orElse(null);
+        if (order == null || order.getStatus() != OrderStatus.AWAITING_PAYMENT
+                || order.getPaymentDueAt() == null || Instant.now().isBefore(order.getPaymentDueAt())) {
+            return false;
+        }
+        doCancel(order, null, "Quá hạn thanh toán");
+        orderRepository.save(order);
+        return true;
+    }
+
+    /** Hết thời hạn kiểm hàng mà người mua không xác nhận: tự hoàn tất. */
+    @Transactional
+    public boolean autoComplete(Long id) {
+        Order order = orderRepository.findForUpdate(id).orElse(null);
+        if (order == null || order.getStatus() != OrderStatus.DELIVERED || order.getDeliveredAt() == null
+                || Instant.now().isBefore(order.getDeliveredAt().plus(marketplace.inspectionPeriod()))) {
+            return false;
+        }
+        complete(order);
+        orderRepository.save(order);
+        return true;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Long> findOverdueUnpaid() {
+        return orderRepository.findIdsByStatusAndPaymentDueAtBefore(OrderStatus.AWAITING_PAYMENT, Instant.now());
+    }
+
+    @Transactional(readOnly = true)
+    public List<Long> findInspectionEnded() {
+        return orderRepository.findIdsByStatusAndDeliveredAtBefore(OrderStatus.DELIVERED,
+                Instant.now().minus(marketplace.inspectionPeriod()));
+    }
+
+    // ---------------------------------------------------------------- Chuyển trạng thái (đơn đã khoá)
+
+    /** cancelledBy null = hệ thống. */
+    private void doCancel(Order order, Long cancelledBy, String reason) {
+        if (order.getPaidAt() != null) {
+            paymentService.refundForOrder(order);
+        } else {
+            paymentService.closePending(order, PaymentStatus.FAILED, "Đơn hàng đã bị huỷ");
+        }
+        release(order);
+        order.setStatus(OrderStatus.CANCELLED);
+        order.setCancelReason(reason);
+        order.setCancelledBy(cancelledBy);
+        order.setCancelledAt(Instant.now());
+    }
+
+    private void complete(Order order) {
+        order.setStatus(OrderStatus.COMPLETED);
+        settlementService.createFor(order);
     }
 
     // ---------------------------------------------------------------- Tồn kho
@@ -258,10 +366,7 @@ public class OrderService {
             }
             OrderItem item = new OrderItem();
             item.setProductId(productId);
-            item.setProductName(product.getName());
-            item.setProductSku(product.getSku());
-            item.setImageUrl(product.getImageUrl());
-            item.setUnitPrice(product.getPrice());
+            item.snapshot(product);
             item.setQuantity(quantity);
             item.setLineTotal(product.getPrice().multiply(BigDecimal.valueOf(quantity)));
             items.add(new Reserved(product.getSeller(), item));
@@ -291,8 +396,11 @@ public class OrderService {
     }
 
     /** Người bán chỉ cần thông tin giao hàng, không thấy email tài khoản của người mua. */
-    private static OrderResponse toResponse(User viewer, Order order) {
-        return OrderResponse.from(order, isAdmin(viewer) || isBuyer(viewer, order));
+    private OrderResponse toResponse(User viewer, Order order) {
+        Instant inspectionEndsAt = order.getStatus() == OrderStatus.DELIVERED && order.getDeliveredAt() != null
+                ? order.getDeliveredAt().plus(marketplace.inspectionPeriod())
+                : null;
+        return OrderResponse.from(order, isAdmin(viewer) || isBuyer(viewer, order), inspectionEndsAt);
     }
 
     private static void applyShipping(Order order, OrderRequest req) {

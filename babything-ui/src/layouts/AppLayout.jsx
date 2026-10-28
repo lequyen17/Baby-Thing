@@ -5,6 +5,7 @@ import { useAuth } from '../auth/AuthContext';
 import {
   CameraIcon,
   CardIcon,
+  CheckSquareIcon,
   LogoMark,
   MessageIcon,
   OrderIcon,
@@ -86,6 +87,11 @@ export default function AppLayout() {
             <NavLink to="/payments" className="app-nav-link">
               <CardIcon size={24} /> <span>Thanh toán</span>
             </NavLink>
+            {isAdmin && (
+              <NavLink to="/admin" className="app-nav-link">
+                <CheckSquareIcon size={24} /> <span>Quản trị</span>
+              </NavLink>
+            )}
           </nav>
 
           <Link to="/products/new" className="btn btn-accent header-sell">
@@ -140,7 +146,8 @@ export default function AppLayout() {
             <Link to="/products">Tin mới đăng</Link>
             <Link to="/products/new">Đăng bán</Link>
             <Link to="/products?mine=1">Tin đăng của tôi</Link>
-            {isAdmin && <Link to="/products">Quản lý sản phẩm</Link>}
+            <Link to="/sales">Doanh thu bán hàng</Link>
+            {isAdmin && <Link to="/admin/products">Duyệt tin đăng</Link>}
           </div>
           <div className="footer-col">
             <strong>Hỗ trợ</strong>

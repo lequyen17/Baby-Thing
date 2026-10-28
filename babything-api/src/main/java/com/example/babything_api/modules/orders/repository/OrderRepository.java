@@ -1,5 +1,7 @@
 package com.example.babything_api.modules.orders.repository;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -15,6 +17,7 @@ import org.springframework.data.repository.query.Param;
 import jakarta.persistence.LockModeType;
 
 import com.example.babything_api.modules.orders.entity.Order;
+import com.example.babything_api.modules.orders.entity.OrderStatus;
 
 public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecificationExecutor<Order> {
 
@@ -31,4 +34,14 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select o from ShopOrder o where o.id = :id")
     Optional<Order> findForUpdate(@Param("id") Long id);
+
+    /** Job: đơn chưa thanh toán đã quá hạn. */
+    @Query("select o.id from ShopOrder o where o.status = :status and o.paymentDueAt < :before order by o.id")
+    List<Long> findIdsByStatusAndPaymentDueAtBefore(@Param("status") OrderStatus status,
+            @Param("before") Instant before);
+
+    /** Job: đơn đã giao trước mốc này (hết thời hạn kiểm hàng). */
+    @Query("select o.id from ShopOrder o where o.status = :status and o.deliveredAt < :before order by o.id")
+    List<Long> findIdsByStatusAndDeliveredAtBefore(@Param("status") OrderStatus status,
+            @Param("before") Instant before);
 }

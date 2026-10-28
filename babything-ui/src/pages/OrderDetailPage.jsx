@@ -3,23 +3,60 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Alert } from '../components/Form';
-import { ArrowLeftIcon, EditIcon, XCircleIcon } from '../components/Icons';
-import { OrderStatusBadge, ORDER_STATUSES, orderPermissions, STEPS } from '../components/OrderStatus';
+import { ArrowLeftIcon, CardIcon, CheckIcon, ClockIcon, EditIcon, TruckIcon, XCircleIcon } from '../components/Icons';
+import { OrderStatusBadge, orderPermissions, STEPS } from '../components/OrderStatus';
 import { ProductImage } from '../components/ProductImage';
+import { ListingSpecs } from '../components/ListingSpecs';
 import { formatDate, formatPrice } from '../utils/format';
 
-/** Thanh tiến trình PENDING → DELIVERED; đơn đã huỷ thì không hiện. */
-function OrderProgress({ status }) {
-  const current = STEPS.indexOf(status);
+/** Thanh tiến trình kèm thời điểm từng bước; đơn đã huỷ thì không hiện. */
+function OrderProgress({ order }) {
+  const current = STEPS.findIndex(([status]) => status === order.status);
   return (
     <ol className="order-progress">
-      {STEPS.map((step, index) => (
-        <li key={step} className={index <= current ? 'is-done' : ''} aria-current={index === current ? 'step' : undefined}>
+      {STEPS.map(([status, timeKey, label], index) => (
+        <li key={status} className={index <= current ? 'is-done' : ''} aria-current={index === current ? 'step' : undefined}>
           <span className="order-progress-dot" />
-          {ORDER_STATUSES[step].label}
+          {label}
+          {index <= current && order[timeKey] && <small className="order-progress-time">{formatDate(order[timeKey])}</small>}
         </li>
       ))}
     </ol>
+  );
+}
+
+/** Gợi ý việc cần làm tiếp theo cho người đang xem. */
+function NextHint({ order, perms }) {
+  const { status } = order;
+  let text = null;
+  if (status === 'AWAITING_PAYMENT') {
+    text = perms.isBuyer
+      ? `Thanh toán trước ${formatDate(order.paymentDueAt)} để giữ hàng; quá hạn đơn sẽ tự huỷ.`
+      : `Người mua chưa thanh toán (hạn ${formatDate(order.paymentDueAt)}).`;
+  } else if (status === 'PENDING') {
+    text = perms.isBuyer ? 'Đã thanh toán. Người bán sẽ xác nhận đơn trong 24 giờ.' : 'Người mua đã thanh toán. Vui lòng xác nhận đơn trong 24 giờ.';
+  } else if (status === 'CONFIRMED') {
+    text = perms.isBuyer ? 'Người bán đang đóng gói.' : 'Đóng gói và giao cho đơn vị vận chuyển, nhập mã vận đơn khi giao.';
+  } else if (status === 'SHIPPING') {
+    text = `Đơn đang được vận chuyển${order.trackingCode ? `, mã vận đơn ${order.trackingCode}` : ''}.`;
+  } else if (status === 'DELIVERED') {
+    text = perms.isBuyer
+      ? `Kiểm tra hàng, đối chiếu với bản chụp tin đăng bên dưới rồi xác nhận trước ${formatDate(order.inspectionEndsAt)}. Hết hạn, đơn tự hoàn tất.`
+      : `Chờ người mua kiểm hàng (đến ${formatDate(order.inspectionEndsAt)}). Hoàn tất thì tiền bán hàng được ghi nhận để chi trả.`;
+  } else if (status === 'COMPLETED') {
+    text = perms.isSeller ? (
+      <>
+        Đơn đã hoàn tất. Tiền bán hàng (đã trừ hoa hồng) được chi trả theo kỳ, xem tại <Link to="/sales">Doanh thu</Link>.
+      </>
+    ) : (
+      'Đơn đã hoàn tất. Cảm ơn bạn đã mua sắm tại Baby Things!'
+    );
+  }
+  if (!text) return null;
+  return (
+    <p className="order-hint">
+      <ClockIcon size={16} /> <span>{text}</span>
+    </p>
   );
 }
 
@@ -28,13 +65,13 @@ export default function OrderDetailPage() {
   const { user } = useAuth();
   const location = useLocation();
   const [order, setOrder] = useState(null);
-  const [error, setError] = useState('');
-  const [notice, setNotice] = useState(location.state?.notice ?? '');
+  const [error, setError] = useState(location.state?.noticeType === 'error' ? location.state.notice : '');
+  const [notice, setNotice] = useState(location.state?.noticeType === 'error' ? '' : (location.state?.notice ?? ''));
   const [busy, setBusy] = useState(false);
+  const [tracking, setTracking] = useState('');
 
   useEffect(() => {
     setOrder(null);
-    setError('');
     api(`/orders/${id}`)
       .then(setOrder)
       .catch((err) => setError(err.message));
@@ -55,16 +92,31 @@ export default function OrderDetailPage() {
   };
 
   const handleCancel = () => {
-    const reason = window.prompt(`Huỷ đơn #${order.id}? Bạn có thể ghi lý do (không bắt buộc):`, '');
+    const refund = order.paidAt ? ' Tiền đã thanh toán sẽ được hoàn cho người mua.' : '';
+    const reason = window.prompt(`Huỷ đơn #${order.id}?${refund} Bạn có thể ghi lý do (không bắt buộc):`, '');
     if (reason === null) return;
-    run(() => api(`/orders/${id}/cancel`, { method: 'POST', body: { reason } }), 'Đã huỷ đơn hàng.');
+    run(() => api(`/orders/${id}/cancel`, { method: 'POST', body: { reason } }), `Đã huỷ đơn hàng.${refund}`);
   };
 
-  const handleNextStep = (step) =>
+  const handleNextStep = (step) => {
+    if (step.needsTracking && !tracking.trim()) {
+      setError('Vui lòng nhập mã vận đơn trước khi giao cho đơn vị vận chuyển.');
+      return;
+    }
     run(
-      () => api(`/orders/${id}/status`, { method: 'PATCH', body: { status: step.status } }),
-      `Đơn hàng đã chuyển sang "${ORDER_STATUSES[step.status].label}".`,
+      () =>
+        api(`/orders/${id}/status`, {
+          method: 'PATCH',
+          body: { status: step.status, trackingCode: step.needsTracking ? tracking.trim() : undefined },
+        }),
+      `Đã cập nhật đơn hàng: ${step.label.toLowerCase()}.`,
     );
+  };
+
+  const handleReceive = () => {
+    if (!window.confirm('Xác nhận bạn đã nhận hàng đúng mô tả? Sau khi xác nhận, tiền sẽ được chuyển cho người bán.')) return;
+    run(() => api(`/orders/${id}/receive`, { method: 'POST' }), 'Cảm ơn bạn! Đơn hàng đã hoàn tất.');
+  };
 
   const perms = order ? orderPermissions(order, user) : null;
 
@@ -95,7 +147,17 @@ export default function OrderDetailPage() {
               </p>
             </div>
             <div className="product-actions order-actions">
-              {perms.nextStep && (
+              {perms.canPay && (
+                <Link to={`/orders/${order.id}/pay`} className="btn btn-primary">
+                  <CardIcon /> Thanh toán
+                </Link>
+              )}
+              {perms.canReceive && (
+                <button type="button" className="btn btn-primary" onClick={handleReceive} disabled={busy}>
+                  <CheckIcon /> Đã nhận hàng
+                </button>
+              )}
+              {perms.nextStep && !perms.nextStep.needsTracking && (
                 <button type="button" className="btn btn-primary" onClick={() => handleNextStep(perms.nextStep)} disabled={busy}>
                   {perms.nextStep.label}
                 </button>
@@ -113,14 +175,35 @@ export default function OrderDetailPage() {
             </div>
           </div>
 
+          {perms.nextStep?.needsTracking && (
+            <form
+              className="card ship-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleNextStep(perms.nextStep);
+              }}
+            >
+              <TruckIcon size={22} />
+              <label className="field">
+                <span>Mã vận đơn (GHN, GHTK, Ahamove…)</span>
+                <input value={tracking} onChange={(e) => setTracking(e.target.value)} maxLength={50} placeholder="VD: GHN123456789" />
+              </label>
+              <button type="submit" className="btn btn-primary" disabled={busy}>
+                {perms.nextStep.label}
+              </button>
+            </form>
+          )}
+
           {order.status === 'CANCELLED' ? (
             <div className="card order-cancelled">
               <strong>Đã huỷ lúc {formatDate(order.cancelledAt)}</strong>
               {order.cancelReason && <p className="muted">Lý do: {order.cancelReason}</p>}
+              {order.paidAt && <p className="muted">Khoản thanh toán của đơn đã được hoàn lại cho người mua.</p>}
             </div>
           ) : (
             <section className="card">
-              <OrderProgress status={order.status} />
+              <OrderProgress order={order} />
+              <NextHint order={order} perms={perms} />
             </section>
           )}
 
@@ -129,18 +212,36 @@ export default function OrderDetailPage() {
               <h2 className="card-title">Sản phẩm</h2>
               <ul className="order-items">
                 {order.items.map((item) => (
-                  <li key={item.id} className="order-item">
-                    <ProductImage product={{ imageUrl: item.imageUrl, name: item.productName }} className="history-thumb" />
-                    <div className="order-item-info">
-                      <Link to={`/products/${item.productId}`}>
-                        <strong>{item.productName}</strong>
-                      </Link>
-                      <span className="muted">SKU: {item.productSku}</span>
-                      <span className="muted">
-                        {formatPrice(item.unitPrice)} × {item.quantity}
-                      </span>
+                  <li key={item.id} className="order-item-block">
+                    <div className="order-item">
+                      <ProductImage product={{ imageUrl: item.imageUrl, name: item.productName }} className="history-thumb" />
+                      <div className="order-item-info">
+                        <Link to={`/products/${item.productId}`}>
+                          <strong>{item.productName}</strong>
+                        </Link>
+                        <span className="muted">SKU: {item.productSku}</span>
+                        <span className="muted">
+                          {formatPrice(item.unitPrice)} × {item.quantity}
+                        </span>
+                      </div>
+                      <span className="order-item-total">{formatPrice(item.lineTotal)}</span>
                     </div>
-                    <span className="order-item-total">{formatPrice(item.lineTotal)}</span>
+                    {item.snapshot && (
+                      <details className="snapshot">
+                        <summary>Bản chụp tin đăng lúc mua</summary>
+                        <ListingSpecs item={item.snapshot} />
+                        {item.snapshot.description && <p className="product-description">{item.snapshot.description}</p>}
+                        {item.snapshot.imageUrls?.length > 0 && (
+                          <div className="gallery-thumbs">
+                            {item.snapshot.imageUrls.map((url) => (
+                              <a key={url} href={url} target="_blank" rel="noreferrer">
+                                <img src={url} alt="" loading="lazy" />
+                              </a>
+                            ))}
+                          </div>
+                        )}
+                      </details>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -165,6 +266,14 @@ export default function OrderDetailPage() {
                     <dd>{order.note}</dd>
                   </>
                 )}
+                {order.trackingCode && (
+                  <>
+                    <dt>Mã vận đơn</dt>
+                    <dd>{order.trackingCode}</dd>
+                  </>
+                )}
+                <dt>Thanh toán</dt>
+                <dd>{order.paidAt ? `Đã thanh toán online lúc ${formatDate(order.paidAt)}` : 'Chưa thanh toán'}</dd>
                 {!perms.isBuyer && (
                   <>
                     <dt>Người mua</dt>
