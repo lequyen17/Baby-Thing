@@ -10,7 +10,7 @@ import CareAdminPanel from './CareAdminPanel';
 import { CARE_ITEM_STATUSES, CARE_STEPS, CareStatusBadge, DROPOFF_METHODS, careStepIndex } from './careFormat';
 
 function CareProgress({ batch }) {
-  const current = careStepIndex(batch.status);
+  const current = careStepIndex(batch);
   return (
     <ol className="order-progress care-progress">
       {CARE_STEPS.map(([status, timeKey, label], index) => (
@@ -44,7 +44,8 @@ function careHint(batch, isAdmin) {
         ? 'Chờ người bán duyệt báo giá và thanh toán phí vệ sinh.'
         : 'Duyệt báo giá và thanh toán phí vệ sinh để bắt đầu làm sạch. Từ chối thì Baby Things hoàn hàng (bạn chịu phí trả).';
     case 'CLEANING':
-      return isAdmin ? 'Làm sạch theo SOP, QC, chụp ảnh chuẩn rồi đăng bán.' : 'Đồ đang được làm sạch, kiểm tra lần cuối và chụp ảnh.';
+      if (!batch.cleanedAt) return isAdmin ? 'Giặt riêng lô theo SOP, ghi người thực hiện.' : 'Đồ đang được làm sạch theo quy trình Baby Things Care.';
+      return isAdmin ? 'QC sau giặt, chụp ảnh chuẩn, đóng túi rồi đăng bán.' : 'Đồ đã được làm sạch, đang kiểm tra lần cuối và chụp ảnh.';
     case 'SELLING':
       return batch.priceDroppedAt
         ? `Đã giảm về giá sàn ngày ${formatDate(batch.priceDroppedAt, true)}. Hết hạn ký gửi ${formatDate(batch.expiresAt, true)}.`
@@ -93,6 +94,8 @@ function MoneyCard({ batch }) {
             <dd>
               {formatPrice(batch.expectedMin)} – {formatPrice(batch.expectedMax)}
             </dd>
+            <dt>Phạm vi điều chỉnh giá</dt>
+            <dd>Giá sàn thấp hơn tối đa {formatPercent(batch.maxDiscount)}</dd>
             <dt>Phí vệ sinh dự kiến</dt>
             <dd>{formatPrice(batch.estimatedFee)}</dd>
             <dt>Hoa hồng</dt>
@@ -100,11 +103,117 @@ function MoneyCard({ batch }) {
           </>
         )}
       </dl>
+      {batch.agreedAt && (
+        <p className="muted small-note">
+          Đã đồng ý thoả thuận ký gửi ({batch.agreementVersion}) lúc {formatDate(batch.agreedAt)}.
+        </p>
+      )}
       {batch.feePaymentRef && <p className="muted small-note">Mã thanh toán phí: {batch.feePaymentRef}</p>}
       {Number(m?.soldTotal) > 0 && (
         <p className="muted small-note">
           Tiền bán từng món được chi trả theo kỳ, xem tại <Link to="/sales">Doanh thu</Link>.
         </p>
+      )}
+    </section>
+  );
+}
+
+/** Bước 3: thoả thuận ký gửi điện tử (BMC 7.5.3). Người bán phải đọc và tick đồng ý đúng phiên bản điều khoản. */
+function AgreementCard({ batch, busy, onAgree }) {
+  const [rules, setRules] = useState(null);
+  const [checked, setChecked] = useState(false);
+
+  useEffect(() => {
+    api('/care/rules').then(setRules).catch(() => setRules(null));
+  }, []);
+
+  return (
+    <section className="card care-agreement">
+      <h2 className="card-title">Thoả thuận ký gửi {rules && <small className="muted">({rules.agreementVersion})</small>}</h2>
+      <p>
+        Lô <strong>{batch.code}</strong>: giá niêm yết dự kiến {formatPrice(batch.expectedMin)} – {formatPrice(batch.expectedMax)}, giá sàn thấp hơn giá
+        niêm yết tối đa {formatPercent(batch.maxDiscount)}, phí vệ sinh dự kiến {formatPrice(batch.estimatedFee)}. Giá và phí cuối cùng được báo sau khi
+        Baby Things kiểm tra hàng, bạn duyệt lại trước khi làm sạch.
+      </p>
+      {rules ? (
+        <ol className="care-terms">
+          {rules.agreementTerms.map((t) => (
+            <li key={t}>{t}</li>
+          ))}
+        </ol>
+      ) : (
+        <p className="muted">Đang tải điều khoản…</p>
+      )}
+      <label className="bulk-select">
+        <input type="checkbox" checked={checked} onChange={(e) => setChecked(e.target.checked)} disabled={!rules} />
+        Tôi đã đọc và đồng ý các điều khoản ký gửi trên
+      </label>
+      <div className="product-actions">
+        <button type="button" className="btn btn-primary" disabled={!checked || busy} onClick={() => onAgree(rules.agreementVersion)}>
+          <CheckIcon /> Đồng ý thoả thuận
+        </button>
+      </div>
+    </section>
+  );
+}
+
+/** Đề xuất giảm giá thấp hơn giá sàn: người bán đồng ý lại hoặc giữ giá cũ. */
+function PriceProposal({ batch, isOwner, busy, onAccept, onReject }) {
+  const items = batch.items.filter((i) => i.proposedPrice != null);
+  if (!batch.priceProposedAt || items.length === 0) return null;
+  return (
+    <section className="review-banner">
+      <div>
+        <strong>Đề xuất giảm giá ngoài phạm vi đã duyệt ({formatDate(batch.priceProposedAt)})</strong>
+        <p>
+          {items.map((i) => `${i.name}: ${formatPrice(i.currentPrice)} → ${formatPrice(i.proposedPrice)} (giá sàn ${formatPrice(i.floorPrice)})`).join(' · ')}
+        </p>
+        {!isOwner && <p className="muted">Chờ người bán đồng ý.</p>}
+      </div>
+      {isOwner && (
+        <div className="product-actions">
+          <button type="button" className="btn btn-primary" onClick={onAccept} disabled={busy}>
+            Đồng ý giá mới
+          </button>
+          <button type="button" className="btn btn-secondary" onClick={onReject} disabled={busy}>
+            Giữ giá cũ
+          </button>
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** Biên bản tiếp nhận (ảnh + ghi chú lúc nhận) và nhật ký làm sạch. */
+function ProcessLog({ batch }) {
+  if (!batch.receivedAt && !batch.sellerNote) return null;
+  return (
+    <section className="card">
+      <h2 className="card-title">Hồ sơ xử lý</h2>
+      {batch.sellerNote && <p>Ghi chú của người bán: {batch.sellerNote}</p>}
+      {batch.receivedAt && (
+        <div className="care-log">
+          <strong>Biên bản tiếp nhận · {formatDate(batch.receivedAt)}</strong>
+          {batch.intakeNote && <span>{batch.intakeNote}</span>}
+          {batch.intakePhotoUrls.length > 0 && (
+            <div className="gallery-thumbs">
+              {batch.intakePhotoUrls.map((url, i) => (
+                <a key={url} href={url} target="_blank" rel="noreferrer">
+                  <img src={url} alt={`Ảnh lúc nhận ${i + 1}`} />
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      {batch.cleanedAt && (
+        <div className="care-log">
+          <strong>Làm sạch · {formatDate(batch.cleanedAt)}</strong>
+          <span>
+            Người thực hiện: {batch.cleanedBy}
+            {batch.cleanNote && ` · ${batch.cleanNote}`}
+          </span>
+        </div>
       )}
     </section>
   );
@@ -142,6 +251,12 @@ function ItemRow({ item }) {
             <dd>{formatPrice(item.listPrice)}</dd>
             <dt>Giá sàn</dt>
             <dd>{formatPrice(item.floorPrice)}</dd>
+          </>
+        )}
+        {item.proposedPrice != null && (
+          <>
+            <dt>Đề xuất</dt>
+            <dd className="text-danger">{formatPrice(item.proposedPrice)}</dd>
           </>
         )}
         {item.currentPrice != null && item.status === 'LISTED' && (
@@ -248,11 +363,6 @@ export default function CareBatchPage() {
             </div>
             {isOwner && (
               <div className="product-actions order-actions">
-                {status === 'PRE_QUOTED' && (
-                  <button type="button" className="btn btn-primary" onClick={() => run(post('agree'), 'Đã đồng ý thoả thuận. Hãy gửi hàng cho Baby Things.')} disabled={busy}>
-                    <CheckIcon /> Đồng ý thoả thuận
-                  </button>
-                )}
                 {status === 'QUOTED' && (
                   <>
                     <button type="button" className="btn btn-primary" onClick={handleAccept} disabled={busy}>
@@ -301,6 +411,21 @@ export default function CareBatchPage() {
             </section>
           )}
 
+          {isOwner && status === 'PRE_QUOTED' && (
+            <AgreementCard
+              batch={batch}
+              busy={busy}
+              onAgree={(agreementVersion) => run(post('agree', { agreementVersion }), 'Đã đồng ý thoả thuận. Hãy gửi hàng cho Baby Things.')}
+            />
+          )}
+          <PriceProposal
+            batch={batch}
+            isOwner={isOwner}
+            busy={busy}
+            onAccept={() => run(post('accept-prices'), 'Đã áp dụng giá mới.')}
+            onReject={() => run(post('reject-prices'), 'Đã giữ giá cũ.')}
+          />
+
           {isAdmin && <CareAdminPanel batch={batch} busy={busy} run={run} />}
 
           <div className="order-detail-grid">
@@ -314,13 +439,7 @@ export default function CareBatchPage() {
             </section>
             <div className="care-side">
               <MoneyCard batch={batch} />
-              {(batch.sellerNote || batch.intakeNote) && (
-                <section className="card">
-                  <h2 className="card-title">Ghi chú</h2>
-                  {batch.sellerNote && <p>Người bán: {batch.sellerNote}</p>}
-                  {batch.intakeNote && <p>Lúc nhận hàng: {batch.intakeNote}</p>}
-                </section>
-              )}
+              <ProcessLog batch={batch} />
             </div>
           </div>
         </>

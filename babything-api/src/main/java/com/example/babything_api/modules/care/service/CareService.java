@@ -33,6 +33,7 @@ import com.example.babything_api.config.AppProperties;
 import com.example.babything_api.core.dto.PageResponse;
 import com.example.babything_api.core.exceptions.ApiException;
 import com.example.babything_api.modules.care.dto.CareDtos.BatchResponse;
+import com.example.babything_api.modules.care.dto.CareDtos.CleanRequest;
 import com.example.babything_api.modules.care.dto.CareDtos.CreateRequest;
 import com.example.babything_api.modules.care.dto.CareDtos.ItemRequest;
 import com.example.babything_api.modules.care.dto.CareDtos.ItemResponse;
@@ -41,6 +42,9 @@ import com.example.babything_api.modules.care.dto.CareDtos.ListRequest;
 import com.example.babything_api.modules.care.dto.CareDtos.Money;
 import com.example.babything_api.modules.care.dto.CareDtos.QuoteItem;
 import com.example.babything_api.modules.care.dto.CareDtos.QuoteRequest;
+import com.example.babything_api.modules.care.dto.CareDtos.ReceiveRequest;
+import com.example.babything_api.modules.care.dto.CareDtos.RepriceItem;
+import com.example.babything_api.modules.care.dto.CareDtos.RepriceRequest;
 import com.example.babything_api.modules.care.dto.CareDtos.Rules;
 import com.example.babything_api.modules.care.dto.CareDtos.ScreenRequest;
 import com.example.babything_api.modules.care.dto.CareDtos.Seller;
@@ -82,6 +86,9 @@ public class CareService {
     public static final Duration REMINDER_BEFORE = Duration.ofDays(7);
     public static final int MAX_PAGE_SIZE = 50;
 
+    /** Đổi nội dung điều khoản thì tăng phiên bản: người bán phải đồng ý đúng bản đang hiển thị. */
+    public static final String AGREEMENT_VERSION = "CARE-2026.10";
+
     private static final String CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
@@ -105,7 +112,29 @@ public class CareService {
     public Rules rules() {
         return new Rules(CATEGORIES, MAX_ITEMS, MIN_LOT_VALUE, MAX_COST_RATIO, commissionRate,
                 (int) CONSIGNMENT.toDays(), (int) PRICE_DROP_AFTER.toDays(), (int) EXTENSION.toDays(),
-                (int) REMINDER_BEFORE.toDays());
+                (int) REMINDER_BEFORE.toDays(), AGREEMENT_VERSION, agreementTerms());
+    }
+
+    /** Nội dung tối thiểu của thoả thuận ký gửi (tài liệu BMC 7.5.3). */
+    private List<String> agreementTerms() {
+        String commission = commissionRate.movePointRight(2).stripTrailingZeros().toPlainString() + "%";
+        return List.of(
+                "Quyền sở hữu: hàng vẫn thuộc về bạn cho đến khi bán được. Baby Things nhận ký gửi, bán hộ, không mua đứt.",
+                "Giá: bạn duyệt giá niêm yết và giá sàn (phạm vi điều chỉnh) của từng món ở báo giá chính thức. Từ ngày "
+                        + PRICE_DROP_AFTER.toDays() + " chưa bán, giá được giảm trong phạm vi này; giảm thấp hơn giá sàn phải được bạn đồng ý lại.",
+                "Phí: hoa hồng " + commission + " trên giá bán của mỗi món bán được. Phí vệ sinh thanh toán trước khi làm sạch và "
+                        + "không hoàn lại sau khi đã làm sạch. Từ chối báo giá chính thức thì không thu phí vệ sinh.",
+                "Thời hạn: ký gửi " + CONSIGNMENT.toDays() + " ngày kể từ ngày đăng bán, gia hạn tối đa một lần thêm "
+                        + EXTENSION.toDays() + " ngày. Hết hạn không gia hạn thì các món chưa bán được hoàn trả.",
+                "Bảo quản: hàng được lưu riêng theo lô, có biên bản và ảnh lúc nhận. Mất hoặc hư hỏng do lỗi của Baby Things "
+                        + "trong thời gian lưu giữ được bồi thường theo giá sàn đã duyệt của món đó.",
+                "Rủi ro khi giặt: một số chất liệu có thể co rút hoặc phai màu dù giặt đúng hướng dẫn trên nhãn. Baby Things "
+                        + "báo trước món có rủi ro và không chịu trách nhiệm hư hại do chất liệu.",
+                "Vận chuyển: phí gửi hàng đến Baby Things và phí trả hàng chưa bán do bạn chịu.",
+                "Hàng không có người nhận: sau 30 ngày kể từ khi báo hoàn trả mà bạn không nhận, Baby Things được xử lý "
+                        + "(quyên góp) các món đó.",
+                "Cam kết: hàng có nguồn gốc hợp pháp, đúng như khai báo.",
+                "Tranh chấp: hai bên thương lượng qua kênh hỗ trợ của Baby Things; không thành thì giải quyết theo pháp luật Việt Nam.");
     }
 
     // ---------------------------------------------------------------- Xem
@@ -207,11 +236,19 @@ public class CareService {
         return toResponse(seller, batchRepository.saveAndFlush(batch));
     }
 
-    /** Bước 3: người bán đồng ý thoả thuận ký gửi điện tử theo báo giá sơ bộ, sau đó gửi hàng. */
+    /**
+     * Bước 3: người bán đồng ý thoả thuận ký gửi điện tử (báo giá sơ bộ + điều khoản 7.5.3), sau đó gửi hàng.
+     * Lưu phiên bản điều khoản để biết người bán đã đồng ý nội dung nào.
+     */
     @Transactional
-    public BatchResponse agree(User seller, Long id) {
+    public BatchResponse agree(User seller, Long id, String agreementVersion) {
         CareBatch batch = findOwnForUpdate(seller, id);
         expect(batch, CareBatchStatus.PRE_QUOTED, "Lô không ở bước chờ đồng ý báo giá sơ bộ");
+        if (!AGREEMENT_VERSION.equals(agreementVersion)) {
+            throw new ApiException(HttpStatus.CONFLICT, "AGREEMENT_OUTDATED",
+                    "Điều khoản ký gửi vừa được cập nhật. Tải lại trang, đọc và đồng ý bản mới");
+        }
+        batch.setAgreementVersion(AGREEMENT_VERSION);
         batch.setAgreedAt(Instant.now());
         batch.setStatus(CareBatchStatus.AWAITING_DROPOFF);
         return save(seller, batch);
@@ -303,9 +340,11 @@ public class CareService {
         BigDecimal min = req.expectedMin();
         BigDecimal max = req.expectedMax();
         BigDecimal fee = req.estimatedFee();
-        if (min == null || max == null || fee == null || fee.signum() < 0 || max.compareTo(min) < 0) {
+        BigDecimal discount = req.maxDiscount();
+        if (min == null || max == null || fee == null || discount == null || fee.signum() < 0
+                || max.compareTo(min) < 0) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_PRE_QUOTE",
-                    "Nhập khoảng giá niêm yết (từ ≤ đến) và phí vệ sinh dự kiến");
+                    "Nhập khoảng giá niêm yết (từ ≤ đến), phạm vi điều chỉnh giá và phí vệ sinh dự kiến");
         }
         if (min.compareTo(MIN_LOT_VALUE) < 0) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "LOT_TOO_SMALL",
@@ -325,25 +364,30 @@ public class CareService {
         batch.setExpectedMin(min);
         batch.setExpectedMax(max);
         batch.setEstimatedFee(fee);
+        batch.setMaxDiscount(discount);
         batch.setPreQuotedAt(Instant.now());
         batch.setStatus(CareBatchStatus.PRE_QUOTED);
         notifySeller(batch, "Lô " + batch.getCode() + " có báo giá sơ bộ",
-                "Giá niêm yết dự kiến " + money(min) + " – " + money(max) + ", phí vệ sinh dự kiến " + money(fee)
-                        + ". Đồng ý thoả thuận để gửi hàng.");
+                "Giá niêm yết dự kiến " + money(min) + " – " + money(max) + ", giá sàn thấp hơn tối đa "
+                        + percent(discount) + ", phí vệ sinh dự kiến " + money(fee)
+                        + ". Đọc và đồng ý thoả thuận để gửi hàng.");
         return save(admin, batch);
     }
 
-    /** Bước 5: mở hàng, chụp tình trạng lúc nhận, đối chiếu khai báo. */
+    /** Bước 5: mở hàng, chụp tình trạng lúc nhận, đối chiếu khai báo → biên bản tiếp nhận điện tử gửi người bán. */
     @Transactional
-    public BatchResponse receive(User admin, Long id, String intakeNote) {
+    public BatchResponse receive(User admin, Long id, ReceiveRequest req) {
         requireAdmin(admin);
         CareBatch batch = findForUpdate(id);
         expect(batch, CareBatchStatus.AWAITING_DROPOFF, "Lô không ở bước chờ gửi hàng");
+        String note = blankToNull(req.intakeNote());
         batch.setReceivedAt(Instant.now());
-        batch.setIntakeNote(blankToNull(intakeNote));
+        batch.setIntakeNote(note);
+        batch.replaceIntakePhotos(req.imageUrls().stream().map(String::trim).distinct().toList());
         batch.setStatus(CareBatchStatus.RECEIVED);
-        notifySeller(batch, "Baby Things đã nhận lô " + batch.getCode(),
-                "Hàng đang được kiểm tra, bạn sẽ nhận báo giá chính thức sớm.");
+        notifySeller(batch, "Biên bản tiếp nhận lô " + batch.getCode(),
+                "Baby Things đã nhận hàng, chụp " + batch.getIntakePhotoUrls().size() + " ảnh tình trạng lúc nhận"
+                        + (note == null ? "" : ". Ghi nhận: " + note) + ". Hàng đang được kiểm tra từng món.");
         return save(admin, batch);
     }
 
@@ -384,6 +428,16 @@ public class CareService {
                 throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_ITEM_QUOTE",
                         "Món \"" + item.getName() + "\" cần cấp tình trạng, giá niêm yết và giá sàn (≤ giá niêm yết)");
             }
+            // Giá sàn phải nằm trong phạm vi điều chỉnh người bán đã đồng ý ở báo giá sơ bộ
+            if (batch.getMaxDiscount() != null) {
+                BigDecimal minFloor = q.listPrice().multiply(BigDecimal.ONE.subtract(batch.getMaxDiscount()))
+                        .setScale(0, RoundingMode.UP);
+                if (q.floorPrice().compareTo(minFloor) < 0) {
+                    throw new ApiException(HttpStatus.BAD_REQUEST, "FLOOR_OUT_OF_RANGE",
+                            "Giá sàn của \"" + item.getName() + "\" vượt phạm vi điều chỉnh đã thoả thuận (giảm tối đa "
+                                    + percent(batch.getMaxDiscount()) + ", tối thiểu " + money(minFloor) + ")");
+                }
+            }
             item.setStatus(CareItemStatus.ACCEPTED);
             item.setRejectReason(null);
             item.setGrade(q.grade());
@@ -411,15 +465,35 @@ public class CareService {
         return save(admin, batch);
     }
 
+    /** Bước 9: làm sạch theo SOP (giặt riêng từng lô), ghi ngày và người thực hiện. */
+    @Transactional
+    public BatchResponse clean(User admin, Long id, CleanRequest req) {
+        requireAdmin(admin);
+        CareBatch batch = findForUpdate(id);
+        expect(batch, CareBatchStatus.CLEANING, "Lô chưa thanh toán phí vệ sinh hoặc đã đăng bán");
+        if (batch.getCleanedAt() != null) {
+            throw new ApiException(HttpStatus.CONFLICT, "ALREADY_CLEANED", "Lô đã được ghi nhận làm sạch");
+        }
+        batch.setCleanedAt(Instant.now());
+        batch.setCleanedBy(req.cleanedBy().trim());
+        batch.setCleanNote(blankToNull(req.note()));
+        notifySeller(batch, "Lô " + batch.getCode() + " đã được làm sạch",
+                "Đồ đã được làm sạch theo quy trình Baby Things Care, đang kiểm tra lần cuối và chụp ảnh để đăng bán.");
+        return save(admin, batch);
+    }
+
     /**
-     * Bước 9–11: đã làm sạch theo SOP, QC đạt, chụp ảnh chuẩn → đăng từng món lên marketplace chung với nhãn
-     * Renewed. Tin đăng thuộc người bán (hàng vẫn của họ) nhưng chỉ Baby Things quản lý. Ngày 0 tính từ lúc đăng.
+     * Bước 10–11: QC đạt, chụp ảnh chuẩn → đăng từng món lên marketplace chung với nhãn Renewed. Tin đăng thuộc
+     * người bán (hàng vẫn của họ) nhưng chỉ Baby Things quản lý. Ngày 0 tính từ lúc đăng.
      */
     @Transactional
     public BatchResponse publish(User admin, Long id, ListRequest req) {
         requireAdmin(admin);
         CareBatch batch = findForUpdate(id);
         expect(batch, CareBatchStatus.CLEANING, "Lô chưa thanh toán phí hoặc đã đăng bán");
+        if (batch.getCleanedAt() == null) {
+            throw new ApiException(HttpStatus.CONFLICT, "NOT_CLEANED", "Ghi nhận làm sạch trước khi QC và đăng bán");
+        }
         Map<Long, ListItem> byId = req.items().stream()
                 .collect(Collectors.toMap(ListItem::id, Function.identity(), (a, b) -> b));
         Instant now = Instant.now();
@@ -456,13 +530,94 @@ public class CareService {
             item.setProductId(product.getId());
             item.setStatus(CareItemStatus.LISTED);
         }
-        batch.setCleanedAt(now);
         batch.setListedAt(now);
         batch.setExpiresAt(now.plus(CONSIGNMENT));
         batch.setStatus(CareBatchStatus.SELLING);
         notifySeller(batch, "Lô " + batch.getCode() + " đã lên sàn",
                 "Các món đạt QC đang được bán với nhãn BabyThings Renewed trong " + CONSIGNMENT.toDays() + " ngày.");
         return save(admin, batch);
+    }
+
+    /**
+     * Bước 13: điều chỉnh giá món đang bán. Trong phạm vi người bán đã duyệt (≥ giá sàn) thì áp dụng ngay và báo
+     * cho người bán; thấp hơn giá sàn thì chỉ là đề xuất, chờ người bán đồng ý lại.
+     */
+    @Transactional
+    public BatchResponse reprice(User admin, Long id, RepriceRequest req) {
+        requireAdmin(admin);
+        CareBatch batch = findForUpdate(id);
+        expect(batch, CareBatchStatus.SELLING, "Chỉ điều chỉnh giá được lô đang bán");
+        Map<Long, CareItem> byId = batch.getItems().stream().collect(Collectors.toMap(CareItem::getId, Function.identity()));
+        List<String> applied = new ArrayList<>();
+        List<String> proposed = new ArrayList<>();
+        for (RepriceItem r : req.items()) {
+            CareItem item = byId.get(r.id());
+            if (item == null || item.getStatus() != CareItemStatus.LISTED || item.getProductId() == null) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "ITEM_NOT_SELLING", "Chỉ điều chỉnh giá được món đang bán");
+            }
+            Product p = productRepository.findAliveForUpdate(item.getProductId())
+                    .orElseThrow(() -> new ApiException(HttpStatus.CONFLICT, "ITEM_NOT_SELLING",
+                            "Tin của \"" + item.getName() + "\" không còn trên sàn"));
+            if (p.getStock() <= 0) {
+                throw new ApiException(HttpStatus.CONFLICT, "ITEM_IN_ORDER",
+                        "\"" + item.getName() + "\" đang có đơn hàng, không đổi giá được");
+            }
+            if (r.price().compareTo(item.getFloorPrice()) >= 0) {
+                p.setPrice(r.price());
+                productRepository.save(p);
+                item.setProposedPrice(null);
+                applied.add(item.getName() + " " + money(r.price()));
+            } else {
+                item.setProposedPrice(r.price());
+                proposed.add(item.getName() + " " + money(r.price()));
+            }
+        }
+        if (!proposed.isEmpty()) {
+            batch.setPriceProposedAt(Instant.now());
+            notifySeller(batch, "Đề xuất giảm giá lô " + batch.getCode(),
+                    "Baby Things đề xuất giá thấp hơn giá sàn bạn đã duyệt: " + String.join(", ", proposed)
+                            + ". Vào lô để đồng ý hoặc giữ giá cũ.");
+        }
+        if (!applied.isEmpty()) {
+            notifySeller(batch, "Đã điều chỉnh giá lô " + batch.getCode(),
+                    "Trong phạm vi bạn đã duyệt: " + String.join(", ", applied) + ".");
+        }
+        return save(admin, batch);
+    }
+
+    /** Người bán đồng ý giá đề xuất dưới giá sàn: áp dụng và lấy làm giá sàn mới. */
+    @Transactional
+    public BatchResponse acceptPrices(User seller, Long id) {
+        CareBatch batch = findOwnForUpdate(seller, id);
+        requireProposal(batch);
+        for (CareItem item : batch.getItems()) {
+            BigDecimal price = item.getProposedPrice();
+            if (price == null) {
+                continue;
+            }
+            item.setProposedPrice(null);
+            if (item.getStatus() != CareItemStatus.LISTED || item.getProductId() == null) {
+                continue;
+            }
+            productRepository.findAliveForUpdate(item.getProductId()).ifPresent(p -> {
+                if (p.getStock() > 0) {
+                    p.setPrice(price);
+                    productRepository.save(p);
+                    item.setFloorPrice(price);
+                }
+            });
+        }
+        batch.setPriceProposedAt(null);
+        return save(seller, batch);
+    }
+
+    /** Người bán giữ giá cũ: bỏ các đề xuất dưới giá sàn. */
+    @Transactional
+    public BatchResponse rejectPrices(User seller, Long id) {
+        CareBatch batch = findOwnForUpdate(seller, id);
+        requireProposal(batch);
+        clearProposals(batch);
+        return save(seller, batch);
     }
 
     /** Hoàn trả cả lô khi kiểm tra không món nào đạt (bước 6). */
@@ -630,10 +785,23 @@ public class CareService {
                 });
             }
         }
+        clearProposals(batch);
         batch.setReturnReason(reason);
         batch.setStatus(CareBatchStatus.RETURNING);
         notifySeller(batch, "Lô " + batch.getCode() + " chờ hoàn trả",
                 reason + ". Baby Things sẽ gửi trả các món chưa bán (người bán chịu phí trả).");
+    }
+
+    private static void requireProposal(CareBatch batch) {
+        expect(batch, CareBatchStatus.SELLING, "Lô không còn đang bán");
+        if (batch.getPriceProposedAt() == null) {
+            throw new ApiException(HttpStatus.CONFLICT, "NO_PRICE_PROPOSAL", "Không có đề xuất giá nào đang chờ");
+        }
+    }
+
+    private static void clearProposals(CareBatch batch) {
+        batch.getItems().forEach(i -> i.setProposedPrice(null));
+        batch.setPriceProposedAt(null);
     }
 
     /** Hoa hồng 10% + phí vệ sinh không vượt 30% giá bán. */
@@ -667,7 +835,7 @@ public class CareService {
             items.add(new ItemResponse(i.getId(), i.getPosition(), i.getName(), i.getCategory(), i.getSize(),
                     i.getAgeRange(), i.getBrand(), i.getDesiredPrice(), i.getSellerDescription(), i.getPhotoUrl(),
                     i.getStatus(), i.getGrade(), i.getGrade() == null ? null : i.getGrade().label(), i.getDefects(),
-                    i.getRejectReason(), i.getListPrice(), i.getFloorPrice(), i.getProductId(),
+                    i.getRejectReason(), i.getListPrice(), i.getFloorPrice(), i.getProposedPrice(), i.getProductId(),
                     p == null ? null : p.getPrice(), p == null ? null : p.getStock(), i.getSoldAt()));
             if (i.getListPrice() != null) {
                 listTotal = listTotal.add(i.getListPrice());
@@ -689,10 +857,12 @@ public class CareService {
         return new BatchResponse(b.getId(), b.getCode(), b.getStatus(), b.getStatus().label(),
                 new Seller(s.getId(), s.getDisplayName(), isAdmin(viewer) ? s.getEmail() : null), b.getDropoffMethod(),
                 b.getSellerNote(), b.getDeclineReason(), b.getExpectedMin(), b.getExpectedMax(), b.getEstimatedFee(),
-                b.getIntakeNote(), b.getCleaningFee(), b.getFeePaymentRef(), money, b.getItems().size(), sold,
-                canExtend(b), b.getPreQuotedAt(), b.getAgreedAt(), b.getReceivedAt(), b.getQuotedAt(), b.getFeePaidAt(),
-                b.getCleanedAt(), b.getListedAt(), b.getListedAt() == null ? null : b.getListedAt().plus(PRICE_DROP_AFTER),
-                b.getPriceDroppedAt(), b.getExpiresAt(), b.getExtendedAt(), b.getReturnReason(), b.getReturnedAt(),
+                b.getMaxDiscount(), b.getAgreementVersion(), b.getIntakeNote(), List.copyOf(b.getIntakePhotoUrls()),
+                b.getCleaningFee(), b.getFeePaymentRef(), b.getCleanedBy(), b.getCleanNote(), money,
+                b.getItems().size(), sold, canExtend(b), b.getPreQuotedAt(), b.getAgreedAt(), b.getReceivedAt(),
+                b.getQuotedAt(), b.getFeePaidAt(), b.getCleanedAt(), b.getListedAt(),
+                b.getListedAt() == null ? null : b.getListedAt().plus(PRICE_DROP_AFTER), b.getPriceDroppedAt(),
+                b.getPriceProposedAt(), b.getExpiresAt(), b.getExtendedAt(), b.getReturnReason(), b.getReturnedAt(),
                 b.getClosedAt(), b.getCreatedAt(), b.getUpdatedAt(), items);
     }
 
@@ -760,6 +930,10 @@ public class CareService {
             sb.append(CODE_ALPHABET.charAt(RANDOM.nextInt(CODE_ALPHABET.length())));
         }
         return sb.toString();
+    }
+
+    private static String percent(BigDecimal ratio) {
+        return ratio.movePointRight(2).stripTrailingZeros().toPlainString() + "%";
     }
 
     private static String money(BigDecimal amount) {

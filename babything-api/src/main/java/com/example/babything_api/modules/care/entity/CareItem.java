@@ -83,6 +83,10 @@ public class CareItem {
     @Column(name = "floor_price", precision = 12, scale = 2)
     private BigDecimal floorPrice;
 
+    /** Giá admin đề xuất thấp hơn giá sàn, chờ người bán đồng ý (ngoài phạm vi đã duyệt). */
+    @Column(name = "proposed_price", precision = 12, scale = 2)
+    private BigDecimal proposedPrice;
+
     @Column(name = "product_id")
     private Long productId;
 
@@ -236,6 +240,14 @@ public class CareItem {
 
     public void setFloorPrice(BigDecimal floorPrice) {
         this.floorPrice = floorPrice;
+    }
+
+    public BigDecimal getProposedPrice() {
+        return proposedPrice;
+    }
+
+    public void setProposedPrice(BigDecimal proposedPrice) {
+        this.proposedPrice = proposedPrice;
     }
 
     public Long getProductId() {

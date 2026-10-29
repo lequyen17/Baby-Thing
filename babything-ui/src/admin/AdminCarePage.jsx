@@ -52,7 +52,7 @@ export default function AdminCarePage() {
       {stats && (
         <section className="care-capacity">
           <div className="card">
-            <span className="muted">Lô đang lưu kho</span>
+            <span className="muted">Lô đang lưu / giữ chỗ (gồm lô đã báo giá sơ bộ)</span>
             <strong>
               {stats.stored}/{stats.capacity}
             </strong>

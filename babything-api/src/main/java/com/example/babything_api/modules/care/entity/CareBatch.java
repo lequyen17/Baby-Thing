@@ -8,7 +8,9 @@ import java.util.List;
 import org.hibernate.annotations.BatchSize;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -20,6 +22,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
+import jakarta.persistence.OrderColumn;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -66,17 +69,32 @@ public class CareBatch {
     @Column(name = "estimated_fee", precision = 12, scale = 2)
     private BigDecimal estimatedFee;
 
+    /** Phạm vi điều chỉnh giá: giá sàn được thấp hơn giá niêm yết tối đa bao nhiêu (0.3 = 30%). */
+    @Column(name = "max_discount", precision = 4, scale = 3)
+    private BigDecimal maxDiscount;
+
     @Column(name = "pre_quoted_at")
     private Instant preQuotedAt;
 
     @Column(name = "agreed_at")
     private Instant agreedAt;
 
+    @Column(name = "agreement_version", length = 20)
+    private String agreementVersion;
+
     @Column(name = "received_at")
     private Instant receivedAt;
 
     @Column(name = "intake_note", length = 1000)
     private String intakeNote;
+
+    /** Ảnh tình trạng lúc nhận hàng, cùng intakeNote tạo thành biên bản tiếp nhận gửi người bán. */
+    @ElementCollection
+    @CollectionTable(name = "care_intake_photos", joinColumns = @JoinColumn(name = "batch_id"))
+    @OrderColumn(name = "position")
+    @Column(name = "url", length = 500, nullable = false)
+    @BatchSize(size = 50)
+    private List<String> intakePhotoUrls = new ArrayList<>();
 
     @Column(name = "cleaning_fee", precision = 12, scale = 2)
     private BigDecimal cleaningFee;
@@ -92,6 +110,15 @@ public class CareBatch {
 
     @Column(name = "cleaned_at")
     private Instant cleanedAt;
+
+    @Column(name = "cleaned_by", length = 100)
+    private String cleanedBy;
+
+    @Column(name = "clean_note", length = 1000)
+    private String cleanNote;
+
+    @Column(name = "price_proposed_at")
+    private Instant priceProposedAt;
 
     @Column(name = "listed_at")
     private Instant listedAt;
@@ -355,6 +382,55 @@ public class CareBatch {
 
     public void setClosedAt(Instant closedAt) {
         this.closedAt = closedAt;
+    }
+
+    public BigDecimal getMaxDiscount() {
+        return maxDiscount;
+    }
+
+    public void setMaxDiscount(BigDecimal maxDiscount) {
+        this.maxDiscount = maxDiscount;
+    }
+
+    public String getAgreementVersion() {
+        return agreementVersion;
+    }
+
+    public void setAgreementVersion(String agreementVersion) {
+        this.agreementVersion = agreementVersion;
+    }
+
+    public List<String> getIntakePhotoUrls() {
+        return intakePhotoUrls;
+    }
+
+    public void replaceIntakePhotos(List<String> urls) {
+        intakePhotoUrls.clear();
+        intakePhotoUrls.addAll(urls);
+    }
+
+    public String getCleanedBy() {
+        return cleanedBy;
+    }
+
+    public void setCleanedBy(String cleanedBy) {
+        this.cleanedBy = cleanedBy;
+    }
+
+    public String getCleanNote() {
+        return cleanNote;
+    }
+
+    public void setCleanNote(String cleanNote) {
+        this.cleanNote = cleanNote;
+    }
+
+    public Instant getPriceProposedAt() {
+        return priceProposedAt;
+    }
+
+    public void setPriceProposedAt(Instant priceProposedAt) {
+        this.priceProposedAt = priceProposedAt;
     }
 
     public Instant getCreatedAt() {

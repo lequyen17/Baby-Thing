@@ -45,15 +45,18 @@ export const CARE_STEPS = [
   ['AWAITING_DROPOFF', 'agreedAt', 'Đồng ý, gửi hàng'],
   ['RECEIVED', 'receivedAt', 'Nhận & kiểm tra'],
   ['QUOTED', 'quotedAt', 'Báo giá chính thức'],
-  ['CLEANING', 'feePaidAt', 'Trả phí, làm sạch'],
+  ['CLEANING', 'feePaidAt', 'Trả phí vệ sinh'],
+  // Không phải trạng thái riêng ở backend: lô CLEANING đã có cleanedAt
+  ['CLEANED', 'cleanedAt', 'Làm sạch & QC'],
   ['SELLING', 'listedAt', 'Đang bán'],
   ['CLOSED', 'closedAt', 'Kết thúc'],
 ];
 
-/** Vị trí của trạng thái trên thanh tiến trình (WAITLISTED ở bước sàng lọc, RETURNING trước kết thúc). */
-export function careStepIndex(status) {
-  const alias = { WAITLISTED: 'SUBMITTED', RETURNING: 'SELLING' }[status] ?? status;
-  return CARE_STEPS.findIndex(([s]) => s === alias);
+/** Vị trí của lô trên thanh tiến trình (WAITLISTED ở bước sàng lọc, RETURNING trước kết thúc). */
+export function careStepIndex(batch) {
+  let step = { WAITLISTED: 'SUBMITTED', RETURNING: 'SELLING' }[batch.status] ?? batch.status;
+  if (step === 'CLEANING' && batch.cleanedAt) step = 'CLEANED';
+  return CARE_STEPS.findIndex(([s]) => s === step);
 }
 
 export function CareStatusBadge({ status }) {

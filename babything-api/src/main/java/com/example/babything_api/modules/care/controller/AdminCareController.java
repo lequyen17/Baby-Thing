@@ -14,10 +14,12 @@ import jakarta.validation.Valid;
 import com.example.babything_api.core.dto.PageResponse;
 import com.example.babything_api.core.security.AuthPrincipal;
 import com.example.babything_api.modules.care.dto.CareDtos.BatchResponse;
+import com.example.babything_api.modules.care.dto.CareDtos.CleanRequest;
 import com.example.babything_api.modules.care.dto.CareDtos.ListRequest;
 import com.example.babything_api.modules.care.dto.CareDtos.QuoteRequest;
 import com.example.babything_api.modules.care.dto.CareDtos.ReasonRequest;
 import com.example.babything_api.modules.care.dto.CareDtos.ReceiveRequest;
+import com.example.babything_api.modules.care.dto.CareDtos.RepriceRequest;
 import com.example.babything_api.modules.care.dto.CareDtos.ScreenRequest;
 import com.example.babything_api.modules.care.dto.CareDtos.Stats;
 import com.example.babything_api.modules.care.entity.CareBatchStatus;
@@ -56,14 +58,26 @@ public class AdminCareController {
 
     @PostMapping("/batches/{id}/receive")
     BatchResponse receive(@AuthenticationPrincipal AuthPrincipal principal, @PathVariable Long id,
-            @Valid @RequestBody(required = false) ReceiveRequest req) {
-        return careService.receive(principal.user(), id, req == null ? null : req.intakeNote());
+            @Valid @RequestBody ReceiveRequest req) {
+        return careService.receive(principal.user(), id, req);
     }
 
     @PostMapping("/batches/{id}/quote")
     BatchResponse quote(@AuthenticationPrincipal AuthPrincipal principal, @PathVariable Long id,
             @Valid @RequestBody QuoteRequest req) {
         return careService.quote(principal.user(), id, req);
+    }
+
+    @PostMapping("/batches/{id}/cleaned")
+    BatchResponse cleaned(@AuthenticationPrincipal AuthPrincipal principal, @PathVariable Long id,
+            @Valid @RequestBody CleanRequest req) {
+        return careService.clean(principal.user(), id, req);
+    }
+
+    @PostMapping("/batches/{id}/reprice")
+    BatchResponse reprice(@AuthenticationPrincipal AuthPrincipal principal, @PathVariable Long id,
+            @Valid @RequestBody RepriceRequest req) {
+        return careService.reprice(principal.user(), id, req);
     }
 
     @PostMapping("/batches/{id}/publish")

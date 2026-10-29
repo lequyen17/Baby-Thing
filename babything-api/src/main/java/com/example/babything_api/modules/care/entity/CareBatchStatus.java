@@ -17,9 +17,12 @@ public enum CareBatchStatus {
     DECLINED("Không tiếp nhận"),
     CANCELLED("Đã huỷ");
 
-    /** Lô đã được nhận vào kho (hoặc đã hẹn gửi): tính vào sức chứa tối đa của kho. */
-    public static final Set<CareBatchStatus> STORED = Set.of(AWAITING_DROPOFF, RECEIVED, QUOTED, CLEANING, SELLING,
-            RETURNING);
+    /**
+     * Lô đang chiếm chỗ trong kho: đã nhận, đã hẹn gửi, hoặc đã báo giá sơ bộ (người bán đồng ý là gửi hàng
+     * ngay, nên phải giữ chỗ từ lúc báo giá để kho không vượt sức chứa).
+     */
+    public static final Set<CareBatchStatus> STORED = Set.of(PRE_QUOTED, AWAITING_DROPOFF, RECEIVED, QUOTED,
+            CLEANING, SELLING, RETURNING);
 
     private final String label;
 

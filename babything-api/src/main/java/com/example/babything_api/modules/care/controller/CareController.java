@@ -15,6 +15,7 @@ import jakarta.validation.Valid;
 
 import com.example.babything_api.core.dto.PageResponse;
 import com.example.babything_api.core.security.AuthPrincipal;
+import com.example.babything_api.modules.care.dto.CareDtos.AgreeRequest;
 import com.example.babything_api.modules.care.dto.CareDtos.BatchResponse;
 import com.example.babything_api.modules.care.dto.CareDtos.CreateRequest;
 import com.example.babything_api.modules.care.dto.CareDtos.ReasonRequest;
@@ -58,8 +59,9 @@ public class CareController {
     }
 
     @PostMapping("/batches/{id}/agree")
-    BatchResponse agree(@AuthenticationPrincipal AuthPrincipal principal, @PathVariable Long id) {
-        return careService.agree(principal.user(), id);
+    BatchResponse agree(@AuthenticationPrincipal AuthPrincipal principal, @PathVariable Long id,
+            @Valid @RequestBody AgreeRequest req) {
+        return careService.agree(principal.user(), id, req.agreementVersion());
     }
 
     @PostMapping("/batches/{id}/cancel")
@@ -82,6 +84,17 @@ public class CareController {
     @PostMapping("/batches/{id}/extend")
     BatchResponse extend(@AuthenticationPrincipal AuthPrincipal principal, @PathVariable Long id) {
         return careService.extend(principal.user(), id);
+    }
+
+    /** Đồng ý / từ chối giá Baby Things đề xuất thấp hơn giá sàn đã duyệt. */
+    @PostMapping("/batches/{id}/accept-prices")
+    BatchResponse acceptPrices(@AuthenticationPrincipal AuthPrincipal principal, @PathVariable Long id) {
+        return careService.acceptPrices(principal.user(), id);
+    }
+
+    @PostMapping("/batches/{id}/reject-prices")
+    BatchResponse rejectPrices(@AuthenticationPrincipal AuthPrincipal principal, @PathVariable Long id) {
+        return careService.rejectPrices(principal.user(), id);
     }
 
     @PostMapping("/batches/{id}/end")
