@@ -20,6 +20,7 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 import com.example.babything_api.modules.products.entity.AgeRange;
+import com.example.babything_api.modules.products.entity.ItemSize;
 
 /** Một món trong lô ký gửi. Thông tin người bán khai báo, kết quả kiểm tra và tin đăng tạo ra khi lên sàn. */
 @Entity
@@ -150,8 +151,9 @@ public class CareItem {
         return size;
     }
 
+    /** Cùng quy tắc với Product: món Care lên sàn mang size này vào bộ lọc. */
     public void setSize(String size) {
-        this.size = size;
+        this.size = ItemSize.normalize(size);
     }
 
     public AgeRange getAgeRange() {

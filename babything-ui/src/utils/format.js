@@ -35,6 +35,29 @@ export function formatAgeRange(value) {
   return AGE_RANGES.find(([key]) => key === value)?.[1] ?? null;
 }
 
+/** Gợi ý size hay gặp (đã ở dạng chuẩn hoá) cho ô size: quần áo theo tháng / cm, giày, tã. */
+export const SIZE_SUGGESTIONS = [
+  'NEWBORN', '0-3M', '3-6M', '6-9M', '9-12M', '12-18M', '18-24M', '2Y', '3Y',
+  '52', '59', '66', '73', '80', '90', '100',
+  'S', 'M', 'L', 'XL',
+];
+
+/**
+ * Cùng quy tắc với ItemSize.normalize ở backend: "80 cm" → "80", "size 3" → "3", "6 - 12 m" → "6-12M".
+ * Dùng khi rời ô size để người bán thấy đúng giá trị sẽ được lưu và lọc.
+ */
+export function normalizeSize(raw) {
+  return (raw ?? '')
+    .trim()
+    .toUpperCase()
+    .replace(/[–—]/g, '-')
+    .replace(/\s+/g, ' ')
+    .replace(/^SIZE ?/, '')
+    .replace(/ ?- ?/g, '-')
+    .replace(/(\d) (CM|M|Y|T)\b/g, '$1$2')
+    .replace(/^(\d+([.,]\d+)?)CM$/, '$1');
+}
+
 /** Trạng thái tin đăng, khớp ProductStatus ở backend. */
 export const PRODUCT_STATUSES = {
   PENDING_REVIEW: { label: 'Chờ duyệt', badge: 'badge-warning' },

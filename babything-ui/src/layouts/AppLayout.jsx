@@ -98,6 +98,9 @@ function Shell() {
   const activeCategory = params.get('category') ?? '';
   const renewed = params.get('renewed') === 'true';
   const [search, setSearch] = useState(params.get('q') ?? '');
+  const urlQuery = params.get('q') ?? '';
+  // Từ khoá đổi từ ô tìm trong trang danh sách / nút Back thì ô trên header hiện theo
+  useEffect(() => setSearch(urlQuery), [urlQuery]);
   const [categories, setCategories] = useState([]);
 
   useEffect(() => {
@@ -106,10 +109,16 @@ function Shell() {
       .catch(() => setCategories([]));
   }, []);
 
+  /** Đang ở trang danh sách thì giữ nguyên bộ lọc (tuổi, tình trạng, size, giá...), chỉ đổi từ khoá và về trang 1. */
   const handleSearch = (e) => {
     e.preventDefault();
     const q = search.trim();
-    navigate(q ? `/products?${new URLSearchParams({ q })}` : '/products');
+    const next = new URLSearchParams(pathname === '/products' ? params : undefined);
+    if (q) next.set('q', q);
+    else next.delete('q');
+    next.delete('page');
+    const query = next.toString();
+    navigate(query ? `/products?${query}` : '/products');
   };
 
   return (

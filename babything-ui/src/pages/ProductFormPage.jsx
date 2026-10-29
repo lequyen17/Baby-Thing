@@ -4,7 +4,7 @@ import { api, apiUpload } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Alert, Field } from '../components/Form';
 import { ArrowLeftIcon, InfoIcon, PlusIcon, XIcon } from '../components/Icons';
-import { AGE_RANGES, CONDITIONS } from '../utils/format';
+import { AGE_RANGES, CONDITIONS, normalizeSize, SIZE_SUGGESTIONS } from '../utils/format';
 import { IMAGE_ACCEPT, shrinkImage } from '../utils/image';
 
 /** Khớp ProductService.MIN_IMAGES / giới hạn 10 ảnh của ProductRequest. */
@@ -66,6 +66,7 @@ export default function ProductFormPage() {
   const [rejectReason, setRejectReason] = useState(initial?.status === 'REJECTED' ? initial.rejectReason : '');
   const [loaded, setLoaded] = useState(!isEdit || Boolean(initial));
   const [categories, setCategories] = useState([]);
+  const [sizes, setSizes] = useState([]);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -77,6 +78,9 @@ export default function ProductFormPage() {
     api('/products/categories')
       .then(setCategories)
       .catch(() => setCategories([]));
+    api('/products/sizes')
+      .then(setSizes)
+      .catch(() => setSizes([]));
   }, []);
 
   useEffect(() => {
@@ -228,7 +232,22 @@ export default function ProductFormPage() {
                 </option>
               ))}
             </Field>
-            <Field label="Kích cỡ / size" value={form.size} onChange={update('size')} maxLength={30} placeholder="VD: 73cm, size 3, 6-9M" error={fieldErrors.size} />
+            {/* Gợi ý size sẵn + size các tin khác đã dùng, để cùng một size không bị gõ thành nhiều kiểu */}
+            <Field
+              label="Kích cỡ / size"
+              value={form.size}
+              onChange={update('size')}
+              onBlur={() => setForm((f) => ({ ...f, size: normalizeSize(f.size) }))}
+              list="product-sizes"
+              maxLength={30}
+              placeholder="VD: 73, 6-9M, 2Y"
+              error={fieldErrors.size}
+            />
+            <datalist id="product-sizes">
+              {[...new Set([...SIZE_SUGGESTIONS, ...sizes])].map((s) => (
+                <option key={s} value={s} />
+              ))}
+            </datalist>
             <Field label="Thời gian đã sử dụng" value={form.usageDuration} onChange={update('usageDuration')} maxLength={50} placeholder="VD: 4 tháng" error={fieldErrors.usageDuration} />
           </div>
 

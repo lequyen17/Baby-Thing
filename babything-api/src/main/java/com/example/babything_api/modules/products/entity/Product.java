@@ -231,8 +231,9 @@ public class Product {
         return size;
     }
 
+    /** Chuẩn hoá để bộ lọc size không tách "80cm" và "80" thành hai lựa chọn (xem ItemSize). */
     public void setSize(String size) {
-        this.size = size;
+        this.size = ItemSize.normalize(size);
     }
 
     public String getDefects() {

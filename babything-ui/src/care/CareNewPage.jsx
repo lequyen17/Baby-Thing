@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { api, apiUpload } from '../api/client';
 import { Alert, Field } from '../components/Form';
 import { ArrowLeftIcon, CameraIcon, PlusIcon, TrashIcon, XIcon } from '../components/Icons';
-import { AGE_RANGES, formatPrice } from '../utils/format';
+import { AGE_RANGES, formatPrice, normalizeSize, SIZE_SUGGESTIONS } from '../utils/format';
 import { IMAGE_ACCEPT, shrinkImage } from '../utils/image';
 import { DROPOFF_METHODS } from './careFormat';
 
@@ -89,6 +89,11 @@ export default function CareNewPage() {
       <Alert>{error}</Alert>
 
       <form className="care-form" onSubmit={handleSubmit} noValidate>
+        <datalist id="care-sizes">
+          {SIZE_SUGGESTIONS.map((s) => (
+            <option key={s} value={s} />
+          ))}
+        </datalist>
         {items.map((item, index) => (
           <section key={index} className="card care-item-form">
             <div className="care-item-head">
@@ -135,7 +140,15 @@ export default function CareNewPage() {
                     </option>
                   ))}
                 </Field>
-                <Field label="Kích cỡ" value={item.size} onChange={(e) => updateItem(index, 'size', e.target.value)} maxLength={30} placeholder="VD: 6-9M" />
+                <Field
+                  label="Kích cỡ"
+                  value={item.size}
+                  onChange={(e) => updateItem(index, 'size', e.target.value)}
+                  onBlur={(e) => updateItem(index, 'size', normalizeSize(e.target.value))}
+                  list="care-sizes"
+                  maxLength={30}
+                  placeholder="VD: 6-9M"
+                />
                 <Field as="select" label="Độ tuổi" value={item.ageRange} onChange={(e) => updateItem(index, 'ageRange', e.target.value)}>
                   <option value="">Không ghi rõ</option>
                   {AGE_RANGES.map(([value, label]) => (

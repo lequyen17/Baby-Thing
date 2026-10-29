@@ -2,12 +2,14 @@ package com.example.babything_api.modules.products.service;
 
 import java.math.BigDecimal;
 import java.security.SecureRandom;
+import java.text.Normalizer;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
@@ -17,6 +19,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
 
 import com.example.babything_api.core.dto.PageResponse;
@@ -24,6 +28,7 @@ import com.example.babything_api.core.exceptions.ApiException;
 import com.example.babything_api.modules.products.dto.ProductRequest;
 import com.example.babything_api.modules.products.dto.ProductResponse;
 import com.example.babything_api.modules.products.entity.AgeRange;
+import com.example.babything_api.modules.products.entity.ItemSize;
 import com.example.babything_api.modules.products.entity.Product;
 import com.example.babything_api.modules.products.entity.ProductCondition;
 import com.example.babything_api.modules.products.entity.ProductStatus;
@@ -48,6 +53,8 @@ public class ProductService {
             "price_desc", Sort.by(Sort.Order.desc("price"), Sort.Order.desc("id")),
             "name_asc", Sort.by(Sort.Order.asc("name"), Sort.Order.desc("id")),
             "name_desc", Sort.by(Sort.Order.desc("name"), Sort.Order.desc("id")));
+
+    private static final Pattern COMBINING_MARKS = Pattern.compile("\\p{M}+");
 
     private static final String SKU_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private static final SecureRandom RANDOM = new SecureRandom();
@@ -382,13 +389,14 @@ public class ProductService {
             }
             String q = blankToNull(query.q());
             if (q != null) {
-                String pattern = "%" + escapeLike(q.toLowerCase(Locale.ROOT)) + "%";
+                // Không dấu ở cả hai phía: từ khoá bỏ dấu tại đây, cột bỏ dấu bằng unaccent() của Postgres (V12)
+                String pattern = "%" + escapeLike(stripAccents(q.toLowerCase(Locale.ROOT))) + "%";
                 // Người mua thường gõ thương hiệu hoặc chi tiết trong mô tả ("cotton", "Aprica"), không chỉ tên tin
                 predicates.add(cb.or(
-                        cb.like(cb.lower(root.get("name")), pattern, '\\'),
+                        cb.like(unaccentLower(cb, root.get("name")), pattern, '\\'),
                         cb.like(cb.lower(root.get("sku")), pattern, '\\'),
-                        cb.like(cb.lower(root.get("brand")), pattern, '\\'),
-                        cb.like(cb.lower(root.get("description")), pattern, '\\')));
+                        cb.like(unaccentLower(cb, root.get("brand")), pattern, '\\'),
+                        cb.like(unaccentLower(cb, root.get("description")), pattern, '\\')));
             }
             if (query.ageRanges() != null && !query.ageRanges().isEmpty()) {
                 predicates.add(root.get("ageRange").in(query.ageRanges()));
@@ -396,9 +404,10 @@ public class ProductService {
             if (query.conditions() != null && !query.conditions().isEmpty()) {
                 predicates.add(root.get("condition").in(query.conditions()));
             }
-            String itemSize = blankToNull(query.itemSize());
+            // Size đã chuẩn hoá khi lưu, nên chuẩn hoá từ khoá theo cùng quy tắc rồi so khớp đúng
+            String itemSize = ItemSize.normalize(query.itemSize());
             if (itemSize != null) {
-                predicates.add(cb.equal(cb.lower(root.get("size")), itemSize.toLowerCase(Locale.ROOT)));
+                predicates.add(cb.equal(root.get("size"), itemSize));
             }
             String category = blankToNull(query.category());
             if (category != null) {
@@ -415,6 +424,17 @@ public class ProductService {
             }
             return cb.and(predicates.toArray(Predicate[]::new));
         };
+    }
+
+    /** Bỏ dấu trước rồi mới lower: lower() của Postgres với locale C không hạ được chữ có dấu như "Á". */
+    private static Expression<String> unaccentLower(CriteriaBuilder cb, Expression<String> column) {
+        return cb.lower(cb.function("unaccent", String.class, column));
+    }
+
+    /** "Áo sơ sinh đẹp" → "Ao so sinh dep", khớp cách unaccent của Postgres bỏ dấu tiếng Việt (kể cả đ/Đ). */
+    static String stripAccents(String value) {
+        String decomposed = Normalizer.normalize(value, Normalizer.Form.NFD);
+        return COMBINING_MARKS.matcher(decomposed).replaceAll("").replace('đ', 'd').replace('Đ', 'D');
     }
 
     private static String escapeLike(String value) {
