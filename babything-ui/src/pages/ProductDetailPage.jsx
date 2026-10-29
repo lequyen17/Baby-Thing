@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
+import { useRequireLogin } from '../auth/RouteGuards';
 import { Avatar } from '../components/Avatar';
 import { Alert } from '../components/Form';
 import { ArrowLeftIcon, CartIcon, CheckIcon, EditIcon, EyeIcon, MessageIcon, SparkleIcon, TrashIcon, XCircleIcon } from '../components/Icons';
@@ -87,19 +88,21 @@ function Gallery({ product }) {
 
 export default function ProductDetailPage() {
   const { id } = useParams();
+  // user = null: khách chưa đăng nhập, chỉ xem; bấm mua / nhắn tin thì đăng nhập rồi quay lại trang này
   const { user } = useAuth();
-  const isAdmin = user.role === 'ADMIN';
+  const isAdmin = user?.role === 'ADMIN';
   const navigate = useNavigate();
   const location = useLocation();
   const contactSeller = useContactSeller();
+  const requireLogin = useRequireLogin();
   const [product, setProduct] = useState(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState(location.state?.notice ?? '');
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
   // Tin Care thuộc người ký gửi nhưng chỉ Baby Things sửa / ẩn / xoá
-  const canManage = Boolean(product) && (isAdmin || (product.sellerId === user.id && !product.care));
-  const isOwner = Boolean(product) && product.sellerId === user.id;
+  const isOwner = Boolean(product && user) && product.sellerId === user.id;
+  const canManage = Boolean(product) && (isAdmin || (isOwner && !product.care));
   const statusInfo = product && PRODUCT_STATUSES[product.status];
 
   const run = async (request, message) => {
@@ -241,19 +244,28 @@ export default function ProductDetailPage() {
               {product.description && <p className="product-description">{product.description}</p>}
               {!isOwner && (
                 <div className="product-actions">
-                  <button type="button" className="btn btn-secondary" onClick={() => contactSeller({ productId: product.id }).catch((err) => setError(err.message))}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => requireLogin(() => contactSeller({ productId: product.id }).catch((err) => setError(err.message)))}
+                  >
                     <MessageIcon /> Nhắn tin cho người bán
                   </button>
                   {product.status === 'ACTIVE' && product.stock > 0 && !isAdmin && (
-                    <button type="button" className="btn btn-secondary" onClick={handleAddToCart} disabled={busy}>
+                    <button type="button" className="btn btn-secondary" onClick={() => requireLogin(handleAddToCart)} disabled={busy}>
                       <CartIcon /> Thêm vào giỏ
                     </button>
                   )}
-                  {product.status === 'ACTIVE' && product.stock > 0 && (
-                    <Link to="/orders/new" state={{ product }} className="btn btn-primary">
-                      Đặt mua ngay
-                    </Link>
-                  )}
+                  {product.status === 'ACTIVE' && product.stock > 0 &&
+                    (user ? (
+                      <Link to="/orders/new" state={{ product }} className="btn btn-primary">
+                        Đặt mua ngay
+                      </Link>
+                    ) : (
+                      <button type="button" className="btn btn-primary" onClick={() => requireLogin()}>
+                        Đặt mua ngay
+                      </button>
+                    ))}
                 </div>
               )}
               {canManage && (
@@ -292,7 +304,7 @@ export default function ProductDetailPage() {
           {canManage ? (
             <ProductViewers productId={product.id} />
           ) : (
-            <p className="muted page-hint">
+            user && <p className="muted page-hint">
               <EyeIcon size={14} /> Sản phẩm bạn mở được lưu trong <Link to="/history">lịch sử xem</Link>.
             </p>
           )}

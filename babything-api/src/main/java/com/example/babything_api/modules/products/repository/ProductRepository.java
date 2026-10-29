@@ -46,6 +46,13 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
             order by p.category""")
     List<String> findCategories(@Param("statuses") List<ProductStatus> statuses);
 
+    /** Các size đang có trong tin đăng, làm gợi ý cho bộ lọc size (size là chữ tự do người bán nhập). */
+    @Query("""
+            select distinct p.size from Product p
+            where p.deletedAt is null and p.size is not null and p.status in :statuses
+            order by p.size""")
+    List<String> findSizes(@Param("statuses") List<ProductStatus> statuses);
+
     /**
      * Trừ kho cho đơn hàng trong một câu UPDATE có điều kiện, nên hai đơn cùng lúc không thể bán quá tồn kho.
      * Trả về 0 khi sản phẩm không còn bán hoặc không đủ hàng.

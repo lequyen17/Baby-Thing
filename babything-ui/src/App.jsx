@@ -56,9 +56,13 @@ export default function App() {
       {Object.entries(CONTENT).map(([key, page]) => (
         <Route key={key} path={page.path} element={<ContentPage page={page} />} />
       ))}
-      <Route element={<ProtectedRoute />}>
-        <Route element={<AppLayout />}>
-          <Route path="/" element={<HomePage />} />
+      <Route element={<AppLayout />}>
+        {/* Xem hàng không cần tài khoản: khách từ link Facebook vào thẳng tin đăng (tài liệu BMC 3.2.3) */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/products" element={<ProductListPage />} />
+        <Route path="/products/:id" element={<ProductDetailPage />} />
+        <Route path="/sellers/:id" element={<SellerProfilePage />} />
+        <Route element={<ProtectedRoute />}>
           <Route element={<AccountLayout />}>
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/profile/addresses" element={<AddressesPage />} />
@@ -66,12 +70,9 @@ export default function App() {
             <Route path="/profile/notifications" element={<NotificationPrefsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
-          <Route path="/sellers/:id" element={<SellerProfilePage />} />
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/messages/:conversationId" element={<MessagesPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
-          <Route path="/products" element={<ProductListPage />} />
-          <Route path="/products/:id" element={<ProductDetailPage />} />
           {/* Mọi thành viên đăng bán được; sửa tin của người khác thì server trả 403 */}
           <Route path="/products/new" element={<ProductFormPage />} />
           <Route path="/products/:id/edit" element={<ProductFormPage />} />
@@ -102,6 +103,8 @@ export default function App() {
             <Route key={feature} path={`/${feature}`} element={<ComingSoonPage feature={feature} />} />
           ))}
         </Route>
+      </Route>
+      <Route element={<ProtectedRoute />}>
         {/* Trang cổng thanh toán giả lập đứng riêng, không có header của sàn */}
         <Route path="/pay/:ref" element={<MockGatewayPage />} />
       </Route>

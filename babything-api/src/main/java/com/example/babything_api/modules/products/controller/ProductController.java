@@ -33,9 +33,12 @@ import com.example.babything_api.modules.products.dto.ProductResponse;
 import com.example.babything_api.modules.products.dto.ProductViewStats;
 import com.example.babything_api.modules.products.dto.ReviewRequest;
 import com.example.babything_api.modules.products.dto.VisibilityRequest;
+import com.example.babything_api.modules.products.entity.AgeRange;
+import com.example.babything_api.modules.products.entity.ProductCondition;
 import com.example.babything_api.modules.products.entity.ProductStatus;
 import com.example.babything_api.modules.products.service.ProductService;
 import com.example.babything_api.modules.products.service.ProductViewService;
+import com.example.babything_api.modules.users.entity.User;
 
 /** Mọi thành viên đăng bán được; sửa/xoá và /{id}/views chỉ cho người bán hoặc ADMIN (kiểm tra trong service). */
 @RestController
@@ -67,21 +70,34 @@ public class ProductController {
             @RequestParam(defaultValue = "false") boolean mine,
             @RequestParam(required = false) Long sellerId,
             @RequestParam(required = false) Boolean renewed,
+            @RequestParam(required = false) List<AgeRange> ageRange,
+            @RequestParam(required = false) List<ProductCondition> condition,
+            @RequestParam(required = false) String itemSize,
             @RequestParam(defaultValue = "newest") String sort,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
-        return productService.list(principal.user(), new ProductService.ListQuery(q, category, status, minPrice,
-                maxPrice, mine, sellerId, sort, page, size, renewed));
+        return productService.list(viewer(principal), new ProductService.ListQuery(q, category, status, minPrice,
+                maxPrice, mine, sellerId, sort, page, size, renewed, ageRange, condition, itemSize));
     }
 
     @GetMapping("/categories")
     List<String> categories(@AuthenticationPrincipal AuthPrincipal principal) {
-        return productService.categories(principal.user());
+        return productService.categories(viewer(principal));
+    }
+
+    @GetMapping("/sizes")
+    List<String> sizes(@AuthenticationPrincipal AuthPrincipal principal) {
+        return productService.sizes(viewer(principal));
     }
 
     @GetMapping("/{id}")
     ProductResponse get(@AuthenticationPrincipal AuthPrincipal principal, @PathVariable Long id) {
-        return productService.view(principal.user(), id);
+        return productService.view(viewer(principal), id);
+    }
+
+    /** Ba endpoint xem ở trên mở cho khách (SecurityConfig): chưa đăng nhập thì principal = null. */
+    private static User viewer(AuthPrincipal principal) {
+        return principal == null ? null : principal.user();
     }
 
     @PostMapping

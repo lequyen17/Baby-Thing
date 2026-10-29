@@ -3,7 +3,7 @@ import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { AuthCard } from '../components/Form';
 import { OtpForm } from '../components/OtpForm';
-import { clearLoginChallenge, loadLoginChallenge } from './flowStorage';
+import { clearLoginChallenge, loadLoginChallenge, takeReturnTo } from './flowStorage';
 
 export default function LoginVerifyPage() {
   const navigate = useNavigate();
@@ -20,7 +20,7 @@ export default function LoginVerifyPage() {
     });
     clearLoginChallenge();
     await signIn(tokens);
-    navigate('/', { replace: true });
+    navigate(takeReturnTo(), { replace: true });
   };
 
   const resend = () =>

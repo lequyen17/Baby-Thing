@@ -526,6 +526,10 @@ a:hover {
   flex-shrink: 0;
 }
 
+.app-nav-guest {
+  gap: 8px;
+}
+
 .app-nav-link {
   display: flex;
   flex-direction: column;
@@ -2209,6 +2213,11 @@ a:hover {
 
   .app-nav-link {
     min-width: 44px;
+  }
+
+  /* Khách trên điện thoại: chỉ giữ "Đăng nhập" (trang đăng nhập có link đăng ký) để header không xuống dòng */
+  .app-nav-guest .btn-dark {
+    display: none;
   }
 
   .header-sell {

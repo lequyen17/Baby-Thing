@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
+import { Loading } from '../auth/RouteGuards';
+import { saveReturnTo } from '../pages/flowStorage';
 import { useCartCount } from '../cart/useCart';
 import {
   CameraIcon,
@@ -20,10 +22,76 @@ import NotificationBell from '../notifications/NotificationBell';
 import { POLICY_LIST } from '../content/pages';
 import { UserMenu } from '../components/UserMenu';
 
-/** Khung chung cho các trang sau khi đăng nhập: thanh thông báo, header, danh mục, nội dung, footer. */
+/**
+ * Khung chung của sàn: thanh thông báo, header, danh mục, nội dung, footer.
+ * Dùng cho cả khách chưa đăng nhập (xem hàng) lẫn thành viên; chờ khôi phục phiên xong mới vẽ
+ * để header không nháy giao diện khách rồi mới đổi sang giao diện thành viên.
+ */
 export default function AppLayout() {
-  const { user } = useAuth();
+  const { loading } = useAuth();
+  return loading ? <Loading /> : <Shell />;
+}
+
+/** Tin nhắn, thông báo, giỏ hàng: chỉ thành viên mới có, nên các hook gọi API chỉ chạy trong component này. */
+function MemberNav({ user }) {
   const isAdmin = user.role === 'ADMIN';
+  useRealtime(user.id);
+  const unreadMessages = useUnreadMessages(user.id);
+  // Admin không mua hàng nên không có giỏ
+  const cartCount = useCartCount(!isAdmin);
+
+  return (
+    <nav className="app-nav" aria-label="Tài khoản">
+      <NavLink to="/messages" className="app-nav-link">
+        <span className="nav-icon">
+          <MessageIcon size={24} />
+          {unreadMessages > 0 && <span className="nav-badge">{unreadMessages > 9 ? '9+' : unreadMessages}</span>}
+        </span>
+        <span>Tin nhắn</span>
+      </NavLink>
+      <NotificationBell />
+      <NavLink to="/orders" className="app-nav-link">
+        <OrderIcon size={24} /> <span>Đơn hàng</span>
+      </NavLink>
+      <NavLink to="/payments" className="app-nav-link">
+        <CardIcon size={24} /> <span>Thanh toán</span>
+      </NavLink>
+      {isAdmin ? (
+        <NavLink to="/admin" className="app-nav-link">
+          <CheckSquareIcon size={24} /> <span>Quản trị</span>
+        </NavLink>
+      ) : (
+        <NavLink to="/cart" className="app-nav-link">
+          <span className="nav-icon">
+            <CartIcon size={24} />
+            {cartCount > 0 && <span className="nav-badge">{cartCount > 9 ? '9+' : cartCount}</span>}
+          </span>
+          <span>Giỏ hàng</span>
+        </NavLink>
+      )}
+    </nav>
+  );
+}
+
+/** Khách: đăng nhập / đăng ký xong quay lại đúng trang đang xem. */
+function GuestNav() {
+  const { pathname, search } = useLocation();
+  const remember = () => saveReturnTo(pathname + search);
+  return (
+    <nav className="app-nav app-nav-guest" aria-label="Tài khoản">
+      <Link to="/login" className="btn btn-secondary btn-sm" onClick={remember}>
+        Đăng nhập
+      </Link>
+      <Link to="/register" className="btn btn-dark btn-sm" onClick={remember}>
+        Đăng ký
+      </Link>
+    </nav>
+  );
+}
+
+function Shell() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [params] = useSearchParams();
@@ -31,10 +99,6 @@ export default function AppLayout() {
   const renewed = params.get('renewed') === 'true';
   const [search, setSearch] = useState(params.get('q') ?? '');
   const [categories, setCategories] = useState([]);
-  useRealtime(user.id);
-  const unreadMessages = useUnreadMessages(user.id);
-  // Admin không mua hàng nên không có giỏ
-  const cartCount = useCartCount(!isAdmin);
 
   useEffect(() => {
     api('/products/categories')
@@ -79,40 +143,13 @@ export default function AppLayout() {
             </button>
           </form>
 
-          <nav className="app-nav" aria-label="Tài khoản">
-            <NavLink to="/messages" className="app-nav-link">
-              <span className="nav-icon">
-                <MessageIcon size={24} />
-                {unreadMessages > 0 && <span className="nav-badge">{unreadMessages > 9 ? '9+' : unreadMessages}</span>}
-              </span>
-              <span>Tin nhắn</span>
-            </NavLink>
-            <NotificationBell />
-            <NavLink to="/orders" className="app-nav-link">
-              <OrderIcon size={24} /> <span>Đơn hàng</span>
-            </NavLink>
-            <NavLink to="/payments" className="app-nav-link">
-              <CardIcon size={24} /> <span>Thanh toán</span>
-            </NavLink>
-            {isAdmin ? (
-              <NavLink to="/admin" className="app-nav-link">
-                <CheckSquareIcon size={24} /> <span>Quản trị</span>
-              </NavLink>
-            ) : (
-              <NavLink to="/cart" className="app-nav-link">
-                <span className="nav-icon">
-                  <CartIcon size={24} />
-                  {cartCount > 0 && <span className="nav-badge">{cartCount > 9 ? '9+' : cartCount}</span>}
-                </span>
-                <span>Giỏ hàng</span>
-              </NavLink>
-            )}
-          </nav>
+          {user ? <MemberNav user={user} /> : <GuestNav />}
 
+          {/* Khách bấm "Đăng bán" thì ProtectedRoute đưa qua đăng nhập rồi quay lại form */}
           <Link to="/products/new" className="btn btn-accent header-sell">
             <PlusIcon /> <span>Đăng bán</span>
           </Link>
-          <UserMenu />
+          {user && <UserMenu />}
         </div>
       </header>
 

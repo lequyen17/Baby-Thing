@@ -43,6 +43,12 @@ public class SecurityConfig {
                         .permitAll()
                         // Ảnh lưu trên ổ đĩa: <img> không gửi kèm access token
                         .requestMatchers(HttpMethod.GET, "/api/uploads/**").permitAll()
+                        // Khách chưa đăng nhập (vd. bấm link từ Facebook) xem được tin đăng và hồ sơ người bán;
+                        // mua, nhắn tin, đăng bán vẫn phải đăng nhập
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/products", "/api/products/categories", "/api/products/sizes","/api/products/{id:\\d+}",
+                                "/api/users/{id:\\d+}/public")
+                        .permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // Sản phẩm: mọi thành viên đăng bán được; quyền sửa/xoá theo chủ tin kiểm tra trong ProductService
                         // Đơn hàng: quyền người mua / người bán / admin kiểm tra trong OrderService

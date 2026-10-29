@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { useRequireLogin } from '../auth/RouteGuards';
 import { useContactSeller } from '../messages/useMessages';
 import { formatPrice, PRODUCT_STATUSES } from '../utils/format';
 import { categoryArt } from '../utils/categoryArt';
@@ -14,9 +15,9 @@ export function StockBadge({ stock }) {
   return <span className="badge badge-success">Còn hàng</span>;
 }
 
-/** Lý do không đặt được (giống điều kiện ở trang chi tiết); null = đặt được. */
+/** Lý do không đặt được (giống điều kiện ở trang chi tiết); null = đặt được. user = null là khách. */
 function unavailableReason(product, user) {
-  if (product.sellerId === user.id) return 'Tin của bạn';
+  if (user && product.sellerId === user.id) return 'Tin của bạn';
   if (product.status !== 'ACTIVE') return PRODUCT_STATUSES[product.status]?.label ?? 'Đang ẩn';
   if (product.stock <= 0) return 'Hết hàng';
   return null;
@@ -27,7 +28,10 @@ export function ProductCard({ product, showStatus = false, footer }) {
   // Lưu tin chưa có backend: chỉ đổi trạng thái trên giao diện
   const [saved, setSaved] = useState(false);
   const unavailable = unavailableReason(product, user);
+  const isOwn = Boolean(user) && product.sellerId === user.id;
   const contactSeller = useContactSeller();
+  // Khách bấm nhắn tin / thêm giỏ / mua: đăng nhập trước rồi quay lại trang này
+  const requireLogin = useRequireLogin();
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
 
@@ -80,12 +84,18 @@ export function ProductCard({ product, showStatus = false, footer }) {
       <div className="product-card-footer">
         {footer ?? (
           <div className="product-card-actions">
-            {product.sellerId === user.id ? (
+            {isOwn ? (
               <button type="button" className="btn btn-secondary" disabled>
                 <MessageIcon size={16} /> Nhắn tin
               </button>
             ) : (
-              <button type="button" className="btn btn-secondary" onClick={() => contactSeller({ productId: product.id }).catch((err) => window.alert(err.message))}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() =>
+                  requireLogin(() => contactSeller({ productId: product.id }).catch((err) => window.alert(err.message)))
+                }
+              >
                 <MessageIcon size={16} /> Nhắn tin
               </button>
             )}
@@ -95,11 +105,11 @@ export function ProductCard({ product, showStatus = false, footer }) {
               </button>
             ) : (
               <>
-                {user.role !== 'ADMIN' && (
+                {user?.role !== 'ADMIN' && (
                   <button
                     type="button"
                     className={`btn btn-secondary btn-cart ${added ? 'is-added' : ''}`}
-                    onClick={handleAddToCart}
+                    onClick={() => requireLogin(handleAddToCart)}
                     disabled={adding}
                     aria-label={added ? 'Đã thêm vào giỏ' : 'Thêm vào giỏ'}
                     title={added ? 'Đã thêm vào giỏ' : 'Thêm vào giỏ'}
@@ -107,9 +117,15 @@ export function ProductCard({ product, showStatus = false, footer }) {
                     {added ? <CheckIcon size={16} /> : <CartIcon size={16} />}
                   </button>
                 )}
-                <Link to="/orders/new" state={{ product }} className="btn btn-dark">
-                  Mua ngay
-                </Link>
+                {user ? (
+                  <Link to="/orders/new" state={{ product }} className="btn btn-dark">
+                    Mua ngay
+                  </Link>
+                ) : (
+                  <button type="button" className="btn btn-dark" onClick={() => requireLogin()}>
+                    Mua ngay
+                  </button>
+                )}
               </>
             )}
           </div>

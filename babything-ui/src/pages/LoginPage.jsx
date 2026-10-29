@@ -4,7 +4,7 @@ import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Alert, AuthCard, Field } from '../components/Form';
 import GoogleSignInButton from '../components/GoogleSignInButton';
-import { saveLoginChallenge } from './flowStorage';
+import { saveLoginChallenge, takeReturnTo } from './flowStorage';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -29,7 +29,7 @@ export default function LoginPage() {
       } else {
         // Server tắt OTP đăng nhập (LOGIN_OTP_ENABLED=false) -> nhận token luôn
         await signIn(res.tokens);
-        navigate('/', { replace: true });
+        navigate(takeReturnTo(), { replace: true });
       }
     } catch (err) {
       setError(err.message);

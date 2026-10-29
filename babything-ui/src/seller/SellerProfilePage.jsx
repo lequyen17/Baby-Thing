@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { useExtraProfile } from '../account/useAccountData';
 import { useAuth } from '../auth/AuthContext';
+import { useRequireLogin } from '../auth/RouteGuards';
 import { Avatar } from '../components/Avatar';
 import { CalendarIcon, MapPinIcon, MessageIcon, ShieldCheckIcon, StarIcon } from '../components/Icons';
 import { ProductCard } from '../components/ProductCard';
@@ -23,16 +24,18 @@ function Stat({ value, label }) {
 /** FR-USER-10: điểm đánh giá, số giao dịch hoàn tất, tỉ lệ khiếu nại, ngày tham gia, huy hiệu, tin đang bán. */
 export default function SellerProfilePage() {
   const { id } = useParams();
+  // user = null: khách xem hồ sơ từ link chia sẻ; bấm nhắn tin thì đăng nhập rồi quay lại
   const { user } = useAuth();
   const contactSeller = useContactSeller();
-  const [extra] = useExtraProfile(user.id);
+  const requireLogin = useRequireLogin();
+  const [extra] = useExtraProfile(user?.id);
   // undefined = đang tải, null = không tìm thấy
   const [publicProfile, setPublicProfile] = useState(undefined);
   const [chatError, setChatError] = useState('');
   // { items, totalItems } của tin đang hiện của người bán này
   const [products, setProducts] = useState(null);
 
-  const isMe = String(user.id) === id;
+  const isMe = Boolean(user) && String(user.id) === id;
   // Chưa có API đánh giá / giao dịch nên các chỉ số thống kê để 0 và người bán hiện là "Seller mới" (FR-FB-06)
   const stats = { rating: 0, reviews: 0, deals: 0, complaintRate: 0 };
   const seller = isMe
@@ -78,7 +81,8 @@ export default function SellerProfilePage() {
   }
 
   const isNew = seller.reviews < MIN_REVIEWS;
-  const startChat = () => contactSeller({ sellerId: Number(id) }).catch((err) => setChatError(err.message));
+  const startChat = () =>
+    requireLogin(() => contactSeller({ sellerId: Number(id) }).catch((err) => setChatError(err.message)));
 
   return (
     <div className="page">

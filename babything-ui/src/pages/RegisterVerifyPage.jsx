@@ -3,7 +3,7 @@ import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { AuthCard } from '../components/Form';
 import { OtpForm } from '../components/OtpForm';
-import { clearPendingRegisterEmail, loadPendingRegisterEmail } from './flowStorage';
+import { clearPendingRegisterEmail, loadPendingRegisterEmail, takeReturnTo } from './flowStorage';
 
 export default function RegisterVerifyPage() {
   const navigate = useNavigate();
@@ -16,7 +16,7 @@ export default function RegisterVerifyPage() {
     const tokens = await api('/auth/register/verify', { method: 'POST', body: { email, otp }, auth: false });
     clearPendingRegisterEmail();
     await signIn(tokens);
-    navigate('/', { replace: true });
+    navigate(takeReturnTo(), { replace: true });
   };
 
   const resend = () => api('/auth/register/resend', { method: 'POST', body: { email }, auth: false });

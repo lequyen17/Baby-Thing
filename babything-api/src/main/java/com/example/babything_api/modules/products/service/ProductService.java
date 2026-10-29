@@ -23,7 +23,9 @@ import com.example.babything_api.core.dto.PageResponse;
 import com.example.babything_api.core.exceptions.ApiException;
 import com.example.babything_api.modules.products.dto.ProductRequest;
 import com.example.babything_api.modules.products.dto.ProductResponse;
+import com.example.babything_api.modules.products.entity.AgeRange;
 import com.example.babything_api.modules.products.entity.Product;
+import com.example.babything_api.modules.products.entity.ProductCondition;
 import com.example.babything_api.modules.products.entity.ProductStatus;
 import com.example.babything_api.modules.products.repository.ProductRepository;
 import com.example.babything_api.modules.products.repository.ProductViewRepository;
@@ -62,16 +64,25 @@ public class ProductService {
      * mine = chỉ tin đăng của người đang xem (thấy cả tin đang ẩn).
      * sellerId = tin của một người bán (hồ sơ người bán); như danh sách chung, khách chỉ thấy tin ACTIVE.
      * renewed = true chỉ lấy hàng Care (BabyThings Renewed), false chỉ lấy hàng tự đăng, null = tất cả.
+     * ageRanges / conditions: chọn nhiều, khớp một trong các giá trị; rỗng hoặc null = không lọc.
+     * itemSize: size của món đồ (không phân biệt hoa thường), khác với size = số tin mỗi trang.
      */
     public record ListQuery(String q, String category, ProductStatus status, BigDecimal minPrice,
-            BigDecimal maxPrice, boolean mine, Long sellerId, String sort, int page, int size, Boolean renewed) {
+            BigDecimal maxPrice, boolean mine, Long sellerId, String sort, int page, int size, Boolean renewed,
+            List<AgeRange> ageRanges, List<ProductCondition> conditions, String itemSize) {
     }
 
     // ---------------------------------------------------------------- Xem danh sách / chi tiết
 
-    /** Khách chỉ thấy sản phẩm ACTIVE; admin và người bán (với tin của mình) thấy tất cả, lọc được theo status. */
+    /**
+     * Khách chỉ thấy sản phẩm ACTIVE; admin và người bán (với tin của mình) thấy tất cả, lọc được theo status.
+     * viewer = null: khách chưa đăng nhập.
+     */
     @Transactional(readOnly = true)
     public PageResponse<ProductResponse> list(User viewer, ListQuery query) {
+        if (query.mine() && viewer == null) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "Vui lòng đăng nhập");
+        }
         Sort sort = SORTS.get(query.sort() == null ? "newest" : query.sort());
         if (sort == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_SORT",
@@ -86,11 +97,14 @@ public class ProductService {
                 ProductResponse::from);
     }
 
-    /** Mở trang chi tiết = một lượt xem, được ghi vào lịch sử của người đang đăng nhập (trừ người bán xem tin mình). */
+    /**
+     * Mở trang chi tiết = một lượt xem, được ghi vào lịch sử của người đang đăng nhập (trừ người bán xem tin mình).
+     * Khách chưa đăng nhập (viewer = null) không có lịch sử nên không ghi.
+     */
     @Transactional
     public ProductResponse view(User viewer, Long id) {
         Product product = findVisible(viewer, id);
-        if (!Objects.equals(product.getCreatedBy(), viewer.getId())) {
+        if (viewer != null && !Objects.equals(product.getCreatedBy(), viewer.getId())) {
             viewRepository.record(viewer.getId(), product.getId());
         }
         return ProductResponse.from(product);
@@ -102,6 +116,14 @@ public class ProductService {
                 ? List.of(ProductStatus.values())
                 : List.of(ProductStatus.ACTIVE);
         return productRepository.findCategories(statuses);
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> sizes(User viewer) {
+        List<ProductStatus> statuses = isAdmin(viewer)
+                ? List.of(ProductStatus.values())
+                : List.of(ProductStatus.ACTIVE);
+        return productRepository.findSizes(statuses);
     }
 
     // ---------------------------------------------------------------- CRUD (mọi thành viên; sửa/xoá: chủ tin hoặc admin)
@@ -296,12 +318,13 @@ public class ProductService {
         return productRepository.findByIdAndDeletedAtIsNull(id).orElseThrow(ProductService::notFound);
     }
 
+    /** user = null là khách chưa đăng nhập: không phải admin, không quản lý tin nào. */
     static boolean isAdmin(User user) {
-        return user.getRole() == Role.ADMIN;
+        return user != null && user.getRole() == Role.ADMIN;
     }
 
     static boolean canManage(User user, Product product) {
-        return isAdmin(user) || Objects.equals(product.getCreatedBy(), user.getId());
+        return user != null && (isAdmin(user) || Objects.equals(product.getCreatedBy(), user.getId()));
     }
 
     private Product save(Product product) {
@@ -360,9 +383,22 @@ public class ProductService {
             String q = blankToNull(query.q());
             if (q != null) {
                 String pattern = "%" + escapeLike(q.toLowerCase(Locale.ROOT)) + "%";
+                // Người mua thường gõ thương hiệu hoặc chi tiết trong mô tả ("cotton", "Aprica"), không chỉ tên tin
                 predicates.add(cb.or(
                         cb.like(cb.lower(root.get("name")), pattern, '\\'),
-                        cb.like(cb.lower(root.get("sku")), pattern, '\\')));
+                        cb.like(cb.lower(root.get("sku")), pattern, '\\'),
+                        cb.like(cb.lower(root.get("brand")), pattern, '\\'),
+                        cb.like(cb.lower(root.get("description")), pattern, '\\')));
+            }
+            if (query.ageRanges() != null && !query.ageRanges().isEmpty()) {
+                predicates.add(root.get("ageRange").in(query.ageRanges()));
+            }
+            if (query.conditions() != null && !query.conditions().isEmpty()) {
+                predicates.add(root.get("condition").in(query.conditions()));
+            }
+            String itemSize = blankToNull(query.itemSize());
+            if (itemSize != null) {
+                predicates.add(cb.equal(cb.lower(root.get("size")), itemSize.toLowerCase(Locale.ROOT)));
             }
             String category = blankToNull(query.category());
             if (category != null) {

@@ -1,11 +1,13 @@
 package com.example.babything_api.core.security;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -24,8 +26,8 @@ import com.example.babything_api.modules.users.entity.UserStatus;
 import com.example.babything_api.modules.users.repository.UserRepository;
 
 /**
- * Đọc "Authorization: Bearer ..." và gắn principal nếu token hợp lệ.
- * Token không hợp lệ thì bỏ qua, endpoint cần đăng nhập sẽ trả 401.
+ * Đọc "Authorization: Bearer ..." và gắn principal nếu token hợp lệ; gửi token không hợp lệ thì trả 401 luôn.
+ * Không gửi token = khách: endpoint mở cho khách chạy bình thường, endpoint cần đăng nhập trả 401.
  */
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
@@ -44,35 +46,43 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
-        if (header != null && header.startsWith("Bearer ")) {
-            authenticate(header.substring(7));
+        if (header != null && header.startsWith("Bearer ") && !authenticate(header.substring(7))) {
+            // Có gửi token nhưng hết hạn / bị thu hồi: trả 401 cả ở endpoint mở cho khách, để client refresh rồi
+            // gọi lại, thay vì nhận về dữ liệu dạng khách (vd. người bán không thấy tin đang ẩn của mình)
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.getWriter().write("{\"code\":\"UNAUTHORIZED\",\"message\":\"Vui lòng đăng nhập\"}");
+            return;
         }
         chain.doFilter(request, response);
     }
 
-    private void authenticate(String token) {
+    /** false = token không dùng được (sai, hết hạn, đã đăng xuất, tài khoản bị khoá hoặc đã đổi mật khẩu). */
+    private boolean authenticate(String token) {
         Claims claims;
         try {
             claims = jwtService.parse(token);
         } catch (JwtException | IllegalArgumentException e) {
-            return;
+            return false;
         }
         if (blacklist.contains(claims.getId())) {
-            return;
+            return false;
         }
         User user = userRepository.findById(Long.valueOf(claims.getSubject())).orElse(null);
         if (user == null || user.getStatus() != UserStatus.ACTIVE) {
-            return;
+            return false;
         }
         // Đổi mật khẩu -> mọi access token phát hành trước đó mất hiệu lực (iat chỉ chính xác tới giây)
         Instant issuedAt = claims.getIssuedAt().toInstant();
         Instant changedAt = user.getPasswordChangedAt();
         if (changedAt != null && issuedAt.isBefore(changedAt.truncatedTo(ChronoUnit.SECONDS))) {
-            return;
+            return false;
         }
         AuthPrincipal principal = new AuthPrincipal(user, claims.getId(), claims.getExpiration().toInstant());
         var authentication = new UsernamePasswordAuthenticationToken(
                 principal, null, List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())));
         SecurityContextHolder.getContext().setAuthentication(authentication);
+        return true;
     }
 }

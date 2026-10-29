@@ -15,6 +15,19 @@
 .inline-add input { flex: 1; min-width: 0; }
 .fee-hint { margin: 4px 0 0; font-size: 0.88rem; }
 
+/* ------------------------------------------------ Danh sách tin: bộ lọc độ tuổi, tình trạng, size, giá */
+.product-filters { display: flex; flex-direction: column; gap: 12px; flex-basis: 100%; padding-top: 12px; border-top: 1px solid var(--border); }
+.filter-group { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.filter-label, .filter-field > span { min-width: 76px; color: var(--muted); font-size: 0.85rem; font-weight: 600; }
+.product-filters .chip { height: 36px; padding: 0 14px; border-color: var(--border-strong); }
+.product-filters .chip.is-active { border-color: var(--ink); }
+.filter-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.filter-field { display: flex; align-items: center; gap: 8px; }
+.filter-field > span { min-width: 0; }
+.filter-field:first-child > span { min-width: 76px; }
+.filter-field input { width: 140px; height: 40px; padding: 0 14px; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--surface); font: inherit; font-size: 0.9rem; }
+.product-toolbar .filter-field select { height: 40px; }
+
 /* ------------------------------------------------ Chi tiết tin: thư viện ảnh, thông số, duyệt */
 .gallery { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .gallery-thumbs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
@@ -211,6 +224,8 @@
 
 @media (max-width: 760px) {
   .checkout { grid-template-columns: 1fr; }
+  .filter-label { flex-basis: 100%; }
+  .filter-field input { width: 110px; }
   .review-item, .review-item.is-selectable { grid-template-columns: 72px minmax(0, 1fr); }
   .review-check { grid-column: 1 / -1; }
   .attention-grid { grid-template-columns: 1fr; }
