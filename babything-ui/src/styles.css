@@ -875,21 +875,37 @@ a:hover {
   min-height: 50px;
 }
 
-.category-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+/* Trang chủ: danh mục + tin đăng lên đầu, phần giới thiệu ở dưới */
+.home-feed {
+  display: flex;
+  flex-direction: column;
   gap: 16px;
+}
+
+.home-categories,
+.home-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.home-categories {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
+  gap: 10px;
+  padding: 14px;
 }
 
 .category-tile {
   display: flex;
   align-items: flex-end;
-  min-height: 96px;
-  padding: 18px;
-  border-radius: 18px;
+  min-height: 64px;
+  padding: 12px 14px;
+  border-radius: 14px;
   color: var(--ink);
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 700;
+  line-height: 1.3;
   transition: transform 0.15s ease;
 }
 
@@ -1439,6 +1455,54 @@ a:hover {
 
 .product-grid-4 {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.home-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 4px 24px 28px;
+}
+
+.feed-tabs {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  border-bottom: 1px solid var(--border);
+}
+
+.feed-tab {
+  flex-shrink: 0;
+  margin-bottom: -1px;
+  padding: 16px 0 12px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.feed-tab:hover {
+  color: var(--ink);
+}
+
+.feed-tab.is-active {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+
+.feed-tabs-more {
+  flex-shrink: 0;
+  margin-left: auto;
+  font-size: 0.9rem;
+}
+
+.product-grid-5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
 }
 
 .product-card {
@@ -2076,8 +2140,15 @@ a:hover {
   }
 }
 
+@media (max-width: 1400px) {
+  .product-grid-5 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 1180px) {
-  .product-grid-4 {
+  .product-grid-4,
+  .product-grid-5 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
@@ -2099,7 +2170,8 @@ a:hover {
     padding-top: 8px;
   }
 
-  .product-grid-4 {
+  .product-grid-4,
+  .product-grid-5 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -2195,9 +2267,33 @@ a:hover {
   }
 
   .product-grid,
-  .product-grid-4 {
+  .product-grid-4,
+  .product-grid-5 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
+  }
+
+  .home-panel {
+    padding: 0 12px 20px;
+  }
+
+  /* Điện thoại: danh mục thành một hàng kéo ngang */
+  .home-categories {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .home-categories .category-tile {
+    flex: 0 0 120px;
+  }
+
+  .feed-tabs {
+    gap: 20px;
+  }
+
+  .feed-tabs-more {
+    display: none;
   }
 
   .product-card-media {

@@ -6,7 +6,7 @@ import { ProductCard } from '../components/ProductCard';
 import { categoryArt } from '../utils/categoryArt';
 
 const FILTERS = [
-  ['all', 'Tất cả'],
+  ['all', 'Mới nhất'],
   ['in', 'Còn hàng'],
   ['low', 'Sắp hết'],
 ];
@@ -32,7 +32,7 @@ export default function HomePage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    api('/products?sort=newest&page=0&size=8')
+    api('/products?sort=newest&page=0&size=20')
       .then((data) => setProducts(data.items))
       .catch((err) => setError(err.message));
   }, []);
@@ -51,6 +51,56 @@ export default function HomePage() {
 
   return (
     <div className="home">
+      <div className="home-feed">
+        {categories.length > 0 && (
+          <nav className="home-categories" aria-label="Danh mục">
+            {categories.map((c) => (
+              <Link
+                key={c}
+                to={`/products?${new URLSearchParams({ category: c })}`}
+                className="category-tile"
+                style={{ background: categoryArt(c).tint }}
+              >
+                {c}
+              </Link>
+            ))}
+          </nav>
+        )}
+
+        <section className="home-panel" aria-label="Tin đăng">
+          <div className="feed-tabs" role="tablist" aria-label="Lọc tin đăng">
+            {FILTERS.map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                className={`feed-tab ${filter === id ? 'is-active' : ''}`}
+                aria-selected={filter === id}
+                onClick={() => setFilter(id)}
+              >
+                {label}
+              </button>
+            ))}
+            <Link to="/products" className="feed-tabs-more">
+              Xem tất cả
+            </Link>
+          </div>
+          <Alert>{error}</Alert>
+          {!products && !error && <p className="muted">Đang tải…</p>}
+          {products && shown.length === 0 && <p className="muted empty-state">Chưa có sản phẩm phù hợp.</p>}
+          {shown.length > 0 && (
+            <div className="product-grid product-grid-5">
+              {shown.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          )}
+          <Link to="/products" className="btn btn-outline btn-lg section-more">
+            Xem thêm tin đăng
+          </Link>
+        </section>
+      </div>
+
       <section className="hero">
         <div className="hero-copy">
           <span className="pill pill-sage">
@@ -118,64 +168,6 @@ export default function HomePage() {
             <span>{text}</span>
           </div>
         ))}
-      </section>
-
-      {categories.length > 0 && (
-        <section className="home-section">
-          <div className="section-head">
-            <h2 className="serif section-title">Mua theo danh mục</h2>
-            <Link to="/products" className="section-link">
-              Tất cả danh mục
-            </Link>
-          </div>
-          <div className="category-grid">
-            {categories.map((c) => (
-              <Link
-                key={c}
-                to={`/products?${new URLSearchParams({ category: c })}`}
-                className="category-tile"
-                style={{ background: categoryArt(c).tint }}
-              >
-                <span>{c}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <section className="home-section">
-        <div className="section-head">
-          <div>
-            <h2 className="serif section-title">Mới đăng gần đây</h2>
-            <p className="muted">Tin đăng từ các gia đình quanh bạn</p>
-          </div>
-          <div className="chip-group" role="group" aria-label="Lọc theo tồn kho">
-            {FILTERS.map(([id, label]) => (
-              <button
-                key={id}
-                type="button"
-                className={`chip ${filter === id ? 'is-active' : ''}`}
-                aria-pressed={filter === id}
-                onClick={() => setFilter(id)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <Alert>{error}</Alert>
-        {!products && !error && <p className="muted">Đang tải…</p>}
-        {products && shown.length === 0 && <p className="muted empty-state">Chưa có sản phẩm phù hợp.</p>}
-        {shown.length > 0 && (
-          <div className="product-grid product-grid-4">
-            {shown.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        )}
-        <Link to="/products" className="btn btn-outline btn-lg section-more">
-          Xem thêm tin đăng
-        </Link>
       </section>
 
       <section id="sell" className="sell-band">
