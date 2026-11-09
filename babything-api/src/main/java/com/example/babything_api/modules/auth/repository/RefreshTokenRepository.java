@@ -21,7 +21,9 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
     @Query("select t from RefreshToken t join fetch t.user where t.token = :tokenHash")
     Optional<RefreshToken> findByTokenHashForUpdate(@Param("tokenHash") String tokenHash);
 
-    Optional<RefreshToken> findByTokenHash(String tokenHash);
+    // Cột token lưu hash; viết query rõ ràng vì tên hàm bị Spring Data hiểu thành token.hash
+    @Query("select t from RefreshToken t where t.token = :tokenHash")
+    Optional<RefreshToken> findByTokenHash(@Param("tokenHash") String tokenHash);
 
     /** Mốc bắt đầu phiên = created_at của token đầu tiên trong family. */
     @Query("select min(t.createdAt) from RefreshToken t where t.familyId = :familyId")

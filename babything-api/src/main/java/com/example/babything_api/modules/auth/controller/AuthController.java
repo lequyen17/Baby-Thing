@@ -121,8 +121,12 @@ public class AuthController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void logout(@AuthenticationPrincipal AuthPrincipal principal, HttpServletRequest request,
             HttpServletResponse response) {
-        refreshCookie.read(request).ifPresent(token -> authService.logout(principal, token));
-        refreshCookie.clear(response);
+        // Thu hồi token lỗi thì vẫn xoá cookie, nếu không F5 sẽ tự đăng nhập lại
+        try {
+            refreshCookie.read(request).ifPresent(token -> authService.logout(principal, token));
+        } finally {
+            refreshCookie.clear(response);
+        }
     }
 
     @PostMapping("/change-password")
