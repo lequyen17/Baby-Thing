@@ -7,6 +7,7 @@ import { SearchIcon } from '../components/Icons';
 import { Pagination } from '../components/Pagination';
 import { ProductCard } from '../components/ProductCard';
 import { AGE_RANGES, CONDITIONS, PRODUCT_STATUSES } from '../utils/format';
+import { SellLink } from '../components/SellModal';
 
 const PAGE_SIZE = 12;
 
@@ -153,9 +154,9 @@ export default function ProductListPage() {
               Tin đăng của tôi
             </button>
           )}
-          <Link to="/products/new" className="btn btn-accent">
+          <SellLink className="btn btn-accent">
             Đăng bán
-          </Link>
+          </SellLink>
         </div>
       </div>
 

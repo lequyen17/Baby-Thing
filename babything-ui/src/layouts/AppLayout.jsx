@@ -10,6 +10,7 @@ import { useRealtime } from '../realtime/useRealtime';
 import NotificationBell from '../notifications/NotificationBell';
 import { POLICY_LIST } from '../content/pages';
 import { UserMenu } from '../components/UserMenu';
+import { SellLink, SellModalProvider } from '../components/SellModal';
 
 /**
  * Khung chung của sàn: thanh thông báo, header, danh mục, nội dung, footer.
@@ -22,7 +23,9 @@ export default function AppLayout() {
     <Loading />
   ) : (
     <LoginModalProvider>
-      <Shell />
+      <SellModalProvider>
+        <Shell />
+      </SellModalProvider>
     </LoginModalProvider>
   );
 }
@@ -81,7 +84,6 @@ function Shell() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
   const navigate = useNavigate();
-  const openLogin = useLoginModal();
   const { pathname } = useLocation();
   const [params] = useSearchParams();
   const activeCategory = params.get('category') ?? '';
@@ -138,18 +140,8 @@ function Shell() {
 
           {user ? <MemberNav user={user} /> : <GuestNav />}
 
-          {/* Khách bấm "Đăng bán" thì mở popup đăng nhập, xong vào thẳng form */}
-          <Link
-            to="/products/new"
-            className="btn btn-accent header-sell"
-            onClick={(e) => {
-              if (user) return;
-              e.preventDefault();
-              openLogin(() => navigate('/products/new'));
-            }}
-          >
-            Đăng bán
-          </Link>
+          {/* Mở popup chọn ký gửi Care / tự đăng; khách thì đăng nhập trước */}
+          <SellLink className="btn btn-accent header-sell">Đăng bán</SellLink>
           {user && <UserMenu />}
         </div>
       </header>
@@ -200,7 +192,7 @@ function Shell() {
           <div className="footer-col">
             <strong>Mua &amp; bán</strong>
             <Link to="/products">Tin mới đăng</Link>
-            <Link to="/products/new">Đăng bán</Link>
+            <SellLink>Đăng bán</SellLink>
             <Link to="/products?mine=1">Tin đăng của tôi</Link>
             <Link to="/sales">Doanh thu bán hàng</Link>
             {isAdmin ? <Link to="/admin/care">Kho Care</Link> : <Link to="/care">Ký gửi BabyThings Care</Link>}

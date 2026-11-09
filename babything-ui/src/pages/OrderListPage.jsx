@@ -8,6 +8,7 @@ import { ORDER_STATUSES, OrderStatusBadge } from '../components/OrderStatus';
 import { Pagination } from '../components/Pagination';
 import { ProductImage } from '../components/ProductImage';
 import { formatDate, formatPrice } from '../utils/format';
+import { SellLink } from '../components/SellModal';
 
 const PAGE_SIZE = 10;
 
@@ -148,7 +149,7 @@ export default function OrderListPage() {
               'Không có đơn hàng nào phù hợp bộ lọc.'
             ) : selling ? (
               <>
-                Chưa có ai đặt mua tin đăng của bạn. <Link to="/products/new">Đăng bán ngay</Link>
+                Chưa có ai đặt mua tin đăng của bạn. <SellLink>Đăng bán ngay</SellLink>
               </>
             ) : (
               <>

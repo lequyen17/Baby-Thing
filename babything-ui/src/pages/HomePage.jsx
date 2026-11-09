@@ -18,24 +18,6 @@ const PROMISES = [
   ['Hàng chọn lọc', 'Mỗi tin đăng đều có danh mục, mô tả và tồn kho minh bạch.'],
 ];
 
-const CARE_PERKS = [
-  ['Tiết kiệm thời gian', 'Không cần tự chụp ảnh, viết bài hay đăng bán từng món. BabyThings hỗ trợ bạn thực hiện những công việc đó.'],
-  ['Chăm sóc trước khi bán', 'Sản phẩm được kiểm tra tình trạng, làm sạch và chụp ảnh thực tế, giúp người mua có thêm thông tin để yên tâm lựa chọn.'],
-  ['Đồ cũ vẫn còn giá trị', 'Biến những món đồ bé không còn sử dụng thành cơ hội thu lại một phần chi phí, thay vì để chúng bị lãng phí.'],
-];
-
-const CARE_STEPS = [
-  ['Bạn đăng ký gửi đồ', 'Chọn những món đồ còn tốt mà bé không còn sử dụng và đăng ký ký gửi.'],
-  ['BabyThings chăm sóc sản phẩm', 'Chúng mình kiểm tra, làm sạch, chụp ảnh và chuẩn bị thông tin sản phẩm.'],
-  ['BabyThings đăng bán giúp bạn', 'Sản phẩm được đăng bán với nhãn Renewed. Bạn vẫn là chủ sở hữu cho đến khi món đồ được bán thành công.'],
-];
-
-const CARE_TERMS = [
-  ['Nhận từ 1–5 món/lô', 'Áp dụng cho quần áo, đồ vải có thể giặt với giá trị lô từ 250.000đ.'],
-  ['Hoa hồng 10% khi bán thành công', 'Cộng phí làm sạch được thông báo và thanh toán trước khi thực hiện. Tổng phí không vượt quá 30% giá bán.'],
-  ['Thời gian ký gửi 60 ngày', 'Từ ngày 45, sản phẩm có thể được giảm về giá sàn đã thỏa thuận. Sau 60 ngày, bạn có thể gia hạn thêm 30 ngày hoặc nhận lại đồ chưa bán.'],
-];
-
 const AI_STEPS = [
   ['Nhận diện sản phẩm', 'Tải ảnh lên, AI tự nhận biết loại sản phẩm, danh mục và tình trạng sử dụng.'],
   ['Tạo bài đăng tự động', 'Tiêu đề, mô tả và thông tin chi tiết được soạn sẵn — bạn chỉ cần xem lại và chỉnh sửa.'],
@@ -216,62 +198,6 @@ export default function HomePage() {
             <span>{text}</span>
           </div>
         ))}
-      </section>
-
-      <section id="care" className="care-intro">
-        <div className="care-intro-head">
-          <span className="care-intro-kicker">BabyThings Care</span>
-          <h2 className="serif">Đồ con không dùng nữa? Để BabyThings bán giúp bạn!</h2>
-          <p>
-            Quần áo con mặc vài lần đã chật? Nhiều món vẫn còn tốt nhưng bạn không có thời gian chụp ảnh, đăng bán hay
-            tìm người mua? <strong>Đừng để những món đồ còn giá trị nằm mãi trong tủ!</strong>
-          </p>
-          <p>
-            Với BabyThings Care, bạn chỉ cần đăng ký ký gửi. Chúng mình sẽ hỗ trợ kiểm tra, làm sạch, chụp ảnh và đăng
-            bán giúp bạn.
-          </p>
-        </div>
-
-        <h3 className="care-intro-title">Nhẹ việc cho mẹ, thêm giá trị cho đồ của bé!</h3>
-        <div className="care-perks">
-          {CARE_PERKS.map(([title, text]) => (
-            <div key={title} className="care-perk">
-              <strong>{title}</strong>
-              <span>{text}</span>
-            </div>
-          ))}
-        </div>
-
-        <h3 className="care-intro-title">Ký gửi dễ dàng chỉ với 3 bước</h3>
-        <ol className="care-steps">
-          {CARE_STEPS.map(([title, text], i) => (
-            <li key={title}>
-              <span className="care-step-no">{String(i + 1).padStart(2, '0')}</span>
-              <strong>{title}</strong>
-              <span>{text}</span>
-            </li>
-          ))}
-        </ol>
-
-        <h3 className="care-intro-title">Phí rõ ràng, bạn chủ động quyết định</h3>
-        <dl className="care-terms">
-          {CARE_TERMS.map(([title, text]) => (
-            <div key={title}>
-              <dt>{title}</dt>
-              <dd>{text}</dd>
-            </div>
-          ))}
-        </dl>
-
-        <div className="care-cta">
-          <div>
-            <h3 className="serif">Đồ bé đã lớn, hãy để giá trị tiếp tục!</h3>
-            <p>Đăng ký ký gửi ngay để BabyThings giúp bạn chăm sóc và tìm người mua cho những món đồ còn tốt.</p>
-          </div>
-          <Link to="/care/new" className="btn btn-cream btn-lg">
-            Để BabyThings bán giúp tôi
-          </Link>
-        </div>
       </section>
 
       <section className="feedback-band">

@@ -2452,6 +2452,70 @@ body:has(.login-dialog[open]) {
   font-size: 0.875rem;
 }
 
+.sell-dialog {
+  width: min(560px, calc(100vw - 32px));
+}
+
+/* Popup nhỏ: trên điện thoại vẫn giữ dạng thẻ, không tràn toàn màn hình như popup đăng nhập */
+@media (max-width: 560px) {
+  .sell-dialog {
+    width: calc(100vw - 32px);
+    height: fit-content;
+    max-height: calc(100dvh - 32px);
+    border-radius: var(--radius);
+  }
+
+  .sell-dialog .login-dialog-body {
+    padding: 28px 16px 20px;
+  }
+}
+
+.sell-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.sell-option {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.sell-option:hover,
+.sell-option:focus-visible {
+  border-color: var(--accent);
+}
+
+.sell-option-care {
+  background: var(--tint-sage);
+  border-color: transparent;
+}
+
+.sell-option strong {
+  font-size: 1.1rem;
+}
+
+.sell-option span {
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.sell-option small {
+  font-weight: 600;
+  color: var(--sage);
+}
+
 .care-intro {
   display: flex;
   flex-direction: column;

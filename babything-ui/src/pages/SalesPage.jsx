@@ -6,6 +6,7 @@ import { Alert } from '../components/Form';
 import { Pagination } from '../components/Pagination';
 import { ProductImage } from '../components/ProductImage';
 import { formatDate, formatPercent, formatPrice } from '../utils/format';
+import { SellLink } from '../components/SellModal';
 
 const PAGE_SIZE = 10;
 
@@ -114,7 +115,7 @@ export default function SalesPage() {
         <div className="card empty-state">
           <p className="muted">
             Chưa có khoản nào. Khi người mua xác nhận đã nhận hàng, tiền bán sẽ xuất hiện ở đây.{' '}
-            <Link to="/products/new">Đăng bán thêm</Link>
+            <SellLink>Đăng bán thêm</SellLink>
           </p>
         </div>
       )}
