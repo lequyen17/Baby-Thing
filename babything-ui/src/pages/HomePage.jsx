@@ -82,13 +82,13 @@ export default function HomePage() {
         <section className="home-banner">
           <div className="home-banner-copy">
             <h2>Điều nhỏ cho bé, An tâm cho mẹ</h2>
-            <p>Mẹ cứ yên tâm chọn đồ cho bé, mỗi món đều được chúng mình xem qua trước khi lên kệ.</p>
+            <p>
+              Bé lớn nhanh, đồ còn tốt? Đừng để những món đồ xinh nằm mãi trong tủ! BabyThings giúp bạn kiểm tra, làm
+              sạch, chụp ảnh và đăng bán hộ, để đồ bé có cơ hội tìm chủ mới, còn mẹ thì nhẹ gánh hơn mỗi ngày.
+            </p>
             <div className="home-banner-actions">
-              <Link to={sellTo} className="btn btn-accent">
-                Đăng bán
-              </Link>
-              <Link to="/products" className="btn btn-outline">
-                Khám phá tin đăng
+              <Link to="/care/new" className="btn btn-accent">
+                Gửi đồ xinh, nhẹ việc mình!
               </Link>
             </div>
           </div>
