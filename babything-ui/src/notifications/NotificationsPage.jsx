@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { CheckIcon, XIcon } from '../components/Icons';
+import { XIcon } from '../components/Icons';
 import { timeAgo } from '../utils/format';
 import { groupOf, useNotifications } from './useNotifications';
 
@@ -27,7 +27,7 @@ export default function NotificationsPage() {
         </div>
         <div className="header-actions">
           <button type="button" className="btn btn-secondary btn-sm" onClick={markAllRead} disabled={unread === 0}>
-            <CheckIcon size={16} /> Đánh dấu tất cả đã đọc
+            Đánh dấu tất cả đã đọc
           </button>
           <Link to="/profile/notifications" className="btn btn-secondary btn-sm">
             Cài đặt

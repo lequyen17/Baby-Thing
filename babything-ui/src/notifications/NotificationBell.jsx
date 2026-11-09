@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { BellIcon } from '../components/Icons';
+
 import { timeAgo } from '../utils/format';
 import { groupOf, useNotifications } from './useNotifications';
 
@@ -43,11 +43,8 @@ export default function NotificationBell() {
         aria-label={unread ? `Thông báo, ${unread} chưa đọc` : 'Thông báo'}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="nav-icon">
-          <BellIcon size={24} />
-          {unread > 0 && <span className="nav-badge">{unread > 9 ? '9+' : unread}</span>}
-        </span>
-        <span>Thông báo</span>
+        Thông báo
+        {unread > 0 && <span className="nav-badge">{unread > 9 ? '9+' : unread}</span>}
       </button>
 
       {open && (

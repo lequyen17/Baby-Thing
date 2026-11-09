@@ -6,7 +6,7 @@ import { useContactSeller } from '../messages/useMessages';
 import { formatPrice, PRODUCT_STATUSES } from '../utils/format';
 import { categoryArt } from '../utils/categoryArt';
 import { addToCart } from '../cart/useCart';
-import { CartIcon, CheckIcon, HeartIcon, MessageIcon } from './Icons';
+import { CartIcon, CheckIcon, HeartIcon } from './Icons';
 import { ProductImage } from './ProductImage';
 
 export function StockBadge({ stock }) {
@@ -86,7 +86,7 @@ export function ProductCard({ product, showStatus = false, footer }) {
           <div className="product-card-actions">
             {isOwn ? (
               <button type="button" className="btn btn-secondary" disabled>
-                <MessageIcon size={16} /> Nhắn tin
+                Nhắn tin
               </button>
             ) : (
               <button
@@ -96,7 +96,7 @@ export function ProductCard({ product, showStatus = false, footer }) {
                   requireLogin(() => contactSeller({ productId: product.id }).catch((err) => window.alert(err.message)))
                 }
               >
-                <MessageIcon size={16} /> Nhắn tin
+                Nhắn tin
               </button>
             )}
             {unavailable ? (

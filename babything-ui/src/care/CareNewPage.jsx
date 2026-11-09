@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, apiUpload } from '../api/client';
 import { Alert, Field } from '../components/Form';
-import { ArrowLeftIcon, CameraIcon, PlusIcon, TrashIcon, XIcon } from '../components/Icons';
+import { CameraIcon, XIcon } from '../components/Icons';
 import { AGE_RANGES, formatPrice, normalizeSize, SIZE_SUGGESTIONS } from '../utils/format';
 import { IMAGE_ACCEPT, shrinkImage } from '../utils/image';
 import { DROPOFF_METHODS } from './careFormat';
@@ -76,7 +76,7 @@ export default function CareNewPage() {
   return (
     <div className="page page-narrow">
       <Link to="/care" className="back-link">
-        <ArrowLeftIcon size={16} /> BabyThings Care
+        BabyThings Care
       </Link>
       <div className="page-header">
         <h1>Đăng ký ký gửi</h1>
@@ -100,7 +100,7 @@ export default function CareNewPage() {
               <h2 className="card-title">Món {index + 1}</h2>
               {items.length > 1 && (
                 <button type="button" className="btn btn-secondary btn-sm" onClick={() => removeItem(index)}>
-                  <TrashIcon size={16} /> Bỏ món
+                  Bỏ món
                 </button>
               )}
             </div>
@@ -183,7 +183,7 @@ export default function CareNewPage() {
 
         {items.length < maxItems && (
           <button type="button" className="btn btn-secondary" onClick={() => setItems((list) => [...list, emptyItem()])}>
-            <PlusIcon /> Thêm món ({items.length}/{maxItems})
+            Thêm món ({items.length}/{maxItems})
           </button>
         )}
 

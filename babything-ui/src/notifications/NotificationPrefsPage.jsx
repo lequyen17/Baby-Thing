@@ -1,5 +1,5 @@
 import { useAuth } from '../auth/AuthContext';
-import { LockIcon } from '../components/Icons';
+
 import { GROUPS, useNotifications } from './useNotifications';
 
 /** FR-NOTI-05: bật/tắt từng nhóm không bắt buộc; thông báo giao dịch và bảo mật luôn bật. */
@@ -25,7 +25,7 @@ export default function NotificationPrefsPage() {
             </div>
             {g.locked ? (
               <span className="badge badge-muted">
-                <LockIcon size={12} /> Luôn bật
+                Luôn bật
               </span>
             ) : (
               <label className="switch">

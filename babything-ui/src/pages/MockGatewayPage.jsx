@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { Alert } from '../components/Form';
-import { LockIcon } from '../components/Icons';
+
 import { PAYMENT_METHODS, PaymentStatusBadge } from '../components/PaymentStatus';
 import { formatDate, formatPrice } from '../utils/format';
 
@@ -43,7 +43,7 @@ export default function MockGatewayPage() {
     <div className="gateway-shell">
       <div className="gateway-card">
         <div className="gateway-brand">
-          <LockIcon size={18} /> Cổng thanh toán <span className="pill pill-sage">Giả lập</span>
+          Cổng thanh toán <span className="pill pill-sage">Giả lập</span>
         </div>
         <Alert>{error}</Alert>
         {!payment && !error && <p className="muted">Đang tải…</p>}

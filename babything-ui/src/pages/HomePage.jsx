@@ -3,7 +3,7 @@ import { Link, useLocation, useOutletContext } from 'react-router-dom';
 import { api } from '../api/client';
 import { Alert } from '../components/Form';
 import { ProductCard } from '../components/ProductCard';
-import { CategoryGlyph, categoryArt } from '../utils/categoryArt';
+import { categoryArt } from '../utils/categoryArt';
 
 const FILTERS = [
   ['all', 'Tất cả'],
@@ -84,7 +84,6 @@ export default function HomePage() {
           </div>
           <div className="hero-card-body">
             <div className="hero-card-photo">
-              <CategoryGlyph category="stroller" size={104} />
               <span>Ảnh của bạn</span>
             </div>
             <dl className="hero-card-steps">
@@ -137,7 +136,6 @@ export default function HomePage() {
                 className="category-tile"
                 style={{ background: categoryArt(c).tint }}
               >
-                <CategoryGlyph category={c} />
                 <span>{c}</span>
               </Link>
             ))}

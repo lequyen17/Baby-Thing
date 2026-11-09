@@ -3,7 +3,7 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Alert } from '../components/Form';
-import { ArrowLeftIcon, CardIcon, CheckIcon, XCircleIcon } from '../components/Icons';
+
 import { ProductImage } from '../components/ProductImage';
 import { formatAgeRange, formatDate, formatPercent, formatPrice } from '../utils/format';
 import CareAdminPanel from './CareAdminPanel';
@@ -150,7 +150,7 @@ function AgreementCard({ batch, busy, onAgree }) {
       </label>
       <div className="product-actions">
         <button type="button" className="btn btn-primary" disabled={!checked || busy} onClick={() => onAgree(rules.agreementVersion)}>
-          <CheckIcon /> Đồng ý thoả thuận
+          Đồng ý thoả thuận
         </button>
       </div>
     </section>
@@ -343,7 +343,7 @@ export default function CareBatchPage() {
   return (
     <div className="page">
       <Link to={isAdmin ? '/admin/care' : '/care'} className="back-link">
-        <ArrowLeftIcon size={16} /> {isAdmin ? 'Kho Care' : 'BabyThings Care'}
+        {isAdmin ? 'Kho Care' : 'BabyThings Care'}
       </Link>
       <Alert type="success">{notice}</Alert>
       <Alert>{error}</Alert>
@@ -366,7 +366,7 @@ export default function CareBatchPage() {
                 {status === 'QUOTED' && (
                   <>
                     <button type="button" className="btn btn-primary" onClick={handleAccept} disabled={busy}>
-                      <CardIcon /> Duyệt & trả phí {formatPrice(batch.cleaningFee)}
+                      Duyệt & trả phí {formatPrice(batch.cleaningFee)}
                     </button>
                     <button type="button" className="btn btn-secondary" onClick={handleReject} disabled={busy}>
                       Từ chối báo giá
@@ -385,7 +385,7 @@ export default function CareBatchPage() {
                 )}
                 {cancellable && (
                   <button type="button" className="btn btn-danger" onClick={handleCancel} disabled={busy}>
-                    <XCircleIcon /> Huỷ đăng ký
+                    Huỷ đăng ký
                   </button>
                 )}
               </div>

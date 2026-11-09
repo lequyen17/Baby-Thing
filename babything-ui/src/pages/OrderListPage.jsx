@@ -3,7 +3,7 @@ import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Alert } from '../components/Form';
-import { PlusIcon, SearchIcon } from '../components/Icons';
+import { SearchIcon } from '../components/Icons';
 import { ORDER_STATUSES, OrderStatusBadge } from '../components/OrderStatus';
 import { Pagination } from '../components/Pagination';
 import { ProductImage } from '../components/ProductImage';
@@ -88,7 +88,7 @@ export default function OrderListPage() {
           <p className="muted">{result ? `${result.totalItems} đơn hàng` : 'Đang tải…'}</p>
         </div>
         <Link to="/orders/new" className="btn btn-primary">
-          <PlusIcon /> Tạo đơn mới
+          Tạo đơn mới
         </Link>
       </div>
 

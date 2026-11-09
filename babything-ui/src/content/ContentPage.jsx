@@ -1,5 +1,5 @@
 import { Link, NavLink } from 'react-router-dom';
-import { LogoMark } from '../components/Icons';
+
 import { useAuth } from '../auth/AuthContext';
 import { formatDate } from '../utils/format';
 import { CONTENT_LIST, POLICY_LIST } from './pages';
@@ -12,7 +12,6 @@ export function ContentLayout({ children }) {
       <header className="app-header">
         <div className="app-header-inner">
           <Link to="/" className="brand">
-            <LogoMark />
             <span>Baby Things</span>
           </Link>
           <nav className="content-nav" aria-label="Thông tin">

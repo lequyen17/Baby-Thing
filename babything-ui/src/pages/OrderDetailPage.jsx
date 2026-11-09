@@ -3,7 +3,7 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Alert } from '../components/Form';
-import { ArrowLeftIcon, CardIcon, CheckIcon, EditIcon, XCircleIcon } from '../components/Icons';
+
 import { OrderStatusBadge, orderPermissions, STEPS } from '../components/OrderStatus';
 import { ProductImage } from '../components/ProductImage';
 import { ListingSpecs } from '../components/ListingSpecs';
@@ -125,7 +125,7 @@ export default function OrderDetailPage() {
   return (
     <div className="page">
       <Link to={perms?.isSeller ? '/orders?view=selling' : '/orders'} className="back-link">
-        <ArrowLeftIcon size={16} /> Tất cả đơn hàng
+        Tất cả đơn hàng
       </Link>
       <Alert type="success">{notice}</Alert>
       <Alert>{error}</Alert>
@@ -152,12 +152,12 @@ export default function OrderDetailPage() {
             <div className="product-actions order-actions">
               {perms.canPay && (
                 <Link to={`/orders/${order.id}/pay`} className="btn btn-primary">
-                  <CardIcon /> Thanh toán
+                  Thanh toán
                 </Link>
               )}
               {perms.canReceive && (
                 <button type="button" className="btn btn-primary" onClick={handleReceive} disabled={busy}>
-                  <CheckIcon /> Đã nhận hàng
+                  Đã nhận hàng
                 </button>
               )}
               {perms.nextStep && !perms.nextStep.needsTracking && (
@@ -167,12 +167,12 @@ export default function OrderDetailPage() {
               )}
               {perms.canEdit && (
                 <Link to={`/orders/${order.id}/edit`} state={{ order }} className="btn btn-secondary">
-                  <EditIcon /> Sửa đơn
+                  Sửa đơn
                 </Link>
               )}
               {perms.canCancel && (
                 <button type="button" className="btn btn-danger" onClick={handleCancel} disabled={busy}>
-                  <XCircleIcon /> Huỷ đơn
+                  Huỷ đơn
                 </button>
               )}
             </div>

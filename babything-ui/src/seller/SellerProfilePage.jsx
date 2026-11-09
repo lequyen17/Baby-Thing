@@ -5,7 +5,7 @@ import { useExtraProfile } from '../account/useAccountData';
 import { useAuth } from '../auth/AuthContext';
 import { useRequireLogin } from '../auth/RouteGuards';
 import { Avatar } from '../components/Avatar';
-import { MessageIcon, StarIcon } from '../components/Icons';
+
 import { ProductCard } from '../components/ProductCard';
 import { useContactSeller } from '../messages/useMessages';
 import { formatDate } from '../utils/format';
@@ -118,7 +118,7 @@ export default function SellerProfilePage() {
             </Link>
           ) : (
             <button type="button" className="btn btn-accent" onClick={startChat}>
-              <MessageIcon size={18} /> Nhắn tin
+              Nhắn tin
             </button>
           )}
         </div>
@@ -127,7 +127,7 @@ export default function SellerProfilePage() {
       <section className="stat-grid">
         <div className="stat">
           <strong>
-            <StarIcon size={18} /> {isNew ? '—' : seller.rating.toFixed(1)}
+            {isNew ? '—' : seller.rating.toFixed(1)}
           </strong>
           <span>{seller.reviews > 0 ? `${seller.reviews} đánh giá` : 'Chưa có đánh giá'}</span>
         </div>

@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Alert } from '../components/Form';
-import { EditIcon, PlusIcon, SearchIcon } from '../components/Icons';
+import { SearchIcon } from '../components/Icons';
 import { Pagination } from '../components/Pagination';
 import { ProductCard } from '../components/ProductCard';
 import { AGE_RANGES, CONDITIONS, PRODUCT_STATUSES } from '../utils/format';
@@ -154,7 +154,7 @@ export default function ProductListPage() {
             </button>
           )}
           <Link to="/products/new" className="btn btn-accent">
-            <PlusIcon /> Đăng bán
+            Đăng bán
           </Link>
         </div>
       </div>
@@ -283,7 +283,7 @@ export default function ProductListPage() {
                   </Link>
                 ) : product.sellerId === user?.id ? (
                   <Link to={`/products/${product.id}/edit`} state={{ product }} className="btn btn-secondary btn-block">
-                    <EditIcon size={16} /> Sửa tin
+                    Sửa tin
                   </Link>
                 ) : undefined
               }

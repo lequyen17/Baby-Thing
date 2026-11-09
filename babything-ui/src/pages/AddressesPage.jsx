@@ -3,7 +3,7 @@ import { useAddresses } from '../account/useAccountData';
 import { newId } from '../api/localStore';
 import { useAuth } from '../auth/AuthContext';
 import { Alert, Field } from '../components/Form';
-import { EditIcon, PlusIcon, TrashIcon } from '../components/Icons';
+import { EditIcon, TrashIcon } from '../components/Icons';
 import { HANOI_DISTRICTS, PROVINCES } from '../data/vnLocations';
 
 const EMPTY = { type: 'RECEIVE', name: '', phone: '', province: 'Hà Nội', district: '', ward: '', detail: '', isDefault: false };
@@ -133,7 +133,7 @@ export default function AddressesPage() {
                 setEditing(EMPTY);
               }}
             >
-              <PlusIcon size={16} /> Thêm địa chỉ
+              Thêm địa chỉ
             </button>
           )}
         </div>

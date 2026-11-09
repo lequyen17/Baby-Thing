@@ -5,7 +5,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useRequireLogin } from '../auth/RouteGuards';
 import { Avatar } from '../components/Avatar';
 import { Alert } from '../components/Form';
-import { ArrowLeftIcon, CartIcon, CheckIcon, EditIcon, EyeIcon, MessageIcon, TrashIcon, XCircleIcon } from '../components/Icons';
+
 import { ListingSpecs } from '../components/ListingSpecs';
 import { useContactSeller } from '../messages/useMessages';
 import { addToCart } from '../cart/useCart';
@@ -171,7 +171,7 @@ export default function ProductDetailPage() {
   return (
     <div className="page">
       <Link to="/products" className="back-link">
-        <ArrowLeftIcon size={16} /> Tất cả sản phẩm
+        Tất cả sản phẩm
       </Link>
       <Alert type="success">{notice}</Alert>
       <Alert>{error}</Alert>
@@ -192,10 +192,10 @@ export default function ProductDetailPage() {
               {isAdmin && (
                 <div className="product-actions">
                   <button type="button" className="btn btn-primary" onClick={approve} disabled={busy}>
-                    <CheckIcon /> Duyệt tin
+                    Duyệt tin
                   </button>
                   <button type="button" className="btn btn-danger" onClick={reject} disabled={busy}>
-                    <XCircleIcon /> Từ chối
+                    Từ chối
                   </button>
                 </div>
               )}
@@ -249,11 +249,11 @@ export default function ProductDetailPage() {
                     className="btn btn-secondary"
                     onClick={() => requireLogin(() => contactSeller({ productId: product.id }).catch((err) => setError(err.message)))}
                   >
-                    <MessageIcon /> Nhắn tin cho người bán
+                    Nhắn tin cho người bán
                   </button>
                   {product.status === 'ACTIVE' && product.stock > 0 && !isAdmin && (
                     <button type="button" className="btn btn-secondary" onClick={() => requireLogin(handleAddToCart)} disabled={busy}>
-                      <CartIcon /> Thêm vào giỏ
+                      Thêm vào giỏ
                     </button>
                   )}
                   {product.status === 'ACTIVE' && product.stock > 0 &&
@@ -275,7 +275,7 @@ export default function ProductDetailPage() {
                   </p>
                   <div className="product-actions">
                     <Link to={`/products/${product.id}/edit`} state={{ product }} className="btn btn-secondary">
-                      <EditIcon /> Sửa tin
+                      Sửa tin
                     </Link>
                     {(product.status === 'ACTIVE' || product.status === 'PENDING_REVIEW') && (
                       <button type="button" className="btn btn-secondary" onClick={() => setVisible(false)} disabled={busy}>
@@ -293,7 +293,7 @@ export default function ProductDetailPage() {
                       </button>
                     )}
                     <button type="button" className="btn btn-danger" onClick={handleDelete} disabled={deleting}>
-                      <TrashIcon /> {deleting ? 'Đang xoá…' : 'Xoá tin'}
+                      {deleting ? 'Đang xoá…' : 'Xoá tin'}
                     </button>
                   </div>
                 </>
@@ -305,7 +305,7 @@ export default function ProductDetailPage() {
             <ProductViewers productId={product.id} />
           ) : (
             user && <p className="muted page-hint">
-              <EyeIcon size={14} /> Sản phẩm bạn mở được lưu trong <Link to="/history">lịch sử xem</Link>.
+              Sản phẩm bạn mở được lưu trong <Link to="/history">lịch sử xem</Link>.
             </p>
           )}
         </>

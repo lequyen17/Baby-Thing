@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { Alert } from '../components/Form';
-import { BankIcon } from '../components/Icons';
+
 import { Pagination } from '../components/Pagination';
 import { ProductImage } from '../components/ProductImage';
 import { formatDate, formatPercent, formatPrice } from '../utils/format';
@@ -88,7 +88,7 @@ export default function SalesPage() {
         <Stat value={summary ? formatPrice(summary.paidAmount) : '…'} label={`Đã nhận (${summary?.paidCount ?? 0} đơn)`} />
         <Stat value={summary ? formatPrice(summary.commissionTotal) : '…'} label="Hoa hồng đã trừ" />
         <Stat
-          value={account ? <BankIcon size={22} /> : '—'}
+          value={account ? 'Đã liên kết' : '—'}
           label={account ? `${account.bankCode} ••••${account.accountNo.slice(-4)}` : 'Chưa có tài khoản nhận tiền'}
         />
       </section>

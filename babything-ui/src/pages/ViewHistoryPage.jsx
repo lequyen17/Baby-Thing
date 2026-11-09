@@ -64,7 +64,7 @@ export default function ViewHistoryPage() {
         </div>
         {result?.totalItems > 0 && (
           <button type="button" className="btn btn-secondary" onClick={clearAll}>
-            <TrashIcon /> Xoá lịch sử
+            Xoá lịch sử
           </button>
         )}
       </div>

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { Alert } from '../components/Form';
-import { PlusIcon } from '../components/Icons';
+
 import { Pagination } from '../components/Pagination';
 import { ProductImage } from '../components/ProductImage';
 import { formatDate, formatPercent, formatPrice } from '../utils/format';
@@ -70,7 +70,7 @@ export default function CarePage() {
           </p>
         </div>
         <Link to="/care/new" className="btn btn-primary">
-          <PlusIcon /> Đăng ký ký gửi
+          Đăng ký ký gửi
         </Link>
       </div>
 

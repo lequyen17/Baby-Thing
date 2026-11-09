@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { Alert } from '../components/Form';
-import { CartIcon, TrashIcon } from '../components/Icons';
+import { TrashIcon } from '../components/Icons';
 import { ProductImage } from '../components/ProductImage';
 import { formatCondition, formatPrice } from '../utils/format';
 import { cartItemToOrderItem, notifyCartChanged } from './useCart';
@@ -133,9 +133,6 @@ export default function CartPage() {
 
       {cart.items.length === 0 ? (
         <div className="card empty-state">
-          <span className="empty-icon">
-            <CartIcon size={26} />
-          </span>
           <p className="muted">Giỏ hàng đang trống.</p>
           <Link to="/products" className="btn btn-primary">
             Xem sản phẩm
@@ -162,7 +159,7 @@ export default function CartPage() {
                     disabled={busy}
                     onClick={() => window.confirm(`Bỏ ${selected.length} sản phẩm đã chọn khỏi giỏ?`) && removeMany(selected)}
                   >
-                    <TrashIcon size={16} /> Xoá đã chọn
+                    Xoá đã chọn
                   </button>
                 )}
               </div>

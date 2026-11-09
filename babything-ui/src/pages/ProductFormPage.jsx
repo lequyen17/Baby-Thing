@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api, apiUpload } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Alert, Field } from '../components/Form';
-import { ArrowLeftIcon, PlusIcon, XIcon } from '../components/Icons';
+import { PlusIcon, XIcon } from '../components/Icons';
 import { AGE_RANGES, CONDITIONS, normalizeSize, SIZE_SUGGESTIONS } from '../utils/format';
 import { IMAGE_ACCEPT, shrinkImage } from '../utils/image';
 
@@ -186,7 +186,7 @@ export default function ProductFormPage() {
   return (
     <div className="page">
       <Link to={isEdit ? `/products/${id}` : '/products'} className="back-link">
-        <ArrowLeftIcon size={16} /> {isEdit ? 'Quay lại tin đăng' : 'Tất cả sản phẩm'}
+        {isEdit ? 'Quay lại tin đăng' : 'Tất cả sản phẩm'}
       </Link>
       <div className="page-header">
         <h1>{isEdit ? 'Sửa tin đăng' : 'Đăng bán sản phẩm'}</h1>

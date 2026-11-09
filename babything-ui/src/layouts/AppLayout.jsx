@@ -5,17 +5,7 @@ import { useAuth } from '../auth/AuthContext';
 import { Loading } from '../auth/RouteGuards';
 import { saveReturnTo } from '../pages/flowStorage';
 import { useCartCount } from '../cart/useCart';
-import {
-  CameraIcon,
-  CardIcon,
-  CartIcon,
-  CheckSquareIcon,
-  LogoMark,
-  MessageIcon,
-  OrderIcon,
-  PlusIcon,
-  SearchIcon,
-} from '../components/Icons';
+import { CameraIcon } from '../components/Icons';
 import { useUnreadMessages } from '../messages/useMessages';
 import { useRealtime } from '../realtime/useRealtime';
 import NotificationBell from '../notifications/NotificationBell';
@@ -43,30 +33,24 @@ function MemberNav({ user }) {
   return (
     <nav className="app-nav" aria-label="Tài khoản">
       <NavLink to="/messages" className="app-nav-link">
-        <span className="nav-icon">
-          <MessageIcon size={24} />
-          {unreadMessages > 0 && <span className="nav-badge">{unreadMessages > 9 ? '9+' : unreadMessages}</span>}
-        </span>
-        <span>Tin nhắn</span>
+        Tin nhắn
+        {unreadMessages > 0 && <span className="nav-badge">{unreadMessages > 9 ? '9+' : unreadMessages}</span>}
       </NavLink>
       <NotificationBell />
       <NavLink to="/orders" className="app-nav-link">
-        <OrderIcon size={24} /> <span>Đơn hàng</span>
+        Đơn hàng
       </NavLink>
       <NavLink to="/payments" className="app-nav-link">
-        <CardIcon size={24} /> <span>Thanh toán</span>
+        Thanh toán
       </NavLink>
       {isAdmin ? (
         <NavLink to="/admin" className="app-nav-link">
-          <CheckSquareIcon size={24} /> <span>Quản trị</span>
+          Quản trị
         </NavLink>
       ) : (
         <NavLink to="/cart" className="app-nav-link">
-          <span className="nav-icon">
-            <CartIcon size={24} />
-            {cartCount > 0 && <span className="nav-badge">{cartCount > 9 ? '9+' : cartCount}</span>}
-          </span>
-          <span>Giỏ hàng</span>
+          Giỏ hàng
+          {cartCount > 0 && <span className="nav-badge">{cartCount > 9 ? '9+' : cartCount}</span>}
         </NavLink>
       )}
     </nav>
@@ -131,12 +115,10 @@ function Shell() {
       <header className="app-header">
         <div className="app-header-inner">
           <Link to="/" className="brand">
-            <LogoMark />
             <span>Baby Things</span>
           </Link>
 
           <form className="header-search" onSubmit={handleSearch} role="search">
-            <SearchIcon size={20} />
             <input
               type="search"
               placeholder="Tìm xe đẩy, ghế ăn, quần áo sơ sinh…"
@@ -156,7 +138,7 @@ function Shell() {
 
           {/* Khách bấm "Đăng bán" thì ProtectedRoute đưa qua đăng nhập rồi quay lại form */}
           <Link to="/products/new" className="btn btn-accent header-sell">
-            <PlusIcon /> <span>Đăng bán</span>
+            Đăng bán
           </Link>
           {user && <UserMenu />}
         </div>

@@ -32,8 +32,9 @@
   --shadow-sm: 0 1px 2px rgba(42, 39, 51, 0.04);
   --shadow-md: 0 24px 48px -28px rgba(42, 39, 51, 0.35);
   --gutter: clamp(16px, 5.5vw, 80px);
-  --font-sans: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-serif: 'Fraunces', Georgia, serif;
+  /* Segoe UI trên Windows, Open Sans (dáng gần giống) trên máy khác */
+  --font-sans: 'Segoe UI', 'Open Sans', system-ui, -apple-system, Roboto, sans-serif;
+  --font-serif: var(--font-sans);
   font-family: var(--font-sans);
   color: var(--text);
   background: var(--bg);
@@ -52,8 +53,8 @@ h1 {
   margin: 0 0 4px;
   font-family: var(--font-serif);
   font-size: 2rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 h2 {
@@ -73,8 +74,8 @@ a:hover {
 
 .serif {
   font-family: var(--font-serif);
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .text-center {
@@ -480,8 +481,8 @@ a:hover {
 
 .brand span {
   font-family: var(--font-serif);
-  font-size: 28px;
-  font-weight: 600;
+  font-size: 26px;
+  font-weight: 800;
   letter-spacing: -0.5px;
 }
 
@@ -492,7 +493,7 @@ a:hover {
   gap: 8px;
   min-width: 0;
   height: 48px;
-  padding: 0 5px 0 18px;
+  padding: 0 5px 0 20px;
   border: 1px solid var(--border-strong);
   border-radius: 999px;
   background: var(--bg);
@@ -531,20 +532,15 @@ a:hover {
 }
 
 .app-nav-link {
-  display: flex;
-  flex-direction: column;
+  display: inline-flex;
   align-items: center;
-  gap: 2px;
-  min-width: 64px;
-  padding: 4px 6px;
+  gap: 6px;
+  padding: 8px 10px;
   border-radius: var(--radius-sm);
   color: var(--text);
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.app-nav-link svg {
-  stroke-width: 1.8;
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .app-nav-link:hover {
@@ -748,26 +744,17 @@ a:hover {
 }
 
 .hero-card-photo {
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 170px;
   height: 170px;
   flex-shrink: 0;
+  border: 2px dashed #e3c3b5;
   border-radius: 18px;
   background: var(--tint-peach);
-  color: var(--ink);
-}
-
-.hero-card-photo span {
-  position: absolute;
-  left: 10px;
-  bottom: 10px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: #fff;
-  font-size: 0.7rem;
+  color: var(--accent-deep);
+  font-size: 0.85rem;
   font-weight: 600;
 }
 
@@ -896,14 +883,13 @@ a:hover {
 
 .category-tile {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  padding: 26px 12px 20px;
-  border-radius: 22px;
+  align-items: flex-end;
+  min-height: 96px;
+  padding: 18px;
+  border-radius: 18px;
   color: var(--ink);
-  font-size: 0.95rem;
-  text-align: center;
+  font-size: 1rem;
+  font-weight: 700;
   transition: transform 0.15s ease;
 }
 
@@ -2149,13 +2135,16 @@ a:hover {
     grid-template-columns: 1fr;
   }
 
-  .app-nav-link > span:not(.nav-icon),
-  .header-sell span {
-    display: none;
+  .app-nav:not(.app-nav-guest) {
+    order: 11;
+    flex-basis: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
   }
 
   .app-nav-link {
-    min-width: 44px;
+    padding: 6px 8px;
+    font-size: 0.85rem;
   }
 
   /* Khách trên điện thoại: chỉ giữ "Đăng nhập" (trang đăng nhập có link đăng ký) để header không xuống dòng */
@@ -2175,9 +2164,22 @@ a:hover {
 
 @media (max-width: 560px) {
   .user-menu-name,
-  .header-search .btn,
-  .brand span {
+  .header-search .btn {
     display: none;
+  }
+
+  .brand span {
+    font-size: 19px;
+  }
+
+  .app-header-inner {
+    column-gap: 8px;
+  }
+
+  .header-sell {
+    min-height: 40px;
+    padding: 0 12px;
+    font-size: 0.85rem;
   }
 
   .promise-grid {

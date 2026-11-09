@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { Alert } from '../components/Form';
-import { CheckIcon, SearchIcon, XCircleIcon, XIcon } from '../components/Icons';
+import { SearchIcon, XIcon } from '../components/Icons';
 import { ListingSpecs } from '../components/ListingSpecs';
 import { Pagination } from '../components/Pagination';
 import { ProductImage } from '../components/ProductImage';
@@ -196,7 +196,7 @@ export default function AdminProductsPage() {
             <div className="bulk-actions">
               {status === 'PENDING_REVIEW' && (
                 <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={() => runBatch(selectedItems, 'approve')}>
-                  <CheckIcon size={16} /> Duyệt {selected.length} tin
+                  Duyệt {selected.length} tin
                 </button>
               )}
               <button
@@ -208,7 +208,7 @@ export default function AdminProductsPage() {
                   if (reason) runBatch(selectedItems, 'reject', reason);
                 }}
               >
-                <XCircleIcon size={16} /> {status === 'PENDING_REVIEW' ? 'Từ chối' : 'Gỡ'} {selected.length} tin
+                {status === 'PENDING_REVIEW' ? 'Từ chối' : 'Gỡ'} {selected.length} tin
               </button>
             </div>
           )}
@@ -256,12 +256,12 @@ export default function AdminProductsPage() {
             <div className="review-actions">
               {p.status === 'PENDING_REVIEW' && (
                 <button type="button" className="btn btn-primary btn-sm" onClick={() => act(p, 'approve')} disabled={busy}>
-                  <CheckIcon size={16} /> Duyệt
+                  Duyệt
                 </button>
               )}
               {p.status !== 'REJECTED' && (
                 <button type="button" className="btn btn-danger btn-sm" onClick={() => act(p, 'reject')} disabled={busy}>
-                  <XCircleIcon size={16} /> {p.status === 'PENDING_REVIEW' ? 'Từ chối' : 'Gỡ tin'}
+                  {p.status === 'PENDING_REVIEW' ? 'Từ chối' : 'Gỡ tin'}
                 </button>
               )}
               <Link to={`/products/${p.id}/edit`} className="btn btn-secondary btn-sm">

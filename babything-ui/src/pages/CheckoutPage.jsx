@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { Alert } from '../components/Form';
-import { ArrowLeftIcon, CardIcon } from '../components/Icons';
+
 import { PAYMENT_METHODS } from '../components/PaymentStatus';
 import { ProductImage } from '../components/ProductImage';
 import { formatDate, formatPrice } from '../utils/format';
@@ -46,7 +46,7 @@ export default function CheckoutPage() {
   return (
     <div className="page page-narrow">
       <Link to={`/orders/${id}`} className="back-link">
-        <ArrowLeftIcon size={16} /> Quay lại đơn hàng
+        Quay lại đơn hàng
       </Link>
       <div className="page-header">
         <h1>Thanh toán đơn #{id}</h1>
@@ -93,7 +93,6 @@ export default function CheckoutPage() {
               {Object.entries(PAYMENT_METHODS).map(([value, label]) => (
                 <label key={value} className={`choice ${method === value ? 'is-active' : ''}`}>
                   <input type="radio" name="method" value={value} checked={method === value} onChange={() => setMethod(value)} />
-                  <CardIcon size={18} />
                   <span>{label}</span>
                 </label>
               ))}

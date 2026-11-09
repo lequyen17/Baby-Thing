@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Alert, Field } from '../components/Form';
-import { ArrowLeftIcon, PlusIcon, SearchIcon, TrashIcon } from '../components/Icons';
+import { PlusIcon, SearchIcon, TrashIcon } from '../components/Icons';
 import { notifyCartChanged } from '../cart/useCart';
 import { ProductImage } from '../components/ProductImage';
 import { formatPrice } from '../utils/format';
@@ -250,7 +250,7 @@ export default function OrderFormPage() {
   return (
     <div className="page">
       <Link to={backTo} className="back-link">
-        <ArrowLeftIcon size={16} /> {isEdit ? 'Quay lại đơn hàng' : fromCart ? 'Quay lại giỏ hàng' : 'Tất cả đơn hàng'}
+        {isEdit ? 'Quay lại đơn hàng' : fromCart ? 'Quay lại giỏ hàng' : 'Tất cả đơn hàng'}
       </Link>
       <div className="page-header">
         <h1>{isEdit ? `Sửa đơn #${id}` : 'Tạo đơn mới'}</h1>
