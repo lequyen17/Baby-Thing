@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation, useOutletContext } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { api } from '../api/client';
 import { Alert } from '../components/Form';
 import { ProductCard } from '../components/ProductCard';
-import { categoryArt } from '../utils/categoryArt';
 
 const FILTERS = [
   ['all', 'Mới nhất'],
@@ -25,7 +24,6 @@ const AI_STEPS = [
 ];
 
 export default function HomePage() {
-  const { categories } = useOutletContext();
   const { hash } = useLocation();
   const [products, setProducts] = useState(null);
   const [filter, setFilter] = useState('all');
@@ -51,55 +49,38 @@ export default function HomePage() {
 
   return (
     <div className="home">
-      <div className="home-feed">
-        {categories.length > 0 && (
-          <nav className="home-categories" aria-label="Danh mục">
-            {categories.map((c) => (
-              <Link
-                key={c}
-                to={`/products?${new URLSearchParams({ category: c })}`}
-                className="category-tile"
-                style={{ background: categoryArt(c).tint }}
-              >
-                {c}
-              </Link>
-            ))}
-          </nav>
-        )}
-
-        <section className="home-panel" aria-label="Tin đăng">
-          <div className="feed-tabs" role="tablist" aria-label="Lọc tin đăng">
-            {FILTERS.map(([id, label]) => (
-              <button
-                key={id}
-                type="button"
-                role="tab"
-                className={`feed-tab ${filter === id ? 'is-active' : ''}`}
-                aria-selected={filter === id}
-                onClick={() => setFilter(id)}
-              >
-                {label}
-              </button>
-            ))}
-            <Link to="/products" className="feed-tabs-more">
-              Xem tất cả
-            </Link>
-          </div>
-          <Alert>{error}</Alert>
-          {!products && !error && <p className="muted">Đang tải…</p>}
-          {products && shown.length === 0 && <p className="muted empty-state">Chưa có sản phẩm phù hợp.</p>}
-          {shown.length > 0 && (
-            <div className="product-grid product-grid-5">
-              {shown.map((p) => (
-                <ProductCard key={p.id} product={p} />
-              ))}
-            </div>
-          )}
-          <Link to="/products" className="btn btn-outline btn-lg section-more">
-            Xem thêm tin đăng
+      <section className="home-panel" aria-label="Tin đăng">
+        <div className="feed-tabs" role="tablist" aria-label="Lọc tin đăng">
+          {FILTERS.map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              className={`feed-tab ${filter === id ? 'is-active' : ''}`}
+              aria-selected={filter === id}
+              onClick={() => setFilter(id)}
+            >
+              {label}
+            </button>
+          ))}
+          <Link to="/products" className="feed-tabs-more">
+            Xem tất cả
           </Link>
-        </section>
-      </div>
+        </div>
+        <Alert>{error}</Alert>
+        {!products && !error && <p className="muted">Đang tải…</p>}
+        {products && shown.length === 0 && <p className="muted empty-state">Chưa có sản phẩm phù hợp.</p>}
+        {shown.length > 0 && (
+          <div className="product-grid product-grid-5">
+            {shown.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        )}
+        <Link to="/products" className="btn btn-outline btn-lg section-more">
+          Xem thêm tin đăng
+        </Link>
+      </section>
 
       <section className="hero">
         <div className="hero-copy">
