@@ -4,7 +4,6 @@ import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { LoginModalProvider, useLoginModal } from '../auth/LoginModal';
 import { Loading } from '../auth/RouteGuards';
-import { saveReturnTo } from '../pages/flowStorage';
 import { useCartCount } from '../cart/useCart';
 import { useUnreadMessages } from '../messages/useMessages';
 import { useRealtime } from '../realtime/useRealtime';
@@ -63,19 +62,17 @@ function MemberNav({ user }) {
   );
 }
 
-/** Khách: đăng nhập bằng popup ngay tại trang; đăng ký xong quay lại đúng trang đang xem. */
+/** Khách: đăng nhập / đăng ký bằng popup ngay tại trang đang xem. */
 function GuestNav() {
-  const { pathname, search } = useLocation();
   const openLogin = useLoginModal();
-  const remember = () => saveReturnTo(pathname + search);
   return (
     <nav className="app-nav app-nav-guest" aria-label="Tài khoản">
       <button type="button" className="btn btn-secondary btn-sm" onClick={() => openLogin()}>
         Đăng nhập
       </button>
-      <Link to="/register" className="btn btn-dark btn-sm" onClick={remember}>
+      <button type="button" className="btn btn-dark btn-sm" onClick={() => openLogin(undefined, 'register')}>
         Đăng ký
-      </Link>
+      </button>
     </nav>
   );
 }

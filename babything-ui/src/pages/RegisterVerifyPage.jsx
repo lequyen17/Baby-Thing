@@ -1,25 +1,18 @@
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { api } from '../api/client';
-import { useAuth } from '../auth/AuthContext';
 import { AuthCard } from '../components/Form';
 import { OtpForm } from '../components/OtpForm';
+import { useRegisterVerify } from '../components/RegisterForm';
 import { clearPendingRegisterEmail, loadPendingRegisterEmail, takeReturnTo } from './flowStorage';
 
 export default function RegisterVerifyPage() {
   const navigate = useNavigate();
-  const { signIn } = useAuth();
   const email = loadPendingRegisterEmail();
+  const { verify, resend } = useRegisterVerify(email, () => {
+    clearPendingRegisterEmail();
+    navigate(takeReturnTo(), { replace: true });
+  });
 
   if (!email) return <Navigate to="/register" replace />;
-
-  const verify = async (otp) => {
-    const tokens = await api('/auth/register/verify', { method: 'POST', body: { email, otp }, auth: false });
-    clearPendingRegisterEmail();
-    await signIn(tokens);
-    navigate(takeReturnTo(), { replace: true });
-  };
-
-  const resend = () => api('/auth/register/resend', { method: 'POST', body: { email }, auth: false });
 
   return (
     <AuthCard
