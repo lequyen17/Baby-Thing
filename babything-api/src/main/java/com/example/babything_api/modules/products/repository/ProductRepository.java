@@ -39,36 +39,48 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
 
     boolean existsBySkuAndDeletedAtIsNullAndIdNot(String sku, Long id);
 
-    /** statuses rỗng không được phép, nên gọi với danh sách trạng thái người dùng được xem. */
+    /**
+     * statuses rỗng không được phép, nên gọi với danh sách trạng thái người dùng được xem.
+     * excludeSellerId khác null thì bỏ tin của người bán đó (người bán không thấy tin mình trong danh sách chung).
+     * inStockOnly = true thì bỏ tin đã hết hàng (khách không thấy hàng hết trong danh sách chung).
+     */
     @Query("""
             select distinct p.category from Product p
             where p.deletedAt is null and p.category is not null and p.status in :statuses
+            and (:excludeSellerId is null or p.createdBy <> :excludeSellerId)
+            and (:inStockOnly = false or p.stock > 0)
             order by p.category""")
-    List<String> findCategories(@Param("statuses") List<ProductStatus> statuses);
+    List<String> findCategories(@Param("statuses") List<ProductStatus> statuses,
+            @Param("excludeSellerId") Long excludeSellerId, @Param("inStockOnly") boolean inStockOnly);
 
-    /** Số tin đang bán theo từng danh mục: mỗi dòng là [category, count]. */
+    /** Số tin đang bán (còn hàng) theo từng danh mục: mỗi dòng là [category, count]. */
     @Query("""
             select p.category, count(p) from Product p
-            where p.deletedAt is null and p.category is not null and p.status = :status
+            where p.deletedAt is null and p.category is not null and p.status = :status and p.stock > 0
             group by p.category
             order by p.category""")
     List<Object[]> countByCategory(@Param("status") ProductStatus status);
 
-    /** Ảnh của tin mới nhất có ảnh trong mỗi danh mục: mỗi dòng là [category, imageUrl]; trùng thời điểm có thể ra 2 dòng. */
+    /**
+     * Ảnh của tin mới nhất còn hàng có ảnh trong mỗi danh mục: mỗi dòng là [category, imageUrl];
+     * trùng thời điểm có thể ra 2 dòng.
+     */
     @Query("""
             select p.category, p.imageUrl from Product p
-            where p.deletedAt is null and p.status = :status and p.imageUrl is not null
+            where p.deletedAt is null and p.status = :status and p.imageUrl is not null and p.stock > 0
               and p.createdAt = (
                 select max(q.createdAt) from Product q
-                where q.category = p.category and q.deletedAt is null and q.status = :status and q.imageUrl is not null)""")
+                where q.category = p.category and q.deletedAt is null and q.status = :status
+                  and q.imageUrl is not null and q.stock > 0)""")
     List<Object[]> findLatestImageByCategory(@Param("status") ProductStatus status);
 
     /** Các size đang có trong tin đăng, làm gợi ý cho bộ lọc size (size là chữ tự do người bán nhập). */
     @Query("""
             select distinct p.size from Product p
             where p.deletedAt is null and p.size is not null and p.status in :statuses
+            and (:inStockOnly = false or p.stock > 0)
             order by p.size""")
-    List<String> findSizes(@Param("statuses") List<ProductStatus> statuses);
+    List<String> findSizes(@Param("statuses") List<ProductStatus> statuses, @Param("inStockOnly") boolean inStockOnly);
 
     /**
      * Trừ kho cho đơn hàng trong một câu UPDATE có điều kiện, nên hai đơn cùng lúc không thể bán quá tồn kho.

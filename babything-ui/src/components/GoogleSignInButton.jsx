@@ -29,15 +29,18 @@ function loadScript() {
     script.onerror = () => {
       script.remove();
       scriptPromise = undefined;
-      reject(new Error('Could not load Google sign-in'));
+      reject(new Error('Không tải được đăng nhập bằng Google'));
     };
     document.head.appendChild(script);
   });
   return scriptPromise;
 }
 
-/** Nút "Sign in with Google" (Google Identity Services). Ẩn hẳn nếu server chưa cấu hình. */
-export default function GoogleSignInButton({ text = 'signin_with' }) {
+/**
+ * Nút "Đăng nhập bằng Google" (Google Identity Services). Ẩn hẳn nếu server chưa cấu hình.
+ * onSignedIn: mặc định quay lại trang đang xem dở; popup đăng nhập truyền vào để ở nguyên trang.
+ */
+export default function GoogleSignInButton({ text = 'signin_with', onSignedIn }) {
   const navigate = useNavigate();
   const { signIn } = useAuth();
   const containerRef = useRef(null);
@@ -75,7 +78,8 @@ export default function GoogleSignInButton({ text = 'signin_with' }) {
       try {
         const tokens = await api('/auth/google', { method: 'POST', body: { credential }, auth: false });
         await signIn(tokens);
-        navigate(takeReturnTo(), { replace: true });
+        if (onSignedIn) onSignedIn();
+        else navigate(takeReturnTo(), { replace: true });
       } catch (err) {
         if (active) {
           setError(err.message);
@@ -89,6 +93,7 @@ export default function GoogleSignInButton({ text = 'signin_with' }) {
       theme: 'outline',
       size: 'large',
       text,
+      locale: 'vi',
       width: Math.min(container.offsetWidth || 320, 400),
     });
 
@@ -96,18 +101,18 @@ export default function GoogleSignInButton({ text = 'signin_with' }) {
       active = false;
       container.replaceChildren();
     };
-  }, [clientId, navigate, signIn, text]);
+  }, [clientId, navigate, signIn, text, onSignedIn]);
 
   if (!clientId && !error) return null;
 
   return (
     <div className="google-signin">
       <div className="auth-divider">
-        <span>or</span>
+        <span>hoặc</span>
       </div>
       <Alert>{error}</Alert>
       {clientId && <div ref={containerRef} className="google-signin-button" aria-busy={submitting} />}
-      {submitting && <p className="muted google-signin-status">Signing in with Google...</p>}
+      {submitting && <p className="muted google-signin-status">Đang đăng nhập bằng Google…</p>}
     </div>
   );
 }

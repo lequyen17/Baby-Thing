@@ -52,7 +52,7 @@ public class GoogleTokenVerifier {
     public GoogleProfile verify(String idToken) {
         if (!props.google().enabled()) {
             throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "GOOGLE_DISABLED",
-                    "Google sign-in is not enabled");
+                    "Chưa bật đăng nhập bằng Google");
         }
         Jwt jwt;
         try {
@@ -60,7 +60,7 @@ public class GoogleTokenVerifier {
         } catch (JwtException e) {
             log.debug("Rejected Google ID token: {}", e.getMessage());
             throw new ApiException(HttpStatus.UNAUTHORIZED, "INVALID_GOOGLE_TOKEN",
-                    "Google sign-in failed, please try again");
+                    "Đăng nhập bằng Google thất bại, vui lòng thử lại");
         }
         return new GoogleProfile(
                 jwt.getSubject(),

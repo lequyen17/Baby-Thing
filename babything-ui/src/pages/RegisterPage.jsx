@@ -21,7 +21,7 @@ export default function RegisterPage() {
     setError('');
     setFieldErrors({});
     if (form.password !== form.confirmPassword) {
-      setFieldErrors({ confirmPassword: 'Passwords do not match' });
+      setFieldErrors({ confirmPassword: 'Mật khẩu nhập lại không khớp' });
       return;
     }
     if (!agreed) {
@@ -43,24 +43,24 @@ export default function RegisterPage() {
 
   return (
     <AuthCard
-      title="Sign up"
+      title="Đăng ký"
       footer={
         <>
-          Already have an account? <Link to="/login">Sign in</Link>
+          Đã có tài khoản? <Link to="/login">Đăng nhập</Link>
         </>
       }
     >
       <form onSubmit={handleSubmit} noValidate>
         <Alert>{error}</Alert>
         <Field
-          label="Display name"
+          label="Tên hiển thị" required
           maxLength={50}
           value={form.displayName}
           onChange={update('displayName')}
           error={fieldErrors.displayName}
         />
         <Field
-          label="Email"
+          label="Email" required
           type="email"
           autoComplete="email"
           value={form.email}
@@ -68,7 +68,7 @@ export default function RegisterPage() {
           error={fieldErrors.email}
         />
         <Field
-          label="Password (8-72 characters)"
+          label="Mật khẩu (8–72 ký tự)" required
           type="password"
           autoComplete="new-password"
           value={form.password}
@@ -76,7 +76,7 @@ export default function RegisterPage() {
           error={fieldErrors.password}
         />
         <Field
-          label="Confirm password"
+          label="Nhập lại mật khẩu" required
           type="password"
           autoComplete="new-password"
           value={form.confirmPassword}
@@ -102,7 +102,7 @@ export default function RegisterPage() {
           <span>Tôi muốn nhận thông tin khuyến mãi và gợi ý sản phẩm (không bắt buộc).</span>
         </label>
         <button type="submit" className="btn btn-primary" disabled={submitting}>
-          {submitting ? 'Sending code...' : 'Sign up'}
+          {submitting ? 'Đang gửi mã…' : 'Đăng ký'}
         </button>
       </form>
       <GoogleSignInButton text="signup_with" />

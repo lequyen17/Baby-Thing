@@ -4,6 +4,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 
 public record VerifyLoginRequest(
-        @NotBlank String challengeId,
-        @NotBlank @Pattern(regexp = "\\d{6}", message = "Verification code must be 6 digits") String otp) {
+        @NotBlank(message = "Thiếu mã phiên xác minh") String challengeId,
+        @NotBlank(message = "Vui lòng nhập mã xác minh") @Pattern(regexp = "\\d{6}", message = "Mã xác minh gồm 6 chữ số") String otp) {
 }

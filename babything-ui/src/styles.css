@@ -147,6 +147,10 @@ a:hover {
   border-color: var(--danger);
 }
 
+.required-mark {
+  color: var(--danger);
+}
+
 .field-error {
   color: var(--danger);
   font-weight: 400;
@@ -414,6 +418,70 @@ a:hover {
   justify-content: flex-end;
   margin: -4px 0 16px;
   font-size: 0.875rem;
+}
+
+/* Popup đăng nhập nhanh (auth/LoginModal.jsx) */
+.login-dialog {
+  width: min(440px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-md);
+}
+
+.login-dialog::backdrop {
+  background: rgba(42, 39, 51, 0.45);
+}
+
+body:has(.login-dialog[open]) {
+  overflow: hidden;
+}
+
+.login-dialog-body {
+  position: relative;
+  padding: 32px 28px 24px;
+}
+
+.login-dialog-body h2 {
+  margin: 0 0 6px;
+  font-size: 1.7rem;
+}
+
+.login-dialog-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.login-dialog-close:hover {
+  background: var(--surface-muted);
+  color: var(--text);
+}
+
+@media (max-width: 560px) {
+  .login-dialog {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 100dvh;
+    height: 100dvh;
+    border-radius: 0;
+  }
+
+  .login-dialog-body {
+    padding: 56px 16px 24px;
+  }
 }
 
 /* ---------------------------------------------------------------- App shell */
@@ -875,76 +943,97 @@ a:hover {
   min-height: 50px;
 }
 
-/* Trang chủ: hàng danh mục bằng ảnh thật + tin đăng lên đầu, phần giới thiệu ở dưới */
+/* Trang chủ: banner ngắn + tin đăng lên đầu, phần giới thiệu ở dưới */
 .home-feed {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.home-categories {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(104px, 1fr);
-  gap: 8px;
-  padding: 16px;
-  overflow-x: auto;
-  scrollbar-width: thin;
-  background: var(--surface);
-  border: 1px solid var(--border);
+.home-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 24px 32px;
+  background: var(--tint-peach);
   border-radius: var(--radius);
 }
 
-.category-card {
+.home-banner-copy {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 6px 4px 8px;
-  border-radius: var(--radius-sm);
-  color: var(--ink);
-  text-align: center;
+  gap: 6px;
+  min-width: 0;
 }
 
-.category-card:hover {
-  background: var(--surface-muted);
+.home-banner-copy h2 {
+  margin: 0;
   color: var(--ink);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.25;
 }
 
-.category-card-img {
+.home-banner-copy p {
+  margin: 0;
+  color: var(--text-soft);
+}
+
+.home-banner-actions {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 76px;
-  height: 76px;
-  margin-bottom: 6px;
-  overflow: hidden;
-  border-radius: 50%;
-  color: var(--ink);
-  font-size: 1.6rem;
-  font-weight: 800;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
 }
 
-.category-card-img img {
+.home-banner-side {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 28px;
+}
+
+/* Ảnh tròn xếp chồng lên nhau */
+.home-banner-photos {
+  display: flex;
+}
+
+.home-banner-photos span {
+  width: 72px;
+  height: 72px;
+  overflow: hidden;
+  border: 3px solid var(--tint-peach);
+  border-radius: 50%;
+}
+
+.home-banner-photos span + span {
+  margin-left: -18px;
+}
+
+.home-banner-photos img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.2s ease;
 }
 
-.category-card:hover .category-card-img img {
-  transform: scale(1.08);
+.home-banner-stats {
+  display: flex;
+  gap: 24px;
+  margin: 0;
 }
 
-.category-card-name {
+.home-banner-stats dt {
+  color: var(--accent-deep);
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.home-banner-stats dd {
+  margin: 0;
+  color: var(--text-soft);
   font-size: 0.85rem;
-  font-weight: 600;
-  line-height: 1.3;
-}
-
-.category-card small {
-  color: var(--muted);
-  font-size: 0.75rem;
 }
 
 .chip-group {
@@ -2100,64 +2189,6 @@ a:hover {
   font-size: 0.95rem;
 }
 
-.order-picker .search-box {
-  height: 42px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-}
-
-.order-picker-results {
-  list-style: none;
-  margin: 8px 0 0;
-  padding: 4px;
-  max-height: 280px;
-  overflow-y: auto;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-}
-
-.order-picker-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 6px 8px;
-  border: none;
-  border-radius: 6px;
-  background: none;
-  font-size: 0.9rem;
-  text-align: left;
-  cursor: pointer;
-}
-
-.order-picker-item:hover:not(:disabled) {
-  background: var(--primary-soft);
-}
-
-.order-picker-item:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.order-picker-thumb {
-  width: 36px;
-  flex-shrink: 0;
-  border-radius: 6px;
-}
-
-.order-picker-thumb svg {
-  width: 18px;
-  height: 18px;
-}
-
-.order-picker-name {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 /* ---------------------------------------------------------------- Responsive */
 
 @media (max-width: 1320px) {
@@ -2321,15 +2352,54 @@ a:hover {
     display: none;
   }
 
-  .home-categories {
-    grid-auto-columns: 88px;
-    padding: 12px 8px;
-    scrollbar-width: none;
+  .home-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 20px;
+    padding: 20px 16px;
   }
 
-  .category-card-img {
-    width: 64px;
-    height: 64px;
+  .home-banner-copy h2 {
+    font-size: 1.2rem;
+  }
+
+  .home-banner-copy p {
+    font-size: 0.9rem;
+  }
+
+  .home-banner-actions .btn {
+    flex: 1;
+    padding: 0 12px;
+  }
+
+  .home-banner-side {
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .home-banner-photos span {
+    width: 44px;
+    height: 44px;
+  }
+
+  .home-banner-photos span + span {
+    margin-left: -12px;
+  }
+
+  .home-banner-photos span:nth-child(n + 5) {
+    display: none;
+  }
+
+  .home-banner-stats {
+    gap: 16px;
+  }
+
+  .home-banner-stats dt {
+    font-size: 1.2rem;
+  }
+
+  .home-banner-stats dd {
+    white-space: nowrap;
   }
 
   .product-card-media {
@@ -2365,10 +2435,6 @@ a:hover {
     flex-basis: calc(100% - 76px);
   }
 
-  .order-picker-item .muted {
-    display: none;
-  }
-
   .profile-hero-body {
     flex-direction: column;
     align-items: flex-start;
@@ -2381,22 +2447,6 @@ a:hover {
 }
 
 /* ---------------------------------------------------------------- Mục sắp ra mắt */
-
-.header-search-camera {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  flex-shrink: 0;
-  border-radius: 999px;
-  background: var(--tint-sage);
-  color: #3f6b55;
-}
-
-.header-search-camera:hover {
-  color: var(--sage);
-}
 
 .product-card {
   position: relative;
@@ -2540,10 +2590,6 @@ a:hover {
 }
 
 @media (max-width: 560px) {
-  .header-search-camera {
-    display: none;
-  }
-
   .product-card-actions {
     grid-template-columns: 1fr;
   }

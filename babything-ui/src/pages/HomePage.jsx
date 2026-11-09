@@ -35,7 +35,7 @@ export default function HomePage() {
     api('/products?sort=newest&page=0&size=20')
       .then((data) => setProducts(data.items))
       .catch((err) => setError(err.message));
-    // Hàng danh mục chỉ để trang trí: lỗi thì ẩn đi, không báo
+    // Ảnh và số liệu trên banner chỉ để trang trí: lỗi thì ẩn đi, không báo
     api('/products/categories/covers')
       .then(setCovers)
       .catch(() => setCovers([]));
@@ -52,23 +52,48 @@ export default function HomePage() {
     return true;
   });
   const sellTo = '/products/new';
+  // Banner: vài ảnh đại diện danh mục + tổng số tin, lấy từ cùng dữ liệu covers
+  const photos = covers.filter((c) => c.imageUrl).slice(0, 5);
+  const totalListings = covers.reduce((sum, c) => sum + c.count, 0);
 
   return (
     <div className="home">
       <div className="home-feed">
-        {covers.length > 0 && (
-          <nav className="home-categories" aria-label="Danh mục">
-            {covers.map(({ category, imageUrl, count }) => (
-              <Link key={category} to={`/products?${new URLSearchParams({ category })}`} className="category-card">
-                <span className="category-card-img" style={{ background: categoryArt(category).tint }}>
-                  {imageUrl ? <img src={imageUrl} alt="" loading="lazy" /> : category.charAt(0)}
-                </span>
-                <span className="category-card-name">{category}</span>
-                <small>{count} tin</small>
+        <section className="home-banner">
+          <div className="home-banner-copy">
+            <h2>Điều nhỏ cho bé, An tâm cho mẹ</h2>
+            <p>Mẹ cứ yên tâm chọn đồ cho bé, mỗi món đều được chúng mình xem qua trước khi lên kệ.</p>
+            <div className="home-banner-actions">
+              <Link to={sellTo} className="btn btn-accent">
+                Đăng bán
               </Link>
-            ))}
-          </nav>
-        )}
+              <Link to="/products" className="btn btn-outline">
+                Khám phá tin đăng
+              </Link>
+            </div>
+          </div>
+          {covers.length > 0 && (
+            <div className="home-banner-side">
+              <div className="home-banner-photos" aria-hidden="true">
+                {photos.map(({ category, imageUrl }) => (
+                  <span key={category} style={{ background: categoryArt(category).tint }}>
+                    <img src={imageUrl} alt="" loading="lazy" />
+                  </span>
+                ))}
+              </div>
+              <dl className="home-banner-stats">
+                <div>
+                  <dt>{totalListings}</dt>
+                  <dd>tin đang bán</dd>
+                </div>
+                <div>
+                  <dt>{covers.length}</dt>
+                  <dd>danh mục</dd>
+                </div>
+              </dl>
+            </div>
+          )}
+        </section>
 
         <section className="home-panel" aria-label="Tin đăng">
           <div className="feed-tabs" role="tablist" aria-label="Lọc tin đăng">

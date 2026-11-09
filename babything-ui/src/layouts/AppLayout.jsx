@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
+import { LoginModalProvider, useLoginModal } from '../auth/LoginModal';
 import { Loading } from '../auth/RouteGuards';
 import { saveReturnTo } from '../pages/flowStorage';
 import { useCartCount } from '../cart/useCart';
-import { CameraIcon } from '../components/Icons';
 import { useUnreadMessages } from '../messages/useMessages';
 import { useRealtime } from '../realtime/useRealtime';
 import NotificationBell from '../notifications/NotificationBell';
@@ -19,7 +19,13 @@ import { UserMenu } from '../components/UserMenu';
  */
 export default function AppLayout() {
   const { loading } = useAuth();
-  return loading ? <Loading /> : <Shell />;
+  return loading ? (
+    <Loading />
+  ) : (
+    <LoginModalProvider>
+      <Shell />
+    </LoginModalProvider>
+  );
 }
 
 /** Tin nhắn, thông báo, giỏ hàng: chỉ thành viên mới có, nên các hook gọi API chỉ chạy trong component này. */
@@ -57,15 +63,16 @@ function MemberNav({ user }) {
   );
 }
 
-/** Khách: đăng nhập / đăng ký xong quay lại đúng trang đang xem. */
+/** Khách: đăng nhập bằng popup ngay tại trang; đăng ký xong quay lại đúng trang đang xem. */
 function GuestNav() {
   const { pathname, search } = useLocation();
+  const openLogin = useLoginModal();
   const remember = () => saveReturnTo(pathname + search);
   return (
     <nav className="app-nav app-nav-guest" aria-label="Tài khoản">
-      <Link to="/login" className="btn btn-secondary btn-sm" onClick={remember}>
+      <button type="button" className="btn btn-secondary btn-sm" onClick={() => openLogin()}>
         Đăng nhập
-      </Link>
+      </button>
       <Link to="/register" className="btn btn-dark btn-sm" onClick={remember}>
         Đăng ký
       </Link>
@@ -77,6 +84,7 @@ function Shell() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
   const navigate = useNavigate();
+  const openLogin = useLoginModal();
   const { pathname } = useLocation();
   const [params] = useSearchParams();
   const activeCategory = params.get('category') ?? '';
@@ -126,9 +134,6 @@ function Shell() {
               onChange={(e) => setSearch(e.target.value)}
               aria-label="Tìm kiếm sản phẩm"
             />
-            <Link to="/image-search" className="header-search-camera" aria-label="Tìm bằng hình ảnh (AI nhận diện)">
-              <CameraIcon size={20} />
-            </Link>
             <button type="submit" className="btn btn-dark btn-sm">
               Tìm kiếm
             </button>
@@ -136,8 +141,16 @@ function Shell() {
 
           {user ? <MemberNav user={user} /> : <GuestNav />}
 
-          {/* Khách bấm "Đăng bán" thì ProtectedRoute đưa qua đăng nhập rồi quay lại form */}
-          <Link to="/products/new" className="btn btn-accent header-sell">
+          {/* Khách bấm "Đăng bán" thì mở popup đăng nhập, xong vào thẳng form */}
+          <Link
+            to="/products/new"
+            className="btn btn-accent header-sell"
+            onClick={(e) => {
+              if (user) return;
+              e.preventDefault();
+              openLogin(() => navigate('/products/new'));
+            }}
+          >
             Đăng bán
           </Link>
           {user && <UserMenu />}

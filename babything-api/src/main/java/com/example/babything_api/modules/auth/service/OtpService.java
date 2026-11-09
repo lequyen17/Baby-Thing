@@ -61,18 +61,18 @@ public class OtpService {
     public Map<String, String> verify(String key, String otp) {
         Map<String, String> fields = find(key);
         if (fields.isEmpty()) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "OTP_EXPIRED", "Verification code has expired, please request a new one");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "OTP_EXPIRED", "Mã xác minh đã hết hạn, vui lòng yêu cầu mã mới");
         }
         long attempts = redis.opsForHash().increment(key, ATTEMPTS, 1);
         if (attempts > props.otp().maxAttempts()) {
             redis.delete(key);
             throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, "OTP_TOO_MANY_ATTEMPTS",
-                    "Too many incorrect attempts, please start over");
+                    "Nhập sai quá nhiều lần, vui lòng thực hiện lại từ đầu");
         }
         if (!Tokens.equalsConstantTime(fields.get(OTP_HASH), Tokens.sha256(otp))) {
             long remaining = props.otp().maxAttempts() - attempts;
             throw new ApiException(HttpStatus.BAD_REQUEST, "OTP_INVALID",
-                    "Incorrect verification code, " + remaining + " attempt(s) left");
+                    "Mã xác minh không đúng, còn " + remaining + " lần thử");
         }
         redis.delete(key);
         return fields;
@@ -83,7 +83,7 @@ public class OtpService {
         Long ttl = redis.getExpire(cooldownKey(purpose, id));
         if (ttl != null && ttl > 0) {
             throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, "OTP_COOLDOWN",
-                    "Please wait " + ttl + " seconds before requesting a new code");
+                    "Vui lòng đợi " + ttl + " giây trước khi yêu cầu mã mới");
         }
     }
 

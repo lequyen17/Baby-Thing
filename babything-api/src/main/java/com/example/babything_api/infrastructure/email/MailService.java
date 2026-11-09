@@ -22,35 +22,35 @@ public class MailService {
     }
 
     public void sendRegistrationOtp(String to, String displayName, String otp) {
-        send(to, "Your registration verification code", """
-                Hi %s,
+        send(to, "Mã xác minh đăng ký Baby Things", """
+                Chào %s,
 
-                Your registration verification code is: %s
-                The code expires in %d minutes. Do not share it with anyone.
+                Mã xác minh đăng ký của bạn là: %s
+                Mã có hiệu lực trong %d phút. Không chia sẻ mã này với bất kỳ ai.
 
-                If you did not sign up, please ignore this email.
+                Nếu bạn không đăng ký tài khoản, hãy bỏ qua email này.
                 """.formatted(displayName, otp, props.otp().ttl().toMinutes()));
     }
 
     public void sendLoginOtp(String to, String displayName, String otp) {
-        send(to, "Your sign-in verification code", """
-                Hi %s,
+        send(to, "Mã xác minh đăng nhập Baby Things", """
+                Chào %s,
 
-                Your sign-in verification code is: %s
-                The code expires in %d minutes. Do not share it with anyone.
+                Mã xác minh đăng nhập của bạn là: %s
+                Mã có hiệu lực trong %d phút. Không chia sẻ mã này với bất kỳ ai.
 
-                If this wasn't you, change your password immediately.
+                Nếu không phải bạn đăng nhập, hãy đổi mật khẩu ngay.
                 """.formatted(displayName, otp, props.otp().ttl().toMinutes()));
     }
 
     public void sendPasswordReset(String to, String displayName, String link) {
-        send(to, "Reset your password", """
-                Hi %s,
+        send(to, "Đặt lại mật khẩu Baby Things", """
+                Chào %s,
 
-                Click the link below to reset your password (valid for %d minutes):
+                Bấm vào link dưới đây để đặt lại mật khẩu (có hiệu lực trong %d phút):
                 %s
 
-                If you did not request a password reset, please ignore this email.
+                Nếu bạn không yêu cầu đặt lại mật khẩu, hãy bỏ qua email này.
                 """.formatted(displayName, props.passwordReset().ttl().toMinutes(), link));
     }
 

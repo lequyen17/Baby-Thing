@@ -85,6 +85,8 @@ public class ProductService {
 
     /**
      * Khách chỉ thấy sản phẩm ACTIVE; admin và người bán (với tin của mình) thấy tất cả, lọc được theo status.
+     * Danh sách chung không hiện tin của chính người đang xem (xem ở mine=true hoặc hồ sơ người bán); admin thấy hết.
+     * Tin đã hết hàng chỉ hiện với admin và với người bán ở mine=true; trang chi tiết vẫn mở được bằng link.
      * viewer = null: khách chưa đăng nhập.
      */
     @Transactional(readOnly = true)
@@ -101,8 +103,11 @@ public class ProductService {
         int size = Math.max(1, Math.min(query.size(), MAX_PAGE_SIZE));
         ProductStatus status = isAdmin(viewer) || query.mine() ? query.status() : ProductStatus.ACTIVE;
         Long sellerId = query.mine() ? viewer.getId() : query.sellerId();
+        Long excludeSellerId = sellerId == null ? ownListingsToHide(viewer) : null;
+        boolean inStockOnly = !isAdmin(viewer) && !query.mine();
         return PageResponse.of(
-                productRepository.findAll(filter(query, status, sellerId), PageRequest.of(page, size, sort)),
+                productRepository.findAll(filter(query, status, sellerId, excludeSellerId, inStockOnly),
+                        PageRequest.of(page, size, sort)),
                 ProductResponse::from);
     }
 
@@ -124,10 +129,10 @@ public class ProductService {
         List<ProductStatus> statuses = isAdmin(viewer)
                 ? List.of(ProductStatus.values())
                 : List.of(ProductStatus.ACTIVE);
-        return productRepository.findCategories(statuses);
+        return productRepository.findCategories(statuses, ownListingsToHide(viewer), !isAdmin(viewer));
     }
 
-    /** Hàng danh mục trên trang chủ: chỉ tính tin đang bán, kể cả với admin. */
+    /** Banner trang chủ: chỉ tính tin đang bán và còn hàng, kể cả với admin. */
     @Transactional(readOnly = true)
     public List<CategoryCover> categoryCovers() {
         Map<String, String> images = new HashMap<>();
@@ -144,7 +149,7 @@ public class ProductService {
         List<ProductStatus> statuses = isAdmin(viewer)
                 ? List.of(ProductStatus.values())
                 : List.of(ProductStatus.ACTIVE);
-        return productRepository.findSizes(statuses);
+        return productRepository.findSizes(statuses, !isAdmin(viewer));
     }
 
     // ---------------------------------------------------------------- CRUD (mọi thành viên; sửa/xoá: chủ tin hoặc admin)
@@ -340,6 +345,11 @@ public class ProductService {
     }
 
     /** user = null là khách chưa đăng nhập: không phải admin, không quản lý tin nào. */
+    /** Người bán không thấy tin của mình trong danh sách chung; admin và khách thì không bỏ gì. */
+    private static Long ownListingsToHide(User viewer) {
+        return viewer == null || isAdmin(viewer) ? null : viewer.getId();
+    }
+
     static boolean isAdmin(User user) {
         return user != null && user.getRole() == Role.ADMIN;
     }
@@ -391,15 +401,22 @@ public class ProductService {
         product.setUpdatedBy(editor.getId());
     }
 
-    private static Specification<Product> filter(ListQuery query, ProductStatus status, Long sellerId) {
+    private static Specification<Product> filter(ListQuery query, ProductStatus status, Long sellerId,
+            Long excludeSellerId, boolean inStockOnly) {
         return (root, cq, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(cb.isNull(root.get("deletedAt")));
             if (sellerId != null) {
                 predicates.add(cb.equal(root.get("createdBy"), sellerId));
             }
+            if (excludeSellerId != null) {
+                predicates.add(cb.notEqual(root.get("createdBy"), excludeSellerId));
+            }
             if (status != null) {
                 predicates.add(cb.equal(root.get("status"), status));
+            }
+            if (inStockOnly) {
+                predicates.add(cb.greaterThan(root.get("stock"), 0));
             }
             String q = blankToNull(query.q());
             if (q != null) {

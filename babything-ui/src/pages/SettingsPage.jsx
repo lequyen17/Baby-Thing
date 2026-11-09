@@ -48,7 +48,7 @@ function ChangePasswordForm() {
       <Alert>{error}</Alert>
       <Alert type="success">{message}</Alert>
       <Field
-        label="Mật khẩu hiện tại"
+        label="Mật khẩu hiện tại" required
         type="password"
         autoComplete="current-password"
         value={form.currentPassword}
@@ -56,7 +56,7 @@ function ChangePasswordForm() {
         error={fieldErrors.currentPassword}
       />
       <Field
-        label="Mật khẩu mới (8–72 ký tự)"
+        label="Mật khẩu mới (8–72 ký tự)" required
         type="password"
         autoComplete="new-password"
         value={form.newPassword}
@@ -64,7 +64,7 @@ function ChangePasswordForm() {
         error={fieldErrors.newPassword}
       />
       <Field
-        label="Nhập lại mật khẩu mới"
+        label="Nhập lại mật khẩu mới" required
         type="password"
         autoComplete="new-password"
         value={form.confirmPassword}

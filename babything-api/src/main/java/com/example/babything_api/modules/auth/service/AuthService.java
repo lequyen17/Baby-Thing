@@ -89,7 +89,7 @@ public class AuthService {
         rateLimiter.check(ip, "register", 10);
         rateLimiter.check(email, "register", 3);
         if (userRepository.existsByEmail(email)) {
-            throw new ApiException(HttpStatus.CONFLICT, "EMAIL_EXISTS", "Email is already registered");
+            throw new ApiException(HttpStatus.CONFLICT, "EMAIL_EXISTS", "Email này đã được đăng ký");
         }
         otpService.ensureNoCooldown(PURPOSE_REGISTER, email);
 
@@ -107,7 +107,7 @@ public class AuthService {
         Map<String, String> pending = otpService.find(regKey(email));
         if (pending.isEmpty()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "REGISTRATION_EXPIRED",
-                    "Registration session has expired, please register again");
+                    "Phiên đăng ký đã hết hạn, vui lòng đăng ký lại");
         }
         otpService.ensureNoCooldown(PURPOSE_REGISTER, email);
         String otp = otpService.regenerate(regKey(email));
@@ -121,7 +121,7 @@ public class AuthService {
         rateLimiter.check(ip, "register-verify", 20);
         Map<String, String> pending = otpService.verify(regKey(email), otp);
         if (userRepository.existsByEmail(email)) {
-            throw new ApiException(HttpStatus.CONFLICT, "EMAIL_EXISTS", "Email is already registered");
+            throw new ApiException(HttpStatus.CONFLICT, "EMAIL_EXISTS", "Email này đã được đăng ký");
         }
         Instant now = Instant.now();
         User user = new User();
@@ -144,8 +144,8 @@ public class AuthService {
         String failures = redis.opsForValue().get(failKey);
         if (failures != null && Integer.parseInt(failures) >= props.login().maxFailures()) {
             throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, "LOGIN_LOCKED",
-                    "Too many failed attempts, please try again in "
-                            + props.login().lockDuration().toMinutes() + " minutes");
+                    "Đăng nhập sai quá nhiều lần, vui lòng thử lại sau "
+                            + props.login().lockDuration().toMinutes() + " phút");
         }
 
         User user = userRepository.findByEmail(email).orElse(null);
@@ -154,7 +154,7 @@ public class AuthService {
             if (count != null && count == 1) {
                 redis.expire(failKey, props.login().lockDuration());
             }
-            throw new ApiException(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", "Invalid email or password");
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", "Email hoặc mật khẩu không đúng");
         }
         ensureActive(user);
         redis.delete(failKey);
@@ -179,12 +179,12 @@ public class AuthService {
         Map<String, String> challenge = otpService.find(challengeKey(challengeId));
         if (challenge.isEmpty()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "CHALLENGE_EXPIRED",
-                    "Verification session has expired, please sign in again");
+                    "Phiên xác minh đã hết hạn, vui lòng đăng nhập lại");
         }
         otpService.ensureNoCooldown(PURPOSE_LOGIN, challengeId);
         User user = userRepository.findById(Long.valueOf(challenge.get("user_id")))
                 .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "CHALLENGE_EXPIRED",
-                        "Verification session has expired, please sign in again"));
+                        "Phiên xác minh đã hết hạn, vui lòng đăng nhập lại"));
         String otp = otpService.regenerate(challengeKey(challengeId));
         mailService.sendLoginOtp(user.getEmail(), user.getDisplayName(), otp);
         otpService.startCooldown(PURPOSE_LOGIN, challengeId);
@@ -196,7 +196,7 @@ public class AuthService {
         Map<String, String> challenge = otpService.verify(challengeKey(challengeId), otp);
         User user = userRepository.findById(Long.valueOf(challenge.get("user_id")))
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS",
-                        "Account not found"));
+                        "Không tìm thấy tài khoản"));
         ensureActive(user);
         Instant now = Instant.now();
         user.setLastLoginAt(now);
@@ -240,7 +240,7 @@ public class AuthService {
         // Chỉ tin email Google đã xác minh, nếu không ai cũng có thể chiếm tài khoản theo email
         if (profile.email() == null || !profile.emailVerified()) {
             throw new ApiException(HttpStatus.FORBIDDEN, "GOOGLE_EMAIL_UNVERIFIED",
-                    "Your Google account email is not verified");
+                    "Email của tài khoản Google chưa được xác minh");
         }
         String email = normalizeEmail(profile.email());
         User user = userRepository.findByEmail(email).orElse(null);
@@ -253,7 +253,7 @@ public class AuthService {
         } else {
             if (identityRepository.existsByUserIdAndProvider(user.getId(), UserIdentity.Provider.GOOGLE)) {
                 throw new ApiException(HttpStatus.CONFLICT, "GOOGLE_ACCOUNT_MISMATCH",
-                        "This email is already linked to a different Google account");
+                        "Email này đã liên kết với một tài khoản Google khác");
             }
             if (user.getEmailVerifiedAt() == null) {
                 user.setEmailVerifiedAt(now);
@@ -329,16 +329,16 @@ public class AuthService {
     public AuthSession changePassword(AuthPrincipal principal, ChangePasswordRequest req) {
         rateLimiter.check("user-" + principal.user().getId(), "change-password", 5);
         User user = userRepository.findById(principal.user().getId())
-                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "Authentication required"));
+                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "Vui lòng đăng nhập"));
         if (user.getPassword() == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "PASSWORD_NOT_SET",
-                    "This account signs in with Google and has no password yet. Use Forgot password to set one");
+                    "Tài khoản này đăng nhập bằng Google và chưa có mật khẩu. Hãy dùng Quên mật khẩu để tạo mật khẩu");
         }
         if (!passwordEncoder.matches(req.currentPassword(), user.getPassword())) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_CURRENT_PASSWORD", "Current password is incorrect");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_CURRENT_PASSWORD", "Mật khẩu hiện tại không đúng");
         }
         if (passwordEncoder.matches(req.newPassword(), user.getPassword())) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "SAME_PASSWORD", "New password must be different from the current one");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "SAME_PASSWORD", "Mật khẩu mới phải khác mật khẩu hiện tại");
         }
         Instant now = Instant.now();
         updatePassword(user, req.newPassword(), now);
@@ -367,11 +367,11 @@ public class AuthService {
         String userId = redis.opsForValue().getAndDelete(resetKey(req.token()));
         if (userId == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "RESET_TOKEN_INVALID",
-                    "Password reset link is invalid or has expired");
+                    "Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn");
         }
         User user = userRepository.findById(Long.valueOf(userId))
                 .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "RESET_TOKEN_INVALID",
-                        "Password reset link is invalid or has expired"));
+                        "Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn"));
         updatePassword(user, req.newPassword(), Instant.now());
         redis.delete("login_fail:" + user.getEmail());
     }
@@ -427,13 +427,13 @@ public class AuthService {
 
     private static void ensureActive(User user) {
         if (user.getStatus() != UserStatus.ACTIVE) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "ACCOUNT_LOCKED", "Account is locked");
+            throw new ApiException(HttpStatus.FORBIDDEN, "ACCOUNT_LOCKED", "Tài khoản đã bị khoá");
         }
     }
 
     private static ApiException invalidRefreshToken() {
         return new ApiException(HttpStatus.UNAUTHORIZED, "INVALID_REFRESH_TOKEN",
-                "Session has expired, please sign in again");
+                "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
     }
 
     private static String normalizeEmail(String email) {

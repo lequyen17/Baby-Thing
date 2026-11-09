@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api, apiUpload } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
-import { Alert, Field } from '../components/Form';
+import { Alert, Field, RequiredMark } from '../components/Form';
 import { PlusIcon, XIcon } from '../components/Icons';
 import { AGE_RANGES, CONDITIONS, normalizeSize, SIZE_SUGGESTIONS } from '../utils/format';
 import { IMAGE_ACCEPT, shrinkImage } from '../utils/image';
@@ -11,8 +11,8 @@ import { IMAGE_ACCEPT, shrinkImage } from '../utils/image';
 const MIN_IMAGES = 3;
 const MAX_IMAGES = 10;
 
+// Không có ô SKU và trạng thái: server tự sinh SKU; tin mới gửi duyệt, khi sửa giữ trạng thái cũ
 const EMPTY_FORM = {
-  sku: '',
   name: '',
   description: '',
   price: '',
@@ -31,7 +31,6 @@ const EMPTY_FORM = {
 
 function toForm(product) {
   return {
-    sku: product.sku,
     name: product.name,
     description: product.description ?? '',
     price: String(product.price),
@@ -72,7 +71,6 @@ export default function ProductFormPage() {
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [imageError, setImageError] = useState('');
-  const [linkInput, setLinkInput] = useState('');
 
   useEffect(() => {
     api('/products/categories')
@@ -128,17 +126,6 @@ export default function ProductFormPage() {
     }
   };
 
-  const handleAddLink = () => {
-    const url = linkInput.trim();
-    if (!/^https?:\/\/\S+$/.test(url)) {
-      setImageError('Link ảnh phải bắt đầu bằng http:// hoặc https://');
-      return;
-    }
-    setImageError('');
-    addImages([url]);
-    setLinkInput('');
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -173,8 +160,7 @@ export default function ProductFormPage() {
       navigate(`/products/${saved.id}`, { replace: true, state: { notice } });
     } catch (err) {
       setError(err.message);
-      if (err.code === 'SKU_EXISTS') setFieldErrors({ sku: err.message });
-      else if (err.code === 'STOCK_CHANGED') setFieldErrors({ stock: err.message });
+      if (err.code === 'STOCK_CHANGED') setFieldErrors({ stock: err.message });
       else if (err.code === 'NOT_ENOUGH_IMAGES') setImageError(err.message);
       else setFieldErrors(err.fields || {});
       setSubmitting(false);
@@ -274,7 +260,8 @@ export default function ProductFormPage() {
 
           <div className="field">
             <span>
-              Ảnh thật của sản phẩm{' '}
+              Ảnh thật của sản phẩm
+              {!isAdmin && <RequiredMark />}{' '}
               <em className="field-counter">
                 {form.imageUrls.length}/{MAX_IMAGES}
                 {!isAdmin && ` · tối thiểu ${MIN_IMAGES}`}
@@ -318,12 +305,6 @@ export default function ProductFormPage() {
             {imageError && <small className="field-error">{imageError}</small>}
             {fieldErrors.imageUrls && <small className="field-error">{fieldErrors.imageUrls}</small>}
           </div>
-          <div className="inline-add">
-            <Field label="Hoặc dán link ảnh" type="url" value={linkInput} onChange={(e) => setLinkInput(e.target.value)} maxLength={500} placeholder="https://..." />
-            <button type="button" className="btn btn-secondary" onClick={handleAddLink} disabled={!linkInput.trim()}>
-              Thêm link
-            </button>
-          </div>
 
           <Field as="textarea" label="Mô tả" rows={5} value={form.description} onChange={update('description')} maxLength={5000} error={fieldErrors.description} />
 
@@ -341,18 +322,6 @@ export default function ProductFormPage() {
               error={fieldErrors.price}
             />
             <Field label="Số lượng" type="number" min="0" step="1" inputMode="numeric" value={form.stock} onChange={update('stock')} required error={fieldErrors.stock} />
-            <Field
-              label="Mã SKU"
-              value={form.sku}
-              onChange={update('sku')}
-              maxLength={64}
-              placeholder={isEdit ? 'Để trống để giữ mã hiện tại' : 'Không bắt buộc, để trống sẽ tự tạo'}
-              error={fieldErrors.sku}
-            />
-            <Field as="select" label="Sau khi lưu" value={form.status} onChange={update('status')} error={fieldErrors.status}>
-              <option value="ACTIVE">{isAdmin ? 'Hiển thị cho người mua' : 'Gửi duyệt để hiển thị'}</option>
-              <option value="INACTIVE">Lưu ở chế độ ẩn</option>
-            </Field>
           </div>
           {form.price !== '' && Number(form.price) > 0 && (
             <p className="muted fee-hint">

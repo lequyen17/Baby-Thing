@@ -28,9 +28,9 @@ export default function ForgotPasswordPage() {
 
   return (
     <AuthCard
-      title="Forgot password"
-      subtitle="Enter your registered email and we'll send you a password reset link."
-      footer={<Link to="/login">Back to sign in</Link>}
+      title="Quên mật khẩu"
+      subtitle="Nhập email đã đăng ký, chúng tôi sẽ gửi cho bạn link đặt lại mật khẩu."
+      footer={<Link to="/login">Quay lại đăng nhập</Link>}
     >
       {message ? (
         <Alert type="success">{message}</Alert>
@@ -38,7 +38,7 @@ export default function ForgotPasswordPage() {
         <form onSubmit={handleSubmit} noValidate>
           <Alert>{error}</Alert>
           <Field
-            label="Email"
+            label="Email" required
             type="email"
             autoComplete="email"
             value={email}
@@ -46,7 +46,7 @@ export default function ForgotPasswordPage() {
             error={fieldErrors.email}
           />
           <button type="submit" className="btn btn-primary" disabled={submitting}>
-            {submitting ? 'Sending...' : 'Send reset link'}
+            {submitting ? 'Đang gửi…' : 'Gửi link đặt lại'}
           </button>
         </form>
       )}

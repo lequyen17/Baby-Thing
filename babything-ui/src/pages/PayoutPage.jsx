@@ -94,7 +94,7 @@ export default function PayoutPage() {
             <strong>Xác nhận bằng mã OTP</strong>
             <p className="muted">Nhập mã gồm 6 số để {payout ? 'đổi' : 'lưu'} thông tin nhận tiền. Mã có hiệu lực trong 5 phút.</p>
             <Field
-              label="Mã OTP"
+              label="Mã OTP" required
               className="otp-input"
               inputMode="numeric"
               maxLength={6}
@@ -132,7 +132,7 @@ export default function PayoutPage() {
           </div>
         ) : (
           <form onSubmit={submit} className="profile-form" noValidate>
-            <Field label="Ngân hàng" as="select" value={form.bankCode} onChange={set('bankCode')} error={errors.bankCode}>
+            <Field label="Ngân hàng" required as="select" value={form.bankCode} onChange={set('bankCode')} error={errors.bankCode}>
               <option value="">Chọn ngân hàng</option>
               {BANKS.map(([code, name]) => (
                 <option key={code} value={code}>
@@ -140,8 +140,8 @@ export default function PayoutPage() {
                 </option>
               ))}
             </Field>
-            <Field label="Số tài khoản" inputMode="numeric" value={form.accountNo} onChange={set('accountNo')} error={errors.accountNo} autoComplete="off" />
-            <Field label="Tên chủ tài khoản (không dấu, viết hoa)" value={form.holderName} onChange={set('holderName')} error={errors.holderName} autoComplete="off" />
+            <Field label="Số tài khoản" required inputMode="numeric" value={form.accountNo} onChange={set('accountNo')} error={errors.accountNo} autoComplete="off" />
+            <Field label="Tên chủ tài khoản (không dấu, viết hoa)" required value={form.holderName} onChange={set('holderName')} error={errors.holderName} autoComplete="off" />
             <div className="form-actions">
               <button type="submit" className="btn btn-primary">
                 Tiếp tục

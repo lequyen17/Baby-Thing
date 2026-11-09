@@ -135,13 +135,13 @@ public class AuthController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     MessageResponse forgotPassword(@Valid @RequestBody EmailRequest req, HttpServletRequest http) {
         authService.forgotPassword(req.email(), ClientIp.of(http));
-        return new MessageResponse("If the email exists, a password reset link has been sent");
+        return new MessageResponse("Nếu email đã đăng ký, link đặt lại mật khẩu đã được gửi tới hộp thư của bạn");
     }
 
     @PostMapping("/reset-password")
     MessageResponse resetPassword(@Valid @RequestBody ResetPasswordRequest req, HttpServletRequest http) {
         authService.resetPassword(req, ClientIp.of(http));
-        return new MessageResponse("Password has been reset, please sign in again");
+        return new MessageResponse("Đã đặt lại mật khẩu, vui lòng đăng nhập lại");
     }
 
     private TokenResponse attachRefreshCookie(HttpServletResponse response, AuthSession session) {
@@ -151,6 +151,6 @@ public class AuthController {
 
     private static ApiException invalidRefreshToken() {
         return new ApiException(HttpStatus.UNAUTHORIZED, "INVALID_REFRESH_TOKEN",
-                "Session has expired, please sign in again");
+                "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
     }
 }

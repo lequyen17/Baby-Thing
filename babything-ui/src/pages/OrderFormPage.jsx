@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Alert, Field } from '../components/Form';
-import { PlusIcon, SearchIcon, TrashIcon } from '../components/Icons';
+import { TrashIcon } from '../components/Icons';
 import { notifyCartChanged } from '../cart/useCart';
 import { ProductImage } from '../components/ProductImage';
 import { formatPrice } from '../utils/format';
@@ -26,7 +26,7 @@ function fromProduct(product, quantity = 1) {
 
 /**
  * Giống OrderService.update: sản phẩm đã có trong đơn mà giữ hoặc giảm số lượng thì giữ giá lúc đặt,
- * tăng thì tính theo giá hiện tại (item.price, biết được khi chọn lại từ danh sách sản phẩm).
+ * tăng thì server tính theo giá hiện tại (client không biết giá đó nên tạm tính theo giá lúc đặt).
  */
 function unitPrice(item, originals) {
   const original = originals[item.productId];
@@ -41,14 +41,12 @@ function fromOrder(order) {
       sku: i.productSku,
       imageUrl: i.imageUrl,
       price: Number(i.unitPrice),
-      // Chưa biết kho hiện tại; chọn lại sản phẩm từ danh sách thì mới có
+      // Không biết kho hiện tại; server kiểm tra khi lưu
       stock: null,
       sellerId: order.seller?.id ?? null,
       sellerName: order.seller?.displayName ?? null,
       quantity: i.quantity,
     })),
-    sellerId: order.seller?.id ?? null,
-    buyerId: order.customer.id,
     originals: Object.fromEntries(
       order.items.map((i) => [i.productId, { price: Number(i.unitPrice), quantity: i.quantity }]),
     ),
@@ -62,82 +60,9 @@ function fromOrder(order) {
 }
 
 /**
- * Tìm sản phẩm theo tên/SKU để thêm vào đơn. Dùng GET /products (danh sách) nên không tính lượt xem.
- * buyerId: người mua của đơn (admin sửa đơn của người khác thì khác user đang đăng nhập).
- * onlySellerId: khi sửa đơn, chỉ thêm được hàng của người bán của đơn đó.
- * originals: dòng hàng của đơn đang sửa; phần đó vẫn chọn lại được dù kho hiện tại đã hết.
+ * Tạo đơn (/orders/new) và sửa đơn chưa thanh toán (/orders/:id/edit).
+ * Không thêm sản phẩm ở đây: hàng đến từ giỏ hàng hoặc "Đặt mua ngay"; trong form chỉ sửa số lượng, bỏ món.
  */
-function ProductPicker({ buyerId, onlySellerId, originals, onPick }) {
-  const [q, setQ] = useState('');
-  const [results, setResults] = useState([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const timer = setTimeout(() => {
-      const query = new URLSearchParams({ status: 'ACTIVE', size: '8' });
-      if (q.trim()) query.set('q', q.trim());
-      api(`/products?${query}`)
-        .then((data) => !cancelled && setResults(data.items))
-        .catch(() => !cancelled && setResults([]));
-    }, 250);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [q]);
-
-  return (
-    <div className="order-picker">
-      <label className="search-box">
-        <SearchIcon />
-        <input
-          type="search"
-          placeholder="Tìm sản phẩm để thêm vào đơn"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          aria-label="Tìm sản phẩm để thêm vào đơn"
-        />
-      </label>
-      {results.length > 0 && (
-        <ul className="order-picker-results">
-          {results.map((p) => {
-            // Server cũng chặn (OWN_PRODUCT, DIFFERENT_SELLER)
-            const own = p.sellerId === buyerId;
-            const otherSeller = onlySellerId !== undefined && p.sellerId !== onlySellerId;
-            const available = p.stock + (originals[p.id]?.quantity ?? 0);
-            return (
-              <li key={p.id}>
-                <button
-                  type="button"
-                  className="order-picker-item"
-                  onClick={() => onPick(p)}
-                  disabled={own || otherSeller || available <= 0}
-                  aria-label={`Thêm ${p.name}`}
-                >
-                  <ProductImage product={p} className="order-picker-thumb" />
-                  <span className="order-picker-name">{p.name}</span>
-                  <span className="muted">
-                    {own
-                      ? 'Tin của bạn'
-                      : otherSeller
-                        ? 'Người bán khác'
-                        : available > 0
-                          ? `Còn ${available}`
-                          : 'Hết hàng'}
-                  </span>
-                  <span className="product-price">{formatPrice(p.price)}</span>
-                  <PlusIcon size={16} />
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-/** Tạo đơn (/orders/new) và sửa đơn còn PENDING (/orders/:id/edit). */
 export default function OrderFormPage() {
   const { id } = useParams();
   const isEdit = Boolean(id);
@@ -155,9 +80,6 @@ export default function OrderFormPage() {
   const [shipping, setShipping] = useState(
     passed?.shipping ?? { recipientName: user.displayName ?? '', phone: '', address: '', note: '' },
   );
-  // Người bán của đơn đang sửa; undefined = tạo mới, hàng của ai cũng được
-  const [orderSellerId, setOrderSellerId] = useState(passed ? passed.sellerId : undefined);
-  const [buyerId, setBuyerId] = useState(passed ? passed.buyerId : user.id);
   // Dòng hàng lúc mở form sửa: { [productId]: { price, quantity } }
   const [originals, setOriginals] = useState(passed?.originals ?? {});
   const [loaded, setLoaded] = useState(!isEdit || Boolean(passed));
@@ -175,28 +97,12 @@ export default function OrderFormPage() {
         }
         const data = fromOrder(order);
         setItems(data.items);
-        setOrderSellerId(data.sellerId);
-        setBuyerId(data.buyerId);
         setOriginals(data.originals);
         setShipping(data.shipping);
         setLoaded(true);
       })
       .catch((err) => setError(err.message));
   }, [id, loaded, navigate]);
-
-  const addProduct = (product) => {
-    // Kho hiện tại đã trừ phần của đơn đang sửa; server hoàn phần đó trước khi trừ lại
-    const fresh = { ...fromProduct(product), stock: product.stock + (originals[product.id]?.quantity ?? 0) };
-    setItems((current) => {
-      const existing = current.find((i) => i.productId === product.id);
-      if (!existing) return [...current, fresh];
-      return current.map((i) =>
-        i.productId === product.id
-          ? { ...i, price: fresh.price, stock: fresh.stock, quantity: Math.min(Number(i.quantity) + 1, MAX_QUANTITY) }
-          : i,
-      );
-    });
-  };
 
   const setQuantity = (productId, value) =>
     setItems((current) => current.map((i) => (i.productId === productId ? { ...i, quantity: value } : i)));
@@ -256,7 +162,7 @@ export default function OrderFormPage() {
         <h1>{isEdit ? `Sửa đơn #${id}` : 'Tạo đơn mới'}</h1>
         <p className="muted">
           {isEdit
-            ? 'Đơn chưa thanh toán thì vẫn sửa được. Sản phẩm giữ nguyên hoặc giảm số lượng thì giữ giá lúc đặt; sản phẩm mới hoặc tăng số lượng thì tính theo giá hiện tại.'
+            ? 'Đơn chưa thanh toán thì vẫn sửa được. Giữ nguyên hoặc giảm số lượng thì giữ giá lúc đặt; tăng số lượng thì phần tăng tính theo giá hiện tại.'
             : 'Hàng được giữ cho bạn 30 phút sau khi đặt; thanh toán online trong thời gian này để người bán xác nhận đơn.'}
         </p>
       </div>
@@ -267,7 +173,6 @@ export default function OrderFormPage() {
         <form className="order-form" onSubmit={handleSubmit} noValidate>
           <section className="card">
             <h2 className="card-title">Sản phẩm</h2>
-            <ProductPicker buyerId={buyerId} onlySellerId={orderSellerId} originals={originals} onPick={addProduct} />
             {!isEdit && sellerCount > 1 && (
               <p className="muted">
                 Các sản phẩm này đến từ {sellerCount} người bán, nên sẽ được tách thành {sellerCount} đơn riêng.
@@ -276,7 +181,9 @@ export default function OrderFormPage() {
             {fieldErrors.items && <small className="field-error">{fieldErrors.items}</small>}
 
             {items.length === 0 ? (
-              <p className="muted order-empty">Chưa có sản phẩm nào.</p>
+              <p className="muted order-empty">
+                Chưa có sản phẩm nào. Chọn hàng trong <Link to="/cart">giỏ hàng</Link> để đặt.
+              </p>
             ) : (
               <ul className="order-items">
                 {items.map((item) => (

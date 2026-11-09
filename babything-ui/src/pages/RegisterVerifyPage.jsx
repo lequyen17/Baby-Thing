@@ -23,9 +23,9 @@ export default function RegisterVerifyPage() {
 
   return (
     <AuthCard
-      title="Verify your email"
-      subtitle={`Enter the 6-digit code sent to ${email}`}
-      footer={<Link to="/register">Use a different email</Link>}
+      title="Xác minh email"
+      subtitle={`Nhập mã 6 số đã gửi tới ${email}`}
+      footer={<Link to="/register">Dùng email khác</Link>}
     >
       <OtpForm onSubmit={verify} onResend={resend} />
     </AuthCard>

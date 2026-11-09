@@ -19,7 +19,7 @@ export default function ResetPasswordPage() {
     setError('');
     setFieldErrors({});
     if (form.newPassword !== form.confirmPassword) {
-      setFieldErrors({ confirmPassword: 'Passwords do not match' });
+      setFieldErrors({ confirmPassword: 'Mật khẩu nhập lại không khớp' });
       return;
     }
     setSubmitting(true);
@@ -39,14 +39,14 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <AuthCard title="Reset password" footer={<Link to="/login">Sign in</Link>}>
-      {!token && <Alert>Invalid reset link.</Alert>}
+    <AuthCard title="Đặt lại mật khẩu" footer={<Link to="/login">Đăng nhập</Link>}>
+      {!token && <Alert>Link đặt lại mật khẩu không hợp lệ.</Alert>}
       {message && <Alert type="success">{message}</Alert>}
       {token && !message && (
         <form onSubmit={handleSubmit} noValidate>
           <Alert>{error}</Alert>
           <Field
-            label="New password (8-72 characters)"
+            label="Mật khẩu mới (8–72 ký tự)" required
             type="password"
             autoComplete="new-password"
             value={form.newPassword}
@@ -54,7 +54,7 @@ export default function ResetPasswordPage() {
             error={fieldErrors.newPassword}
           />
           <Field
-            label="Confirm new password"
+            label="Nhập lại mật khẩu mới" required
             type="password"
             autoComplete="new-password"
             value={form.confirmPassword}
@@ -62,7 +62,7 @@ export default function ResetPasswordPage() {
             error={fieldErrors.confirmPassword}
           />
           <button type="submit" className="btn btn-primary" disabled={submitting}>
-            {submitting ? 'Saving...' : 'Reset password'}
+            {submitting ? 'Đang lưu…' : 'Đặt lại mật khẩu'}
           </button>
         </form>
       )}

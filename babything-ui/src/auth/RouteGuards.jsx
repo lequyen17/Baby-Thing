@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { loadReturnTo, saveReturnTo } from '../pages/flowStorage';
 import { useAuth } from './AuthContext';
+import { useLoginModal } from './LoginModal';
 
 export function Loading() {
   return <div className="page-center muted">Đang tải…</div>;
@@ -27,19 +28,25 @@ export function GuestRoute() {
 
 /**
  * Thao tác cần tài khoản (mua, nhắn tin, thêm giỏ) bấm từ trang công khai:
- * khách thì chuyển tới đăng nhập và nhớ trang hiện tại để quay lại; thành viên thì chạy luôn.
+ * khách thì mở popup đăng nhập, xong chạy tiếp thao tác đó; thành viên thì chạy luôn.
+ * Ngoài popup (trang không có header) thì chuyển tới /login và nhớ trang hiện tại để quay lại.
  */
 export function useRequireLogin() {
   const { user } = useAuth();
+  const openLogin = useLoginModal();
   const navigate = useNavigate();
   const location = useLocation();
   return useCallback(
     (action) => {
       if (user) return action?.();
+      if (openLogin) {
+        openLogin(action);
+        return undefined;
+      }
       saveReturnTo(currentPath(location));
       navigate('/login');
       return undefined;
     },
-    [user, navigate, location],
+    [user, openLogin, navigate, location],
   );
 }

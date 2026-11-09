@@ -68,7 +68,7 @@ export default function ProfilePage() {
         <form onSubmit={handleSubmit} noValidate className="profile-form">
           <Alert>{error}</Alert>
           <Alert type="success">{message}</Alert>
-          <Field label="Tên hiển thị" value={form.displayName} onChange={update('displayName')} error={fieldErrors.displayName} maxLength={50} />
+          <Field label="Tên hiển thị" required value={form.displayName} onChange={update('displayName')} error={fieldErrors.displayName} maxLength={50} />
           <Field label="Email" value={user.email} disabled readOnly />
           <Field label="Khu vực (quận/huyện Hà Nội)" as="select" value={form.district} onChange={update('district')}>
             <option value="">Chọn quận/huyện</option>

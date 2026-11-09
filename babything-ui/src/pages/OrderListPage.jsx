@@ -87,8 +87,8 @@ export default function OrderListPage() {
           <h1>Đơn hàng</h1>
           <p className="muted">{result ? `${result.totalItems} đơn hàng` : 'Đang tải…'}</p>
         </div>
-        <Link to="/orders/new" className="btn btn-primary">
-          Tạo đơn mới
+        <Link to="/cart" className="btn btn-primary">
+          Đến giỏ hàng
         </Link>
       </div>
 

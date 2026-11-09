@@ -45,28 +45,28 @@ function AddressForm({ initial, onSave, onCancel }) {
         ))}
       </div>
       <div className="form-two">
-        <Field label="Họ tên" value={form.name} onChange={set('name')} error={errors.name} autoComplete="name" />
-        <Field label="Số điện thoại" value={form.phone} onChange={set('phone')} error={errors.phone} inputMode="tel" autoComplete="tel" />
+        <Field label="Họ tên" required value={form.name} onChange={set('name')} error={errors.name} autoComplete="name" />
+        <Field label="Số điện thoại" required value={form.phone} onChange={set('phone')} error={errors.phone} inputMode="tel" autoComplete="tel" />
       </div>
       <div className="form-two">
-        <Field label="Tỉnh/thành phố" as="select" value={form.province} onChange={(e) => setForm({ ...form, province: e.target.value, district: '' })}>
+        <Field label="Tỉnh/thành phố" required as="select" value={form.province} onChange={(e) => setForm({ ...form, province: e.target.value, district: '' })}>
           {PROVINCES.map((p) => (
             <option key={p}>{p}</option>
           ))}
         </Field>
         {form.province === 'Hà Nội' ? (
-          <Field label="Quận/huyện" as="select" value={form.district} onChange={set('district')} error={errors.district}>
+          <Field label="Quận/huyện" required as="select" value={form.district} onChange={set('district')} error={errors.district}>
             <option value="">Chọn quận/huyện</option>
             {HANOI_DISTRICTS.map((d) => (
               <option key={d}>{d}</option>
             ))}
           </Field>
         ) : (
-          <Field label="Quận/huyện" value={form.district} onChange={set('district')} error={errors.district} />
+          <Field label="Quận/huyện" required value={form.district} onChange={set('district')} error={errors.district} />
         )}
       </div>
-      <Field label="Phường/xã" value={form.ward} onChange={set('ward')} error={errors.ward} />
-      <Field label="Số nhà, tên đường" value={form.detail} onChange={set('detail')} error={errors.detail} />
+      <Field label="Phường/xã" required value={form.ward} onChange={set('ward')} error={errors.ward} />
+      <Field label="Số nhà, tên đường" required value={form.detail} onChange={set('detail')} error={errors.detail} />
       <label className="check">
         <input type="checkbox" checked={form.isDefault} onChange={(e) => setForm({ ...form, isDefault: e.target.checked })} />
         Đặt làm địa chỉ mặc định

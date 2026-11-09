@@ -35,7 +35,7 @@ export function OtpForm({ onSubmit, onResend }) {
     setInfo('');
     try {
       await onResend();
-      setInfo('A new verification code has been sent');
+      setInfo('Đã gửi mã xác minh mới');
       setOtp('');
       setCooldown(RESEND_SECONDS);
     } catch (err) {
@@ -48,7 +48,7 @@ export function OtpForm({ onSubmit, onResend }) {
       <Alert>{error}</Alert>
       <Alert type="success">{info}</Alert>
       <Field
-        label="Verification code"
+        label="Mã xác minh" required
         className="otp-input"
         inputMode="numeric"
         autoComplete="one-time-code"
@@ -58,10 +58,10 @@ export function OtpForm({ onSubmit, onResend }) {
         onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
       />
       <button type="submit" className="btn btn-primary" disabled={submitting || otp.length !== 6}>
-        {submitting ? 'Verifying...' : 'Verify'}
+        {submitting ? 'Đang xác minh…' : 'Xác minh'}
       </button>
       <button type="button" className="btn btn-link" onClick={handleResend} disabled={cooldown > 0}>
-        {cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend code'}
+        {cooldown > 0 ? `Gửi lại mã sau ${cooldown}s` : 'Gửi lại mã'}
       </button>
     </form>
   );

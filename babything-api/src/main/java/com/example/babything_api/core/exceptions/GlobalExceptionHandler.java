@@ -55,6 +55,6 @@ public class GlobalExceptionHandler {
     ResponseEntity<ErrorResponse> handleMail(MailException e) {
         log.error("Failed to send email", e);
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                .body(new ErrorResponse("MAIL_FAILED", "Could not send email, please try again later"));
+                .body(new ErrorResponse("MAIL_FAILED", "Không gửi được email, vui lòng thử lại sau"));
     }
 }

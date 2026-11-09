@@ -11,8 +11,6 @@
 .image-tile-add { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border-style: dashed; border-color: var(--border-strong); color: var(--muted); font-size: 0.85rem; text-align: center; }
 .image-tile-add label { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; width: 100%; height: 100%; cursor: pointer; }
 .image-tile-add:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
-.inline-add { display: flex; gap: 8px; margin-top: 12px; }
-.inline-add input { flex: 1; min-width: 0; }
 .fee-hint { margin: 4px 0 0; font-size: 0.88rem; }
 
 /* ------------------------------------------------ Danh sách tin: bộ lọc độ tuổi, tình trạng, size, giá */
@@ -239,7 +237,6 @@
   .cart-item-thumb .history-thumb { width: 56px; height: 56px; }
   .review-media .history-thumb { width: 72px; height: 72px; }
   .review-actions { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; }
-  .inline-add { flex-direction: column; }
   .care-rules, .care-capacity { grid-template-columns: 1fr; }
   .care-item-body { grid-template-columns: 1fr; }
   .care-item { grid-template-columns: 56px minmax(0, 1fr); }

@@ -4,6 +4,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record ResetPasswordRequest(
-        @NotBlank String token,
-        @NotBlank @Size(min = 8, max = 72, message = "Password must be 8 to 72 characters") String newPassword) {
+        @NotBlank(message = "Link đặt lại mật khẩu không hợp lệ") String token,
+        @NotBlank(message = "Vui lòng nhập mật khẩu mới") @Size(min = 8, max = 72, message = "Mật khẩu từ 8 đến 72 ký tự") String newPassword) {
 }

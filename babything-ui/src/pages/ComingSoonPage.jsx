@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom';
 
 /** Các mục có trong thiết kế nhưng backend chưa hỗ trợ: hiển thị trang "sắp ra mắt". */
 export const COMING_SOON = {
-  'image-search': ['Tìm bằng hình ảnh', 'Chụp ảnh món đồ, AI tìm những tin đăng tương tự cho bạn.'],
   feedback: ['Góp ý', 'Gửi góp ý và theo dõi phản hồi của Baby Things ngay trong tài khoản.'],
 };
 

@@ -32,11 +32,26 @@ export function AuthCard({ title, subtitle, children, footer }) {
   );
 }
 
-/** as="textarea" | "select" để dùng thay cho input; children là các option của select. */
+/** Dấu * đỏ sau nhãn của ô bắt buộc. */
+export function RequiredMark() {
+  return (
+    <span className="required-mark" aria-hidden="true">
+      {' '}*
+    </span>
+  );
+}
+
+/**
+ * as="textarea" | "select" để dùng thay cho input; children là các option của select.
+ * required: hiện dấu * đỏ sau nhãn (form dùng noValidate nên trình duyệt không tự chặn).
+ */
 export function Field({ label, error, as: Control = 'input', children, ...inputProps }) {
   return (
     <label className="field">
-      <span>{label}</span>
+      <span>
+        {label}
+        {inputProps.required && <RequiredMark />}
+      </span>
       <Control {...inputProps} aria-invalid={Boolean(error)}>
         {children}
       </Control>
