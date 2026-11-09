@@ -64,11 +64,6 @@ export function UserMenu() {
           <NavLink to="/sales" className="user-menu-item" role="menuitem">
             Doanh thu bán hàng
           </NavLink>
-          {user.role !== 'ADMIN' && (
-            <NavLink to="/care" className="user-menu-item" role="menuitem">
-              Ký gửi Care
-            </NavLink>
-          )}
           <NavLink to="/profile/notifications" className="user-menu-item" role="menuitem">
             Cài đặt thông báo
           </NavLink>
