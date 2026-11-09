@@ -18,6 +18,24 @@ const PROMISES = [
   ['Hàng chọn lọc', 'Mỗi tin đăng đều có danh mục, mô tả và tồn kho minh bạch.'],
 ];
 
+const CARE_PERKS = [
+  ['Tiết kiệm thời gian', 'Không cần tự chụp ảnh, viết bài hay đăng bán từng món. BabyThings hỗ trợ bạn thực hiện những công việc đó.'],
+  ['Chăm sóc trước khi bán', 'Sản phẩm được kiểm tra tình trạng, làm sạch và chụp ảnh thực tế, giúp người mua có thêm thông tin để yên tâm lựa chọn.'],
+  ['Đồ cũ vẫn còn giá trị', 'Biến những món đồ bé không còn sử dụng thành cơ hội thu lại một phần chi phí, thay vì để chúng bị lãng phí.'],
+];
+
+const CARE_STEPS = [
+  ['Bạn đăng ký gửi đồ', 'Chọn những món đồ còn tốt mà bé không còn sử dụng và đăng ký ký gửi.'],
+  ['BabyThings chăm sóc sản phẩm', 'Chúng mình kiểm tra, làm sạch, chụp ảnh và chuẩn bị thông tin sản phẩm.'],
+  ['BabyThings đăng bán giúp bạn', 'Sản phẩm được đăng bán với nhãn Renewed. Bạn vẫn là chủ sở hữu cho đến khi món đồ được bán thành công.'],
+];
+
+const CARE_TERMS = [
+  ['Nhận từ 1–5 món/lô', 'Áp dụng cho quần áo, đồ vải có thể giặt với giá trị lô từ 250.000đ.'],
+  ['Hoa hồng 10% khi bán thành công', 'Cộng phí làm sạch được thông báo và thanh toán trước khi thực hiện. Tổng phí không vượt quá 30% giá bán.'],
+  ['Thời gian ký gửi 60 ngày', 'Từ ngày 45, sản phẩm có thể được giảm về giá sàn đã thỏa thuận. Sau 60 ngày, bạn có thể gia hạn thêm 30 ngày hoặc nhận lại đồ chưa bán.'],
+];
+
 const AI_STEPS = [
   ['Nhận diện sản phẩm', 'Tải ảnh lên, AI tự nhận biết loại sản phẩm, danh mục và tình trạng sử dụng.'],
   ['Tạo bài đăng tự động', 'Tiêu đề, mô tả và thông tin chi tiết được soạn sẵn — bạn chỉ cần xem lại và chỉnh sửa.'],
@@ -55,6 +73,8 @@ export default function HomePage() {
   // Banner: vài ảnh đại diện danh mục + tổng số tin, lấy từ cùng dữ liệu covers
   const photos = covers.filter((c) => c.imageUrl).slice(0, 5);
   const totalListings = covers.reduce((sum, c) => sum + c.count, 0);
+  // Ảnh minh hoạ cho thẻ trợ lý AI: lấy ảnh danh mục xe đẩy nếu có, khớp với nội dung ví dụ
+  const demoPhoto = covers.find((c) => c.imageUrl && /stroll|xe đẩy|xe day/i.test(c.category))?.imageUrl;
 
   return (
     <div className="home">
@@ -129,28 +149,28 @@ export default function HomePage() {
         </section>
       </div>
 
-      <section className="hero">
-        <div className="hero-copy">
-          <span className="pill pill-sage">
-            Đăng bán nhanh với trợ lý AI
-          </span>
-          <h1 className="serif hero-title">
-            Đồ tốt cho bé,
-            <br />
-            trao tay lần hai
-            <br />
-            vẫn trọn vẹn.
-          </h1>
-          <p className="hero-lead">
-            Nơi các gia đình mua, bán quần áo, xe đẩy, ghế ăn, nôi cũi và đồ chơi còn dùng tốt — tiết kiệm hơn cho
-            bố mẹ, nhẹ nhàng hơn cho môi trường.
+      <section id="how" className="ai-band">
+        <div className="ai-band-copy">
+          <span className="ai-band-kicker">Trợ lý AI của Baby Things</span>
+          <h2 className="serif">Chụp một tấm ảnh, phần còn lại để AI lo.</h2>
+          <p className="ai-band-lead">
+            Quần áo, xe đẩy, ghế ăn, nôi cũi hay đồ chơi bé không còn dùng — đăng bán trong vài phút, tiết kiệm hơn
+            cho bố mẹ, nhẹ nhàng hơn cho môi trường.
           </p>
-          <div className="hero-actions">
-            <Link to="/products" className="btn btn-accent btn-lg">
-              Mua sắm ngay
+          <ol className="ai-steps">
+            {AI_STEPS.map(([title, text]) => (
+              <li key={title}>
+                <strong>{title}</strong>
+                <span>{text}</span>
+              </li>
+            ))}
+          </ol>
+          <div className="ai-band-actions">
+            <Link to={sellTo} className="btn btn-cream btn-lg">
+              Thử đăng bán với AI
             </Link>
-            <Link to={sellTo} className="btn btn-outline btn-lg">
-              Bán đồ bé đã dùng
+            <Link to="/products" className="btn btn-ghost-light btn-lg">
+              Mua sắm ngay
             </Link>
           </div>
         </div>
@@ -161,8 +181,8 @@ export default function HomePage() {
             <span className="muted">Ví dụ minh hoạ</span>
           </div>
           <div className="hero-card-body">
-            <div className="hero-card-photo">
-              <span>Ảnh của bạn</span>
+            <div className={`hero-card-photo ${demoPhoto ? 'has-photo' : ''}`}>
+              {demoPhoto ? <img src={demoPhoto} alt="" loading="lazy" /> : <span>Ảnh của bạn</span>}
             </div>
             <dl className="hero-card-steps">
               <div>
@@ -198,47 +218,59 @@ export default function HomePage() {
         ))}
       </section>
 
-      <section id="sell" className="sell-band">
-        <div className="sell-band-head">
-          <div>
-            <span className="sell-band-kicker">
-              Trợ lý AI của Baby Things
-            </span>
-            <h2 className="serif">Chụp một tấm ảnh, phần còn lại để AI lo.</h2>
-          </div>
-          <Link to={sellTo} className="btn btn-cream btn-lg">
-            Thử đăng bán với AI
-          </Link>
+      <section id="care" className="care-intro">
+        <div className="care-intro-head">
+          <span className="care-intro-kicker">BabyThings Care</span>
+          <h2 className="serif">Đồ con không dùng nữa? Để BabyThings bán giúp bạn!</h2>
+          <p>
+            Quần áo con mặc vài lần đã chật? Nhiều món vẫn còn tốt nhưng bạn không có thời gian chụp ảnh, đăng bán hay
+            tìm người mua? <strong>Đừng để những món đồ còn giá trị nằm mãi trong tủ!</strong>
+          </p>
+          <p>
+            Với BabyThings Care, bạn chỉ cần đăng ký ký gửi. Chúng mình sẽ hỗ trợ kiểm tra, làm sạch, chụp ảnh và đăng
+            bán giúp bạn.
+          </p>
         </div>
-        <div className="sell-steps">
-          {AI_STEPS.map(([title, text], i) => (
-            <div key={title} className="sell-step">
-              <span className="sell-step-no">Bước {i + 1}</span>
-              <h3>{title}</h3>
-              <p>{text}</p>
+
+        <h3 className="care-intro-title">Nhẹ việc cho mẹ, thêm giá trị cho đồ của bé!</h3>
+        <div className="care-perks">
+          {CARE_PERKS.map(([title, text]) => (
+            <div key={title} className="care-perk">
+              <strong>{title}</strong>
+              <span>{text}</span>
             </div>
           ))}
         </div>
-      </section>
 
-      <section id="how" className="home-section">
-        <h2 className="serif section-title text-center">Mua hay bán — đều đơn giản</h2>
-        <div className="how-grid">
-          <div className="how-card">
-            <span className="serif how-title accent">Mua</span>
-            <p>
-              Tìm theo danh mục hoặc từ khoá, xem chi tiết tình trạng và giá, lưu lại lịch sử những món đã xem để
-              quay lại so sánh.
-            </p>
-            <Link to="/products">Bắt đầu mua sắm</Link>
+        <h3 className="care-intro-title">Ký gửi dễ dàng chỉ với 3 bước</h3>
+        <ol className="care-steps">
+          {CARE_STEPS.map(([title, text], i) => (
+            <li key={title}>
+              <span className="care-step-no">{String(i + 1).padStart(2, '0')}</span>
+              <strong>{title}</strong>
+              <span>{text}</span>
+            </li>
+          ))}
+        </ol>
+
+        <h3 className="care-intro-title">Phí rõ ràng, bạn chủ động quyết định</h3>
+        <dl className="care-terms">
+          {CARE_TERMS.map(([title, text]) => (
+            <div key={title}>
+              <dt>{title}</dt>
+              <dd>{text}</dd>
+            </div>
+          ))}
+        </dl>
+
+        <div className="care-cta">
+          <div>
+            <h3 className="serif">Đồ bé đã lớn, hãy để giá trị tiếp tục!</h3>
+            <p>Đăng ký ký gửi ngay để BabyThings giúp bạn chăm sóc và tìm người mua cho những món đồ còn tốt.</p>
           </div>
-          <div className="how-card">
-            <span className="serif how-title sage">Bán</span>
-            <p>
-              Đăng tin nhanh, quản lý sản phẩm đang bán, cập nhật giá và tồn kho, theo dõi ai đã xem sản phẩm của bạn.
-            </p>
-            <Link to={sellTo}>Đăng bán sản phẩm</Link>
-          </div>
+          <Link to="/care/new" className="btn btn-cream btn-lg">
+            Để BabyThings bán giúp tôi
+          </Link>
         </div>
       </section>
 
