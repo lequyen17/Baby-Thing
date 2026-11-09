@@ -46,6 +46,23 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
             order by p.category""")
     List<String> findCategories(@Param("statuses") List<ProductStatus> statuses);
 
+    /** Số tin đang bán theo từng danh mục: mỗi dòng là [category, count]. */
+    @Query("""
+            select p.category, count(p) from Product p
+            where p.deletedAt is null and p.category is not null and p.status = :status
+            group by p.category
+            order by p.category""")
+    List<Object[]> countByCategory(@Param("status") ProductStatus status);
+
+    /** Ảnh của tin mới nhất có ảnh trong mỗi danh mục: mỗi dòng là [category, imageUrl]; trùng thời điểm có thể ra 2 dòng. */
+    @Query("""
+            select p.category, p.imageUrl from Product p
+            where p.deletedAt is null and p.status = :status and p.imageUrl is not null
+              and p.createdAt = (
+                select max(q.createdAt) from Product q
+                where q.category = p.category and q.deletedAt is null and q.status = :status and q.imageUrl is not null)""")
+    List<Object[]> findLatestImageByCategory(@Param("status") ProductStatus status);
+
     /** Các size đang có trong tin đăng, làm gợi ý cho bộ lọc size (size là chữ tự do người bán nhập). */
     @Query("""
             select distinct p.size from Product p

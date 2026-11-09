@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 import java.text.Normalizer;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -25,6 +26,7 @@ import jakarta.persistence.criteria.Predicate;
 
 import com.example.babything_api.core.dto.PageResponse;
 import com.example.babything_api.core.exceptions.ApiException;
+import com.example.babything_api.modules.products.dto.CategoryCover;
 import com.example.babything_api.modules.products.dto.ProductRequest;
 import com.example.babything_api.modules.products.dto.ProductResponse;
 import com.example.babything_api.modules.products.entity.AgeRange;
@@ -123,6 +125,18 @@ public class ProductService {
                 ? List.of(ProductStatus.values())
                 : List.of(ProductStatus.ACTIVE);
         return productRepository.findCategories(statuses);
+    }
+
+    /** Hàng danh mục trên trang chủ: chỉ tính tin đang bán, kể cả với admin. */
+    @Transactional(readOnly = true)
+    public List<CategoryCover> categoryCovers() {
+        Map<String, String> images = new HashMap<>();
+        for (Object[] row : productRepository.findLatestImageByCategory(ProductStatus.ACTIVE)) {
+            images.putIfAbsent((String) row[0], (String) row[1]);
+        }
+        return productRepository.countByCategory(ProductStatus.ACTIVE).stream()
+                .map(row -> new CategoryCover((String) row[0], images.get((String) row[0]), (Long) row[1]))
+                .toList();
     }
 
     @Transactional(readOnly = true)

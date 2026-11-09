@@ -46,7 +46,7 @@ public class SecurityConfig {
                         // Khách chưa đăng nhập (vd. bấm link từ Facebook) xem được tin đăng và hồ sơ người bán;
                         // mua, nhắn tin, đăng bán vẫn phải đăng nhập
                         .requestMatchers(HttpMethod.GET,
-                                "/api/products", "/api/products/categories", "/api/products/sizes","/api/products/{id:\\d+}",
+                                "/api/products", "/api/products/categories", "/api/products/categories/covers", "/api/products/sizes","/api/products/{id:\\d+}",
                                 "/api/users/{id:\\d+}/public")
                         .permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

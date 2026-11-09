@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { api } from '../api/client';
 import { Alert } from '../components/Form';
 import { ProductCard } from '../components/ProductCard';
+import { categoryArt } from '../utils/categoryArt';
 
 const FILTERS = [
   ['all', 'Mới nhất'],
@@ -28,11 +29,16 @@ export default function HomePage() {
   const [products, setProducts] = useState(null);
   const [filter, setFilter] = useState('all');
   const [error, setError] = useState('');
+  const [covers, setCovers] = useState([]);
 
   useEffect(() => {
     api('/products?sort=newest&page=0&size=20')
       .then((data) => setProducts(data.items))
       .catch((err) => setError(err.message));
+    // Hàng danh mục chỉ để trang trí: lỗi thì ẩn đi, không báo
+    api('/products/categories/covers')
+      .then(setCovers)
+      .catch(() => setCovers([]));
   }, []);
 
   // Link dạng "/#how" từ header/footer: cuộn tới đúng mục
@@ -49,38 +55,54 @@ export default function HomePage() {
 
   return (
     <div className="home">
-      <section className="home-panel" aria-label="Tin đăng">
-        <div className="feed-tabs" role="tablist" aria-label="Lọc tin đăng">
-          {FILTERS.map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              className={`feed-tab ${filter === id ? 'is-active' : ''}`}
-              aria-selected={filter === id}
-              onClick={() => setFilter(id)}
-            >
-              {label}
-            </button>
-          ))}
-          <Link to="/products" className="feed-tabs-more">
-            Xem tất cả
-          </Link>
-        </div>
-        <Alert>{error}</Alert>
-        {!products && !error && <p className="muted">Đang tải…</p>}
-        {products && shown.length === 0 && <p className="muted empty-state">Chưa có sản phẩm phù hợp.</p>}
-        {shown.length > 0 && (
-          <div className="product-grid product-grid-5">
-            {shown.map((p) => (
-              <ProductCard key={p.id} product={p} />
+      <div className="home-feed">
+        {covers.length > 0 && (
+          <nav className="home-categories" aria-label="Danh mục">
+            {covers.map(({ category, imageUrl, count }) => (
+              <Link key={category} to={`/products?${new URLSearchParams({ category })}`} className="category-card">
+                <span className="category-card-img" style={{ background: categoryArt(category).tint }}>
+                  {imageUrl ? <img src={imageUrl} alt="" loading="lazy" /> : category.charAt(0)}
+                </span>
+                <span className="category-card-name">{category}</span>
+                <small>{count} tin</small>
+              </Link>
             ))}
-          </div>
+          </nav>
         )}
-        <Link to="/products" className="btn btn-outline btn-lg section-more">
-          Xem thêm tin đăng
-        </Link>
-      </section>
+
+        <section className="home-panel" aria-label="Tin đăng">
+          <div className="feed-tabs" role="tablist" aria-label="Lọc tin đăng">
+            {FILTERS.map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                className={`feed-tab ${filter === id ? 'is-active' : ''}`}
+                aria-selected={filter === id}
+                onClick={() => setFilter(id)}
+              >
+                {label}
+              </button>
+            ))}
+            <Link to="/products" className="feed-tabs-more">
+              Xem tất cả
+            </Link>
+          </div>
+          <Alert>{error}</Alert>
+          {!products && !error && <p className="muted">Đang tải…</p>}
+          {products && shown.length === 0 && <p className="muted empty-state">Chưa có sản phẩm phù hợp.</p>}
+          {shown.length > 0 && (
+            <div className="product-grid product-grid-5">
+              {shown.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          )}
+          <Link to="/products" className="btn btn-outline btn-lg section-more">
+            Xem thêm tin đăng
+          </Link>
+        </section>
+      </div>
 
       <section className="hero">
         <div className="hero-copy">

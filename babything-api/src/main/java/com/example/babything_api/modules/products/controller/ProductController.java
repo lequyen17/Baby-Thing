@@ -27,6 +27,7 @@ import com.example.babything_api.core.dto.PageResponse;
 import com.example.babything_api.core.security.AuthPrincipal;
 import com.example.babything_api.infrastructure.cache.RateLimiter;
 import com.example.babything_api.infrastructure.storage.ImageStorage;
+import com.example.babything_api.modules.products.dto.CategoryCover;
 import com.example.babything_api.modules.products.dto.ProductImageResponse;
 import com.example.babything_api.modules.products.dto.ProductRequest;
 import com.example.babything_api.modules.products.dto.ProductResponse;
@@ -83,6 +84,11 @@ public class ProductController {
     @GetMapping("/categories")
     List<String> categories(@AuthenticationPrincipal AuthPrincipal principal) {
         return productService.categories(viewer(principal));
+    }
+
+    @GetMapping("/categories/covers")
+    List<CategoryCover> categoryCovers() {
+        return productService.categoryCovers();
     }
 
     @GetMapping("/sizes")

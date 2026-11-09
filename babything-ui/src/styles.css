@@ -875,7 +875,77 @@ a:hover {
   min-height: 50px;
 }
 
-/* Trang chủ: tin đăng lên đầu (danh mục đã có trên thanh dưới header), phần giới thiệu ở dưới */
+/* Trang chủ: hàng danh mục bằng ảnh thật + tin đăng lên đầu, phần giới thiệu ở dưới */
+.home-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.home-categories {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(104px, 1fr);
+  gap: 8px;
+  padding: 16px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.category-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 4px 8px;
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  text-align: center;
+}
+
+.category-card:hover {
+  background: var(--surface-muted);
+  color: var(--ink);
+}
+
+.category-card-img {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 76px;
+  height: 76px;
+  margin-bottom: 6px;
+  overflow: hidden;
+  border-radius: 50%;
+  color: var(--ink);
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+.category-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.2s ease;
+}
+
+.category-card:hover .category-card-img img {
+  transform: scale(1.08);
+}
+
+.category-card-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.category-card small {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
 
 .chip-group {
   display: flex;
@@ -2249,6 +2319,17 @@ a:hover {
 
   .feed-tabs-more {
     display: none;
+  }
+
+  .home-categories {
+    grid-auto-columns: 88px;
+    padding: 12px 8px;
+    scrollbar-width: none;
+  }
+
+  .category-card-img {
+    width: 64px;
+    height: 64px;
   }
 
   .product-card-media {
