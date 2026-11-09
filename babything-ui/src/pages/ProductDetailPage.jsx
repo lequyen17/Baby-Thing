@@ -5,7 +5,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useRequireLogin } from '../auth/RouteGuards';
 import { Avatar } from '../components/Avatar';
 import { Alert } from '../components/Form';
-import { ArrowLeftIcon, CartIcon, CheckIcon, EditIcon, EyeIcon, MessageIcon, SparkleIcon, TrashIcon, XCircleIcon } from '../components/Icons';
+import { ArrowLeftIcon, CartIcon, CheckIcon, EditIcon, EyeIcon, MessageIcon, TrashIcon, XCircleIcon } from '../components/Icons';
 import { ListingSpecs } from '../components/ListingSpecs';
 import { useContactSeller } from '../messages/useMessages';
 import { addToCart } from '../cart/useCart';
@@ -231,7 +231,7 @@ export default function ProductDetailPage() {
               {product.care && (
                 <div className="care-renewed">
                   <strong>
-                    <SparkleIcon size={18} /> BabyThings Renewed · Cấp {product.care.gradeLabel}
+                    BabyThings Renewed · Cấp {product.care.gradeLabel}
                   </strong>
                   <span>
                     Baby Things đã kiểm tra, làm sạch theo quy trình và chụp ảnh thật

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { maskAccount, PAYOUT_CHANGED_EVENT } from '../account/useAccountData';
 import { api } from '../api/client';
 import { Alert, Field } from '../components/Form';
-import { BankIcon, InfoIcon, LockIcon } from '../components/Icons';
+import { BankIcon } from '../components/Icons';
 import { BANKS } from '../data/vnLocations';
 
 // Chưa có dịch vụ OTP cho thao tác này: dùng mã cố định để demo luồng giao diện.
@@ -91,9 +91,6 @@ export default function PayoutPage() {
           <p className="muted">Đang tải…</p>
         ) : pending ? (
           <form onSubmit={confirm} className="otp-box" noValidate>
-            <span className="empty-icon">
-              <LockIcon size={26} />
-            </span>
             <strong>Xác nhận bằng mã OTP</strong>
             <p className="muted">Nhập mã gồm 6 số để {payout ? 'đổi' : 'lưu'} thông tin nhận tiền. Mã có hiệu lực trong 5 phút.</p>
             <Field
@@ -162,7 +159,7 @@ export default function PayoutPage() {
       <aside className="account-side">
         <section className="card">
           <h2 className="card-title">
-            <InfoIcon size={18} /> Lưu ý
+            Lưu ý
           </h2>
           <ul className="plain-list">
             <li>Bắt buộc có tài khoản nhận tiền trước lần chi trả đầu tiên.</li>

@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api, apiUpload } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Alert, Field } from '../components/Form';
-import { ArrowLeftIcon, InfoIcon, PlusIcon, XIcon } from '../components/Icons';
+import { ArrowLeftIcon, PlusIcon, XIcon } from '../components/Icons';
 import { AGE_RANGES, CONDITIONS, normalizeSize, SIZE_SUGGESTIONS } from '../utils/format';
 import { IMAGE_ACCEPT, shrinkImage } from '../utils/image';
 
@@ -356,7 +356,7 @@ export default function ProductFormPage() {
           </div>
           {form.price !== '' && Number(form.price) > 0 && (
             <p className="muted fee-hint">
-              <InfoIcon size={14} /> Bán được, bạn nhận khoảng{' '}
+              Bán được, bạn nhận khoảng{' '}
               <strong>{new Intl.NumberFormat('vi-VN').format(Math.round(Number(form.price) * 0.9))}đ</strong> mỗi món sau khi
               trừ 10% hoa hồng. Không thu phí đăng tin.
             </p>

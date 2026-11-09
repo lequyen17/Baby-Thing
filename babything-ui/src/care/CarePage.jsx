@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { Alert } from '../components/Form';
-import { DropletIcon, PlusIcon, SparkleIcon, TagIcon } from '../components/Icons';
+import { PlusIcon } from '../components/Icons';
 import { Pagination } from '../components/Pagination';
 import { ProductImage } from '../components/ProductImage';
 import { formatDate, formatPercent, formatPrice } from '../utils/format';
@@ -77,17 +77,14 @@ export default function CarePage() {
       {rules && (
         <section className="care-rules">
           <div className="card">
-            <TagIcon size={22} />
             <strong>Lô {rules.maxItems > 1 ? `1–${rules.maxItems}` : 1} món, từ {formatPrice(rules.minLotValue)}</strong>
             <span className="muted">Nhận {rules.categories.join(', ').toLowerCase()}, loại vải giặt được.</span>
           </div>
           <div className="card">
-            <DropletIcon size={22} />
             <strong>Hoa hồng {formatPercent(rules.commissionRate)} + phí vệ sinh</strong>
             <span className="muted">Tổng chi phí không quá {formatPercent(rules.maxCostRatio)} giá bán. Phí vệ sinh trả trước khi làm sạch.</span>
           </div>
           <div className="card">
-            <SparkleIcon size={22} />
             <strong>Bán trong {rules.consignmentDays} ngày</strong>
             <span className="muted">
               Ngày {rules.priceDropDay} giảm về giá sàn đã thoả thuận. Gia hạn 1 lần thêm {rules.extensionDays} ngày, hoặc nhận lại hàng chưa bán.

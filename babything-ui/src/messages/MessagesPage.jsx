@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { Avatar } from '../components/Avatar';
-import { ArrowLeftIcon, CameraIcon, InfoIcon, MessageIcon, SearchIcon, XIcon } from '../components/Icons';
+import { ArrowLeftIcon, CameraIcon, MessageIcon, SearchIcon, XIcon } from '../components/Icons';
 import { categoryArt } from '../utils/categoryArt';
 import { formatPrice, timeAgo } from '../utils/format';
 import { MAX_IMAGES, MAX_TEXT, hasOffPlatformContact, useMessages, useThread } from './useMessages';
@@ -150,7 +150,7 @@ function Thread({ conversation, onBack, onSend, onBlock, onReport }) {
 
       <div className="chat-messages" role="log" aria-live="polite">
         <p className="chat-safety">
-          <InfoIcon size={16} /> Giao dịch ngoài sàn không được Baby Things bảo vệ. Hãy trao đổi và thanh toán ngay trên website.
+          Giao dịch ngoài sàn không được Baby Things bảo vệ. Hãy trao đổi và thanh toán ngay trên website.
         </p>
         {conversation.messages.length === 0 && <p className="muted text-center">Hãy hỏi người bán về tình trạng, kích thước hoặc cách giao hàng.</p>}
         {conversation.messages.map((m) => (
@@ -262,9 +262,6 @@ export default function MessagesPage() {
         />
       ) : (
         <div className="chat-empty">
-          <span className="empty-icon">
-            <MessageIcon size={30} />
-          </span>
           <strong>Chọn một hội thoại</strong>
           <p className="muted">Hỏi người bán về tình trạng sản phẩm ngay trên Baby Things — tin nhắn cũng là bằng chứng khi cần khiếu nại.</p>
         </div>

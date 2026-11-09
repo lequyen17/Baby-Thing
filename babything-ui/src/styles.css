@@ -836,58 +836,23 @@ a:hover {
 
 .promise {
   display: flex;
-  align-items: flex-start;
-  gap: 14px;
+  flex-direction: column;
+  gap: 4px;
   padding: 20px;
+  border-top: 3px solid var(--sage);
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 18px;
-}
-
-.promise > div {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
 
 .promise strong {
   font-size: 0.95rem;
 }
 
-.promise > div > span {
+.promise span {
   font-size: 0.8rem;
   line-height: 1.5;
   color: var(--muted);
-}
-
-.promise-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  flex-shrink: 0;
-  border-radius: 12px;
-}
-
-.tone-sage {
-  background: var(--tint-sage);
-  color: var(--sage);
-}
-
-.tone-peach {
-  background: var(--tint-peach);
-  color: var(--accent-deep);
-}
-
-.tone-butter {
-  background: var(--tint-butter);
-  color: #7a5a12;
-}
-
-.tone-sky {
-  background: var(--tint-sky);
-  color: #2e4e66;
 }
 
 .home-section {
@@ -1024,17 +989,6 @@ a:hover {
   padding: 28px;
   border-radius: 22px;
   background: var(--forest-2);
-}
-
-.sell-step-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  background: #f4efe6;
-  color: var(--forest);
 }
 
 .sell-step-no {
@@ -1372,7 +1326,8 @@ a:hover {
 
 .info-row {
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: 2px;
   padding: 12px 0;
   border-top: 1px solid var(--border);
 }
@@ -1380,18 +1335,6 @@ a:hover {
 .info-row:first-of-type {
   border-top: none;
   padding-top: 0;
-}
-
-.info-row-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-  border-radius: 10px;
-  background: var(--tint-sage);
-  color: var(--sage);
 }
 
 .info-row-label {
@@ -2460,15 +2403,6 @@ a:hover {
 
 .coming-soon .btn {
   margin-top: 8px;
-}
-
-.coming-soon-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 80px;
-  height: 80px;
-  border-radius: 24px;
 }
 
 @media (max-width: 560px) {

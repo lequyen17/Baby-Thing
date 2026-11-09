@@ -4,20 +4,17 @@ import { api } from '../api/client';
 import { useAddresses, useExtraProfile, usePayoutAccount } from '../account/useAccountData';
 import { useAuth } from '../auth/AuthContext';
 import { Alert, Field } from '../components/Form';
-import { CalendarIcon, CheckIcon, ClockIcon, MailIcon, ShieldCheckIcon } from '../components/Icons';
+import { CheckIcon } from '../components/Icons';
 import { HANOI_DISTRICTS } from '../data/vnLocations';
 import { formatDate } from '../utils/format';
 
 const BIO_MAX = 160;
 
-function InfoRow({ icon, label, children }) {
+function InfoRow({ label, children }) {
   return (
     <div className="info-row">
-      <span className="info-row-icon">{icon}</span>
-      <div>
-        <div className="info-row-label">{label}</div>
-        <div className="info-row-value">{children}</div>
-      </div>
+      <div className="info-row-label">{label}</div>
+      <div className="info-row-value">{children}</div>
     </div>
   );
 }
@@ -135,16 +132,16 @@ export default function ProfilePage() {
 
         <section className="card">
           <h2 className="card-title">Hoạt động tài khoản</h2>
-          <InfoRow icon={<CalendarIcon />} label="Ngày tham gia">
+          <InfoRow label="Ngày tham gia">
             {formatDate(user.createdAt, true)}
           </InfoRow>
-          <InfoRow icon={<ShieldCheckIcon />} label="Xác minh email">
+          <InfoRow label="Xác minh email">
             {formatDate(user.emailVerifiedAt)}
           </InfoRow>
-          <InfoRow icon={<ClockIcon />} label="Đăng nhập gần nhất">
+          <InfoRow label="Đăng nhập gần nhất">
             {formatDate(user.lastLoginAt)}
           </InfoRow>
-          <InfoRow icon={<MailIcon />} label="Trang người bán công khai">
+          <InfoRow label="Trang người bán công khai">
             <Link to={`/sellers/${user.id}`}>Xem hồ sơ của tôi</Link>
           </InfoRow>
         </section>

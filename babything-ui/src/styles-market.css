@@ -167,7 +167,6 @@
 .text-danger { color: var(--danger); }
 .care-rules, .care-capacity { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .care-rules .card, .care-capacity .card { display: flex; flex-direction: column; gap: 6px; padding: 18px; }
-.care-rules svg { color: var(--sage); }
 .care-rules .muted { font-size: 0.88rem; }
 .care-capacity strong { font-family: var(--font-serif); font-size: 1.6rem; }
 .care-capacity meter { width: 100%; height: 8px; }

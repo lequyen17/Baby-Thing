@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { BellIcon, CheckIcon, XIcon } from '../components/Icons';
+import { CheckIcon, XIcon } from '../components/Icons';
 import { timeAgo } from '../utils/format';
 import { groupOf, useNotifications } from './useNotifications';
 
@@ -46,9 +46,6 @@ export default function NotificationsPage() {
 
       {shown.length === 0 ? (
         <div className="card empty-block">
-          <span className="empty-icon">
-            <BellIcon size={28} />
-          </span>
           <strong>{filter === 'unread' ? 'Không có thông báo chưa đọc' : 'Chưa có thông báo'}</strong>
           <p className="muted">Cập nhật về đơn hàng, tin nhắn và tin đăng của bạn sẽ hiện ở đây.</p>
         </div>
@@ -64,9 +61,7 @@ export default function NotificationsPage() {
                   navigate(n.to);
                 }}
               >
-                <span className={`noti-icon group-${n.group}`}>
-                  <BellIcon size={18} />
-                </span>
+                <span className={`noti-icon group-${n.group}`} aria-hidden="true" />
                 <span className="noti-text">
                   <strong>{n.title}</strong>
                   <span>{n.body}</span>

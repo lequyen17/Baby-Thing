@@ -3,7 +3,7 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Alert } from '../components/Form';
-import { ArrowLeftIcon, CardIcon, CheckIcon, ClockIcon, XCircleIcon } from '../components/Icons';
+import { ArrowLeftIcon, CardIcon, CheckIcon, XCircleIcon } from '../components/Icons';
 import { ProductImage } from '../components/ProductImage';
 import { formatAgeRange, formatDate, formatPercent, formatPrice } from '../utils/format';
 import CareAdminPanel from './CareAdminPanel';
@@ -375,7 +375,7 @@ export default function CareBatchPage() {
                 )}
                 {status === 'SELLING' && batch.canExtend && (
                   <button type="button" className="btn btn-primary" onClick={handleExtend} disabled={busy}>
-                    <ClockIcon /> Gia hạn 30 ngày
+                    Gia hạn 30 ngày
                   </button>
                 )}
                 {status === 'SELLING' && (
@@ -404,7 +404,7 @@ export default function CareBatchPage() {
               <CareProgress batch={batch} />
               {hint && (
                 <p className="order-hint">
-                  <ClockIcon size={16} /> <span>{hint}</span>
+                  {hint}
                 </p>
               )}
               {batch.returnReason && <p className="muted small-note">Hoàn trả: {batch.returnReason}{batch.returnedAt && ` · đã trả ${formatDate(batch.returnedAt, true)}`}</p>}

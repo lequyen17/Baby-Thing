@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navigate, NavLink, Outlet } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
-import { BankIcon, CardIcon, CheckSquareIcon, DropletIcon, OrderIcon } from '../components/Icons';
+
 import { formatPrice } from '../utils/format';
 
 /** Khu vực quản trị; server chặn /api/admin/** và các thao tác kiểm duyệt với người không phải ADMIN. */
@@ -29,16 +29,15 @@ export default function AdminLayout() {
   if (!isAdmin) return <Navigate to="/" replace />;
 
   const tabs = [
-    ['/admin/products', 'Duyệt tin', CheckSquareIcon, stats?.review.pending],
+    ['/admin/products', 'Duyệt tin', stats?.review.pending],
     // Số trên tab = đơn cần chú ý (chờ xác nhận / chưa giao quá lâu, sắp hết hạn kiểm hàng)
-    ['/admin/orders', 'Đơn hàng', OrderIcon, stats && Object.values(stats.orders.attention).reduce((a, b) => a + b, 0)],
-    ['/admin/payments', 'Thanh toán', CardIcon],
-    ['/admin/settlements', 'Chi trả người bán', BankIcon, stats?.settlements.pendingCount],
+    ['/admin/orders', 'Đơn hàng', stats && Object.values(stats.orders.attention).reduce((a, b) => a + b, 0)],
+    ['/admin/payments', 'Thanh toán'],
+    ['/admin/settlements', 'Chi trả người bán', stats?.settlements.pendingCount],
     // Số trên tab = lô đang chờ admin xử lý (sàng lọc, nhận hàng, kiểm tra, làm sạch, hoàn trả)
     [
       '/admin/care',
       'Kho Care',
-      DropletIcon,
       stats && ['SUBMITTED', 'AWAITING_DROPOFF', 'RECEIVED', 'CLEANING', 'RETURNING'].reduce((sum, s) => sum + (stats.care.byStatus[s] ?? 0), 0),
     ],
   ];
@@ -68,9 +67,9 @@ export default function AdminLayout() {
         </div>
       </section>
       <nav className="segmented admin-tabs" aria-label="Quản trị">
-        {tabs.map(([to, label, Icon, count]) => (
+        {tabs.map(([to, label, count]) => (
           <NavLink key={to} to={to} className={({ isActive }) => (isActive ? 'is-active' : undefined)}>
-            <Icon size={16} /> {label}
+            {label}
             {count > 0 && <span className="nav-count">{count}</span>}
           </NavLink>
         ))}

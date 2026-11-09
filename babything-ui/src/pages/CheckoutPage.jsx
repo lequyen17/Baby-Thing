@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { Alert } from '../components/Form';
-import { ArrowLeftIcon, CardIcon, ClockIcon, ShieldCheckIcon } from '../components/Icons';
+import { ArrowLeftIcon, CardIcon } from '../components/Icons';
 import { PAYMENT_METHODS } from '../components/PaymentStatus';
 import { ProductImage } from '../components/ProductImage';
 import { formatDate, formatPrice } from '../utils/format';
@@ -52,7 +52,7 @@ export default function CheckoutPage() {
         <h1>Thanh toán đơn #{id}</h1>
         {order?.paymentDueAt && (
           <p className="muted">
-            <ClockIcon size={14} /> Hàng được giữ đến {formatDate(order.paymentDueAt)}. Quá hạn, đơn sẽ tự huỷ.
+            Hàng được giữ đến {formatDate(order.paymentDueAt)}. Quá hạn, đơn sẽ tự huỷ.
           </p>
         )}
       </div>
@@ -99,7 +99,7 @@ export default function CheckoutPage() {
               ))}
             </div>
             <p className="muted small-note">
-              <ShieldCheckIcon size={14} /> Tiền được thu qua đối tác thanh toán. Người bán chỉ nhận tiền sau khi bạn xác nhận đã
+              Tiền được thu qua đối tác thanh toán. Người bán chỉ nhận tiền sau khi bạn xác nhận đã
               nhận hàng đúng mô tả; huỷ trước khi người bán xác nhận sẽ được hoàn tiền.
             </p>
             <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>

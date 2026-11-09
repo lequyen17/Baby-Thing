@@ -4,18 +4,18 @@ import { apiUpload } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Avatar } from '../components/Avatar';
 import { Alert } from '../components/Form';
-import { BankIcon, BellIcon, CameraIcon, LockIcon, MapPinIcon, ShieldCheckIcon, UserIcon } from '../components/Icons';
+import { CameraIcon } from '../components/Icons';
 import { formatDate } from '../utils/format';
 import { useAddresses, useExtraProfile, usePayoutAccount } from './useAccountData';
 
 const ACCEPT = 'image/jpeg,image/png,image/webp,image/gif';
 
 const TABS = [
-  ['/profile', 'Hồ sơ', UserIcon, true],
-  ['/profile/addresses', 'Sổ địa chỉ', MapPinIcon],
-  ['/profile/payout', 'Nhận tiền', BankIcon],
-  ['/profile/notifications', 'Thông báo', BellIcon],
-  ['/settings', 'Bảo mật', LockIcon],
+  ['/profile', 'Hồ sơ', true],
+  ['/profile/addresses', 'Sổ địa chỉ'],
+  ['/profile/payout', 'Nhận tiền'],
+  ['/profile/notifications', 'Thông báo'],
+  ['/settings', 'Bảo mật'],
 ];
 
 /** Khung chung của khu vực tài khoản: ảnh bìa, avatar, mức hoàn thiện hồ sơ và thanh tab. */
@@ -102,7 +102,7 @@ export default function AccountLayout() {
               <span className="badge">{user.role === 'ADMIN' ? 'Quản trị viên' : 'Thành viên'}</span>
               {user.emailVerifiedAt && (
                 <span className="badge badge-success">
-                  <ShieldCheckIcon size={14} /> Đã xác minh email
+                  Đã xác minh email
                 </span>
               )}
               <span className="badge badge-muted">Tham gia {formatDate(user.createdAt, true)}</span>
@@ -120,9 +120,9 @@ export default function AccountLayout() {
           </div>
         </div>
         <nav className="account-tabs" aria-label="Tài khoản">
-          {TABS.map(([to, label, Icon, end]) => (
+          {TABS.map(([to, label, end]) => (
             <NavLink key={to} to={to} end={end} className="account-tab">
-              <Icon size={18} /> {label}
+              {label}
             </NavLink>
           ))}
         </nav>

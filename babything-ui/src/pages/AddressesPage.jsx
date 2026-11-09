@@ -3,7 +3,7 @@ import { useAddresses } from '../account/useAccountData';
 import { newId } from '../api/localStore';
 import { useAuth } from '../auth/AuthContext';
 import { Alert, Field } from '../components/Form';
-import { EditIcon, MapPinIcon, PlusIcon, TrashIcon } from '../components/Icons';
+import { EditIcon, PlusIcon, TrashIcon } from '../components/Icons';
 import { HANOI_DISTRICTS, PROVINCES } from '../data/vnLocations';
 
 const EMPTY = { type: 'RECEIVE', name: '', phone: '', province: 'Hà Nội', district: '', ward: '', detail: '', isDefault: false };
@@ -141,9 +141,6 @@ export default function AddressesPage() {
 
         {addresses.length === 0 && !editing ? (
           <div className="empty-block">
-            <span className="empty-icon">
-              <MapPinIcon size={28} />
-            </span>
             <strong>Chưa có địa chỉ nào</strong>
             <p className="muted">Thêm địa chỉ nhận hàng để đặt mua nhanh hơn, hoặc địa chỉ lấy hàng khi bạn bán đồ.</p>
           </div>
@@ -151,9 +148,6 @@ export default function AddressesPage() {
           <ul className="address-list">
             {addresses.map((a) => (
               <li key={a.id} className={`address-item${a.isDefault ? ' is-default' : ''}`}>
-                <span className="address-pin">
-                  <MapPinIcon size={20} />
-                </span>
                 <div className="address-body">
                   <div className="address-title">
                     <strong>{a.name}</strong>

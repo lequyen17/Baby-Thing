@@ -2,17 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useOutletContext } from 'react-router-dom';
 import { api } from '../api/client';
 import { Alert } from '../components/Form';
-import {
-  ArrowRightIcon,
-  CameraIcon,
-  CardIcon,
-  HistoryIcon,
-  PenIcon,
-  ShieldCheckIcon,
-  SparkleIcon,
-  StarIcon,
-  TagIcon,
-} from '../components/Icons';
 import { ProductCard } from '../components/ProductCard';
 import { CategoryGlyph, categoryArt } from '../utils/categoryArt';
 
@@ -23,16 +12,16 @@ const FILTERS = [
 ];
 
 const PROMISES = [
-  [ShieldCheckIcon, 'sage', 'Tài khoản xác minh', 'Người bán được quản lý và có thể bị khoá khi vi phạm.'],
-  [CardIcon, 'peach', 'Thanh toán an toàn', 'Giá niêm yết rõ ràng cho từng sản phẩm.'],
-  [HistoryIcon, 'butter', 'Lưu lịch sử xem', 'Xem lại những món bạn đã quan tâm bất cứ lúc nào.'],
-  [StarIcon, 'sky', 'Hàng chọn lọc', 'Mỗi tin đăng đều có danh mục, mô tả và tồn kho minh bạch.'],
+  ['Tài khoản xác minh', 'Người bán được quản lý và có thể bị khoá khi vi phạm.'],
+  ['Thanh toán an toàn', 'Giá niêm yết rõ ràng cho từng sản phẩm.'],
+  ['Lưu lịch sử xem', 'Xem lại những món bạn đã quan tâm bất cứ lúc nào.'],
+  ['Hàng chọn lọc', 'Mỗi tin đăng đều có danh mục, mô tả và tồn kho minh bạch.'],
 ];
 
 const AI_STEPS = [
-  [CameraIcon, 'Nhận diện sản phẩm', 'Tải ảnh lên, AI tự nhận biết loại sản phẩm, danh mục và tình trạng sử dụng.'],
-  [PenIcon, 'Tạo bài đăng tự động', 'Tiêu đề, mô tả và thông tin chi tiết được soạn sẵn — bạn chỉ cần xem lại và chỉnh sửa.'],
-  [TagIcon, 'Gợi ý giá hợp lý', 'Đề xuất khoảng giá phù hợp dựa trên tình trạng và các tin đăng tương tự.'],
+  ['Nhận diện sản phẩm', 'Tải ảnh lên, AI tự nhận biết loại sản phẩm, danh mục và tình trạng sử dụng.'],
+  ['Tạo bài đăng tự động', 'Tiêu đề, mô tả và thông tin chi tiết được soạn sẵn — bạn chỉ cần xem lại và chỉnh sửa.'],
+  ['Gợi ý giá hợp lý', 'Đề xuất khoảng giá phù hợp dựa trên tình trạng và các tin đăng tương tự.'],
 ];
 
 export default function HomePage() {
@@ -65,7 +54,7 @@ export default function HomePage() {
       <section className="hero">
         <div className="hero-copy">
           <span className="pill pill-sage">
-            <SparkleIcon size={16} /> Đăng bán nhanh với trợ lý AI
+            Đăng bán nhanh với trợ lý AI
           </span>
           <h1 className="serif hero-title">
             Đồ tốt cho bé,
@@ -80,7 +69,7 @@ export default function HomePage() {
           </p>
           <div className="hero-actions">
             <Link to="/products" className="btn btn-accent btn-lg">
-              Mua sắm ngay <ArrowRightIcon />
+              Mua sắm ngay
             </Link>
             <Link to={sellTo} className="btn btn-outline btn-lg">
               Bán đồ bé đã dùng
@@ -118,21 +107,16 @@ export default function HomePage() {
             Xe đẩy gấp gọn, khung nhẹ, mái che rộng, gấp một tay. Dùng khoảng 6 tháng, đầy đủ phụ kiện…
           </div>
           <Link to={sellTo} className="btn btn-dark btn-block">
-            <PenIcon /> Đăng bài ngay
+            Đăng bài ngay
           </Link>
         </div>
       </section>
 
       <section className="promise-grid" aria-label="Cam kết">
-        {PROMISES.map(([Icon, tone, title, text]) => (
+        {PROMISES.map(([title, text]) => (
           <div key={title} className="promise">
-            <span className={`promise-icon tone-${tone}`}>
-              <Icon size={22} />
-            </span>
-            <div>
-              <strong>{title}</strong>
-              <span>{text}</span>
-            </div>
+            <strong>{title}</strong>
+            <span>{text}</span>
           </div>
         ))}
       </section>
@@ -200,20 +184,17 @@ export default function HomePage() {
         <div className="sell-band-head">
           <div>
             <span className="sell-band-kicker">
-              <SparkleIcon size={16} /> Trợ lý AI của Baby Things
+              Trợ lý AI của Baby Things
             </span>
             <h2 className="serif">Chụp một tấm ảnh, phần còn lại để AI lo.</h2>
           </div>
           <Link to={sellTo} className="btn btn-cream btn-lg">
-            Thử đăng bán với AI <ArrowRightIcon />
+            Thử đăng bán với AI
           </Link>
         </div>
         <div className="sell-steps">
-          {AI_STEPS.map(([Icon, title, text], i) => (
+          {AI_STEPS.map(([title, text], i) => (
             <div key={title} className="sell-step">
-              <span className="sell-step-icon">
-                <Icon size={26} />
-              </span>
               <span className="sell-step-no">Bước {i + 1}</span>
               <h3>{title}</h3>
               <p>{text}</p>

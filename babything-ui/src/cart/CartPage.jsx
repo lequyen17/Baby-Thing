@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { Alert } from '../components/Form';
-import { CartIcon, InfoIcon, TrashIcon } from '../components/Icons';
+import { CartIcon, TrashIcon } from '../components/Icons';
 import { ProductImage } from '../components/ProductImage';
 import { formatCondition, formatPrice } from '../utils/format';
 import { cartItemToOrderItem, notifyCartChanged } from './useCart';
@@ -238,7 +238,7 @@ export default function CartPage() {
             </dl>
             {sellerCount > 1 && (
               <p className="small-note muted">
-                <InfoIcon size={14} /> Hàng của {sellerCount} người bán sẽ được tách thành {sellerCount} đơn, thanh toán từng đơn.
+                Hàng của {sellerCount} người bán sẽ được tách thành {sellerCount} đơn, thanh toán từng đơn.
               </p>
             )}
             <button type="button" className="btn btn-primary btn-block" disabled={chosen.length === 0 || busy} onClick={checkout}>

@@ -3,7 +3,7 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Alert } from '../components/Form';
-import { ArrowLeftIcon, CardIcon, CheckIcon, ClockIcon, EditIcon, TruckIcon, XCircleIcon } from '../components/Icons';
+import { ArrowLeftIcon, CardIcon, CheckIcon, EditIcon, XCircleIcon } from '../components/Icons';
 import { OrderStatusBadge, orderPermissions, STEPS } from '../components/OrderStatus';
 import { ProductImage } from '../components/ProductImage';
 import { ListingSpecs } from '../components/ListingSpecs';
@@ -57,7 +57,7 @@ function NextHint({ order, perms }) {
   if (!text) return null;
   return (
     <p className="order-hint">
-      <ClockIcon size={16} /> <span>{text}</span>
+      {text}
     </p>
   );
 }
@@ -186,7 +186,6 @@ export default function OrderDetailPage() {
                 handleNextStep(perms.nextStep);
               }}
             >
-              <TruckIcon size={22} />
               <label className="field">
                 <span>Mã vận đơn (GHN, GHTK, Ahamove…)</span>
                 <input value={tracking} onChange={(e) => setTracking(e.target.value)} maxLength={50} placeholder="VD: GHN123456789" />

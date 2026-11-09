@@ -5,7 +5,7 @@ import { useExtraProfile } from '../account/useAccountData';
 import { useAuth } from '../auth/AuthContext';
 import { useRequireLogin } from '../auth/RouteGuards';
 import { Avatar } from '../components/Avatar';
-import { CalendarIcon, MapPinIcon, MessageIcon, ShieldCheckIcon, StarIcon } from '../components/Icons';
+import { MessageIcon, StarIcon } from '../components/Icons';
 import { ProductCard } from '../components/ProductCard';
 import { useContactSeller } from '../messages/useMessages';
 import { formatDate } from '../utils/format';
@@ -95,18 +95,18 @@ export default function SellerProfilePage() {
             {isNew ? <span className="badge">Seller mới</span> : <span className="badge badge-success">Người bán uy tín</span>}
             {seller.verified && (
               <span className="badge badge-muted">
-                <ShieldCheckIcon size={14} /> Đã xác minh
+                Đã xác minh
               </span>
             )}
           </div>
           <p className="seller-meta">
             {seller.district && (
               <span>
-                <MapPinIcon size={16} /> {seller.district}, Hà Nội
+                {seller.district}, Hà Nội
               </span>
             )}
             <span>
-              <CalendarIcon size={16} /> Tham gia {formatDate(seller.joined, true)}
+              Tham gia {formatDate(seller.joined, true)}
             </span>
           </p>
           <p className="seller-bio">{seller.bio || (isMe ? 'Bạn chưa viết giới thiệu.' : 'Người bán chưa có giới thiệu.')}</p>

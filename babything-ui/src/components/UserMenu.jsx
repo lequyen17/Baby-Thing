@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { Avatar } from './Avatar';
-import { BankIcon, BellIcon, ChevronDownIcon, DropletIcon, HistoryIcon, MapPinIcon, LogoutIcon, ReceiptIcon, SettingsIcon, UserIcon } from './Icons';
+import { ChevronDownIcon } from './Icons';
 
 export function UserMenu() {
   const { user, signOut } = useAuth();
@@ -53,34 +53,34 @@ export function UserMenu() {
             </div>
           </div>
           <NavLink to="/profile" className="user-menu-item" role="menuitem">
-            <UserIcon /> Hồ sơ của tôi
+            Hồ sơ của tôi
           </NavLink>
           <NavLink to="/profile/addresses" className="user-menu-item" role="menuitem">
-            <MapPinIcon /> Sổ địa chỉ
+            Sổ địa chỉ
           </NavLink>
           <NavLink to="/profile/payout" className="user-menu-item" role="menuitem">
-            <BankIcon /> Tài khoản nhận tiền
+            Tài khoản nhận tiền
           </NavLink>
           <NavLink to="/sales" className="user-menu-item" role="menuitem">
-            <ReceiptIcon /> Doanh thu bán hàng
+            Doanh thu bán hàng
           </NavLink>
           {user.role !== 'ADMIN' && (
             <NavLink to="/care" className="user-menu-item" role="menuitem">
-              <DropletIcon /> Ký gửi Care
+              Ký gửi Care
             </NavLink>
           )}
           <NavLink to="/profile/notifications" className="user-menu-item" role="menuitem">
-            <BellIcon /> Cài đặt thông báo
+            Cài đặt thông báo
           </NavLink>
           <NavLink to="/history" className="user-menu-item" role="menuitem">
-            <HistoryIcon /> Sản phẩm đã xem
+            Sản phẩm đã xem
           </NavLink>
           <NavLink to="/settings" className="user-menu-item" role="menuitem">
-            <SettingsIcon /> Bảo mật
+            Bảo mật
           </NavLink>
           <div className="user-menu-divider" />
           <button type="button" className="user-menu-item user-menu-item-danger" role="menuitem" onClick={signOut}>
-            <LogoutIcon /> Đăng xuất
+            Đăng xuất
           </button>
         </div>
       )}

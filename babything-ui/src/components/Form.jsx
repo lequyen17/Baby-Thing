@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { ShieldCheckIcon } from './Icons';
 
 /** Trang xác thực chia đôi: bên trái giới thiệu thương hiệu, bên phải là form. */
 export function AuthCard({ title, subtitle, children, footer }) {
@@ -18,7 +17,7 @@ export function AuthCard({ title, subtitle, children, footer }) {
           <p>Đăng nhập để mua, bán và theo dõi những sản phẩm bạn quan tâm.</p>
         </div>
         <div className="auth-aside-note">
-          <ShieldCheckIcon size={20} /> Thông tin tài khoản được bảo mật
+          Thông tin tài khoản được bảo mật
         </div>
       </aside>
       <div className="auth-main">

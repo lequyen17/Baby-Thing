@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { Alert } from '../components/Form';
-import { ClockIcon, SearchIcon } from '../components/Icons';
+import { SearchIcon } from '../components/Icons';
 import { ORDER_STATUSES, OrderStatusBadge } from '../components/OrderStatus';
 import { Pagination } from '../components/Pagination';
 import { ProductImage } from '../components/ProductImage';
@@ -140,7 +140,6 @@ export default function AdminOrdersPage() {
                 aria-pressed={active}
                 onClick={() => updateParams({ attention: active ? '' : key, status: '' })}
               >
-                <ClockIcon size={18} />
                 <span>
                   <strong>
                     {count} {label.toLowerCase()}
