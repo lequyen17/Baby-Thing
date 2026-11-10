@@ -13,7 +13,7 @@ const ICONS = {
   box: 'M10 22l22-10 22 10v24L32 56 10 46z M10 22l22 10 22-10 M32 32v24',
 };
 
-export const TINTS = ['#F6E3DA', '#E1ECE4', '#F5EBC9', '#DDE8F0'];
+export const TINTS = ['#FDE2E2', '#E1ECE4', '#F5EBC9', '#DDE8F0'];
 
 const RULES = [
   [/stroll|xe đẩy|xe day/i, 'stroller'],
