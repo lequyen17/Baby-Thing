@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { api, tokenStore } from '../api/client';
+import { api, apiUrl, tokenStore } from '../api/client';
 import { MESSAGES_EVENT, NOTIFICATIONS_EVENT, setRealtimeConnected } from './events';
 
 const EVENT_TARGETS = {
@@ -53,7 +53,7 @@ export function useRealtime(userId) {
       let delay = 1000;
       while (!signal.aborted) {
         try {
-          const res = await fetch('/api/realtime/stream', {
+          const res = await fetch(apiUrl('/realtime/stream'), {
             headers: { Accept: 'text/event-stream', Authorization: `Bearer ${tokenStore.access}` },
             credentials: 'include',
             signal,

@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
+import com.example.babything_api.config.AppProperties;
 import com.example.babything_api.core.exceptions.ApiException;
 import com.example.babything_api.core.security.AuthPrincipal;
 import com.example.babything_api.core.security.RefreshTokenCookieService;
@@ -40,10 +41,12 @@ public class AuthController {
 
     private final AuthService authService;
     private final RefreshTokenCookieService refreshCookie;
+    private final AppProperties props;
 
-    public AuthController(AuthService authService, RefreshTokenCookieService refreshCookie) {
+    public AuthController(AuthService authService, RefreshTokenCookieService refreshCookie, AppProperties props) {
         this.authService = authService;
         this.refreshCookie = refreshCookie;
+        this.props = props;
     }
 
     @PostMapping("/register")
@@ -70,10 +73,11 @@ public class AuthController {
     @PostMapping("/login")
     LoginResponse login(@Valid @RequestBody LoginRequest req, HttpServletRequest http, HttpServletResponse response) {
         LoginResult result = authService.login(req, ClientIp.of(http));
-        if (result.refreshTokenPlain() != null) {
-            refreshCookie.write(response, result.refreshTokenPlain());
+        if (result.refreshTokenPlain() == null) {
+            return result.body();
         }
-        return result.body();
+        return LoginResponse.authenticated(
+                attachRefreshCookie(response, new AuthSession(result.body().tokens(), result.refreshTokenPlain())));
     }
 
     @PostMapping("/login/resend")
@@ -150,7 +154,8 @@ public class AuthController {
 
     private TokenResponse attachRefreshCookie(HttpServletResponse response, AuthSession session) {
         refreshCookie.write(response, session.refreshTokenPlain());
-        return session.tokens();
+        return props.refreshTokenInBody() ? session.tokens().withRefreshToken(session.refreshTokenPlain())
+                : session.tokens();
     }
 
     private static ApiException invalidRefreshToken() {

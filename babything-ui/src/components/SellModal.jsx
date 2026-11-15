@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useHref, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { useLoginModal } from '../auth/LoginModal';
 
@@ -39,9 +39,10 @@ export function useSellModal() {
 /** Nút/đường dẫn "Đăng bán" mở popup chọn cách bán; giữ href /sell cho mở tab mới. */
 export function SellLink({ children, ...props }) {
   const openSell = useSellModal();
+  const href = useHref('/sell');
   return (
     <a
-      href="/sell"
+      href={href}
       {...props}
       onClick={(e) => {
         if (e.ctrlKey || e.metaKey || e.shiftKey) return;

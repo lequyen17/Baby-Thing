@@ -16,6 +16,7 @@ import jakarta.servlet.http.HttpServletResponse;
 public class RefreshTokenCookieService {
 
     public static final String COOKIE_NAME = "refresh_token";
+    public static final String HEADER_NAME = "X-Refresh-Token";
 
     private final AppProperties props;
 
@@ -23,10 +24,11 @@ public class RefreshTokenCookieService {
         this.props = props;
     }
 
+    /** Ưu tiên cookie; không có thì lấy header {@value #HEADER_NAME} (frontend khác domain lưu token trong localStorage). */
     public Optional<String> read(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
         if (cookies == null) {
-            return Optional.empty();
+            return fromHeader(request);
         }
         for (Cookie cookie : cookies) {
             if (COOKIE_NAME.equals(cookie.getName())) {
@@ -36,7 +38,12 @@ public class RefreshTokenCookieService {
                 }
             }
         }
-        return Optional.empty();
+        return fromHeader(request);
+    }
+
+    private static Optional<String> fromHeader(HttpServletRequest request) {
+        String value = request.getHeader(HEADER_NAME);
+        return value != null && !value.isBlank() ? Optional.of(value) : Optional.empty();
     }
 
     public void write(HttpServletResponse response, String plainRefreshToken) {

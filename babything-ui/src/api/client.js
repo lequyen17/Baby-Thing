@@ -1,5 +1,35 @@
-/** Access token chỉ trong RAM tab; refresh nằm HttpOnly cookie (path /api/auth). */
+/**
+ * Access token chỉ trong RAM tab; refresh nằm HttpOnly cookie (path /api/auth).
+ * Ngoại lệ: frontend khác domain với API (GitHub Pages) thì Safari/iPhone chặn cookie, server bật
+ * REFRESH_TOKEN_IN_BODY và trả refresh token trong body; khi đó lưu vào localStorage, gửi qua header.
+ */
 let accessToken = null;
+
+/** Rỗng = API chung domain (nginx / proxy của Vite dev). */
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+
+export const apiUrl = (path) => `${API_BASE}/api${path}`;
+
+const REFRESH_KEY = 'babything.refreshToken';
+const REFRESH_HEADER = 'X-Refresh-Token';
+
+const refreshStore = {
+  get() {
+    try {
+      return localStorage.getItem(REFRESH_KEY);
+    } catch {
+      return null;
+    }
+  },
+  set(token) {
+    try {
+      if (token) localStorage.setItem(REFRESH_KEY, token);
+      else localStorage.removeItem(REFRESH_KEY);
+    } catch {
+      // Chế độ riêng tư chặn localStorage: chỉ mất khả năng giữ đăng nhập sau F5
+    }
+  },
+};
 
 const authChannel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('babything-auth') : null;
 
@@ -13,10 +43,12 @@ export const tokenStore = {
   },
   set(tokens) {
     accessToken = tokens?.accessToken ?? null;
+    if (tokens?.refreshToken) refreshStore.set(tokens.refreshToken);
     if (accessToken) broadcastSessionUpdated(accessToken);
   },
   clear() {
     accessToken = null;
+    refreshStore.set(null);
     broadcastSignedOut();
   },
 };
@@ -55,7 +87,10 @@ function send(path, { method = 'GET', body, auth = true } = {}) {
   const headers = { Accept: 'application/json' };
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   if (auth && tokenStore.access) headers.Authorization = `Bearer ${tokenStore.access}`;
-  return fetch(`/api${path}`, {
+  // Logout cần refresh token để thu hồi; chỉ gửi cho /auth/*, không rải ra mọi request
+  const refresh = path.startsWith('/auth/') && refreshStore.get();
+  if (refresh) headers[REFRESH_HEADER] = refresh;
+  return fetch(apiUrl(path), {
     method,
     headers,
     credentials: 'include',
@@ -85,9 +120,12 @@ async function refreshTokens(failedAccessToken) {
     if (failedAccessToken && tokenStore.access && tokenStore.access !== failedAccessToken) {
       return true;
     }
-    const res = await fetch('/api/auth/refresh', {
+    const headers = { Accept: 'application/json' };
+    const refresh = refreshStore.get();
+    if (refresh) headers[REFRESH_HEADER] = refresh;
+    const res = await fetch(apiUrl('/auth/refresh'), {
       method: 'POST',
-      headers: { Accept: 'application/json' },
+      headers,
       credentials: 'include',
     });
     if (!res.ok) {
@@ -127,7 +165,7 @@ export async function apiUpload(path, formData) {
   const headers = { Accept: 'application/json' };
   if (tokenStore.access) headers.Authorization = `Bearer ${tokenStore.access}`;
 
-  let res = await fetch(`/api${path}`, {
+  let res = await fetch(apiUrl(path), {
     method: 'POST',
     headers,
     credentials: 'include',
@@ -137,7 +175,7 @@ export async function apiUpload(path, formData) {
   if (res.status === 401 && usedAccessToken) {
     if (await refreshTokens(usedAccessToken)) {
       if (tokenStore.access) headers.Authorization = `Bearer ${tokenStore.access}`;
-      res = await fetch(`/api${path}`, { method: 'POST', headers, credentials: 'include', body: formData });
+      res = await fetch(apiUrl(path), { method: 'POST', headers, credentials: 'include', body: formData });
     } else {
       window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
     }

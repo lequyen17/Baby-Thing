@@ -1,0 +1,71 @@
+# Render Blueprint cho babything-api (gói free). Postgres ở Neon, Redis ở Upstash, ảnh ở Cloudflare R2.
+# Biến sync: false do bạn tự điền trên dashboard Render khi tạo Blueprint, không ghi vào repo.
+services:
+  - type: web
+    name: babything-api
+    runtime: docker
+    plan: free
+    branch: main
+    rootDir: babything-api
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/products/categories
+    envVars:
+      # Gói free chỉ có 512 MB; mặc định JVM chỉ dùng 25% RAM làm heap, quá ít cho Spring Boot
+      - key: JAVA_TOOL_OPTIONS
+        value: -XX:MaxRAMPercentage=75 -XX:+UseSerialGC -Xss512k
+      # Neon: jdbc:postgresql://<host>/<db>?sslmode=require (dùng host KHÔNG có "-pooler" để Flyway chạy ổn)
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      # Upstash: host, port 6379, mật khẩu (token), bật TLS
+      - key: REDIS_HOST
+        sync: false
+      - key: REDIS_PORT
+        value: "6379"
+      - key: REDIS_PASSWORD
+        sync: false
+      - key: REDIS_SSL
+        value: "true"
+      - key: JWT_SECRET
+        generateValue: true
+      # vd. https://lequyen17.github.io/Baby-Thing (link trong email đặt lại mật khẩu)
+      - key: APP_FRONTEND_URL
+        sync: false
+      # Chỉ origin, không có đường dẫn: https://lequyen17.github.io
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: REFRESH_TOKEN_IN_BODY
+        value: "true"
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: LOGIN_OTP_ENABLED
+        value: "true"
+      - key: MAIL_ENABLED
+        sync: false
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_PORT
+        sync: false
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      # Bắt buộc trên Render free: ổ đĩa bị xoá mỗi lần khởi động lại, ảnh lưu local sẽ mất
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET_NAME
+        sync: false
+      - key: R2_PUBLIC_URL
+        sync: false

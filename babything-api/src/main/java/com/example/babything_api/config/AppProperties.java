@@ -2,6 +2,7 @@ package com.example.babything_api.config;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.List;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
@@ -10,6 +11,8 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 public record AppProperties(
         String frontendUrl,
         boolean cookieSecure,
+        @DefaultValue List<String> corsAllowedOrigins,
+        boolean refreshTokenInBody,
         Mail mail,
         Jwt jwt,
         Otp otp,
