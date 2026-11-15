@@ -42,8 +42,10 @@ services:
         value: "true"
       - key: COOKIE_SECURE
         value: "true"
+      # TẠM TẮT: Render free chặn cổng SMTP nên không gửi được mã OTP qua email.
+      # BẬT LẠI ("true") khi có sản phẩm thật và đã cấu hình gửi mail (xem DEPLOY.md, mục "Trước khi chạy thật")
       - key: LOGIN_OTP_ENABLED
-        value: "true"
+        value: "false"
       - key: MAIL_ENABLED
         sync: false
       - key: MAIL_HOST

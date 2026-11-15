@@ -76,6 +76,17 @@ Mở web trên cả Chrome và Safari/iPhone, rồi kiểm tra lần lượt:
 - Nhắn tin (realtime)
 - Đăng xuất
 
+## Trước khi chạy thật (hiện đang tạm tắt)
+
+Bản trên Render đang là bản demo. Có sản phẩm thật thì **bắt buộc** làm các việc sau:
+
+- [ ] **Bật lại OTP khi đăng nhập**: `LOGIN_OTP_ENABLED=true`. Hiện đang tắt vì Render free chặn cổng SMTP (25, 465, 587), không gửi mail được.
+- [ ] **Gửi email thật**: nâng Render lên gói trả phí để dùng SMTP (Gmail App Password), hoặc chuyển sang dịch vụ gửi mail qua HTTP (Brevo, Postmark…; cần sửa code). Rồi đặt `MAIL_ENABLED=true` và các biến `MAIL_*`. Khi chưa có mail:
+  - Đăng ký vẫn cần mã OTP, mã chỉ hiện trong tab Logs của Render.
+  - Chức năng quên mật khẩu không dùng được.
+- [ ] **Đổi mật khẩu admin** `admin@babything.local`. Mật khẩu mặc định nằm trong migration V2 của repo public.
+- [ ] **Cân nhắc bỏ `REFRESH_TOKEN_IN_BODY`**: dùng tên miền riêng cho cả frontend và API để quay về cookie HttpOnly, an toàn hơn trước XSS.
+
 ## Đưa dữ liệu cũ lên (tuỳ chọn)
 
 ```bash
